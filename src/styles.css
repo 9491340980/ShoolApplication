@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #1a56db;
+  --color-primary-light: #e8f0fe;
+  --color-primary-dark: #1240a8;
+  --color-accent: #f59e0b;
+  --color-accent-light: #fef3c7;
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-danger: #ef4444;
+  --color-danger-light: #fee2e2;
+  --color-violet-brand: #8b5cf6;
+  --color-violet-light: #ede9fe;
+  --color-page: #f0f4ff;
+  --color-ink: #1e293b;
+  --color-muted: #64748b;
+  --color-line: #e2e8f0;
+
+  --font-sans: "Inter", "Noto Sans Telugu", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", "Noto Sans Telugu", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-page);
+  color: var(--color-ink);
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl p-5 border border-line shadow-sm;
+  }
+  .card-title {
+    @apply text-[15px] font-bold text-ink mb-4 flex items-center gap-2;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold;
+  }
+  .badge-green { @apply bg-success-light text-emerald-600; }
+  .badge-red { @apply bg-danger-light text-red-600; }
+  .badge-blue { @apply bg-primary-light text-primary; }
+  .badge-yellow { @apply bg-accent-light text-amber-600; }
+  .badge-purple { @apply bg-violet-light text-violet-600; }
+  .btn, .btn-blue, .btn-green, .btn-red, .btn-outline {
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold cursor-pointer transition-all border-0;
+  }
+  .btn-blue { @apply bg-primary text-white hover:bg-primary-dark; }
+  .btn-green { @apply bg-success text-white hover:bg-emerald-600; }
+  .btn-red { @apply bg-danger text-white hover:bg-red-600; }
+  .btn-outline { @apply bg-white text-primary border border-primary hover:bg-primary-light; }
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
+  .input {
+    @apply px-3 py-2 border-[1.5px] border-line rounded-lg text-[13px] outline-none w-full transition-colors bg-white focus:border-primary;
+  }
+  .th {
+    @apply px-3.5 py-2.5 text-left text-[11px] font-bold text-muted bg-slate-50 tracking-wide uppercase border-b border-line whitespace-nowrap;
+  }
+  .td {
+    @apply px-3.5 py-3 border-b border-slate-100 text-ink align-middle text-[13.5px];
+  }
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }

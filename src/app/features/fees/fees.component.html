@@ -1,0 +1,103 @@
+@if (isStaff()) {
+  <!-- COLLECTION DASHBOARD -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-success-light flex items-center justify-center text-[22px] shrink-0">💰</div>
+      <div>
+        <div class="font-display text-xl font-extrabold text-success leading-none">₹{{ collected().toLocaleString('en-IN') }}</div>
+        <div class="text-xs text-muted mt-1">{{ 'collectedThisMonth' | t }}</div>
+      </div>
+    </div>
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-danger-light flex items-center justify-center text-[22px] shrink-0">⏳</div>
+      <div>
+        <div class="font-display text-xl font-extrabold text-danger leading-none">₹{{ pendingTotal().toLocaleString('en-IN') }}</div>
+        <div class="text-xs text-muted mt-1">{{ 'totalPending' | t }}</div>
+      </div>
+    </div>
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-success-light flex items-center justify-center text-[22px] shrink-0">✅</div>
+      <div>
+        <div class="font-display text-xl font-extrabold text-success leading-none">{{ paidStudents() }}</div>
+        <div class="text-xs text-muted mt-1">{{ 'studentsPaid' | t }}</div>
+      </div>
+    </div>
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-accent-light flex items-center justify-center text-[22px] shrink-0">❗</div>
+      <div>
+        <div class="font-display text-xl font-extrabold text-amber-600 leading-none">{{ pendingRows().length }}</div>
+        <div class="text-xs text-muted mt-1">{{ 'pendingStudents' | t }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card !p-0 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
+      <div class="text-[15px] font-bold">{{ 'feePendingStudents' | t }}</div>
+      <div class="flex items-center gap-2">
+        @if (smsSent) {
+          <span class="badge badge-green">✓ {{ 'smsSent' | t }}</span>
+        }
+        <button class="btn-blue btn-sm" (click)="sendSms()">📱 {{ 'sendReminderSms' | t }}</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-[13.5px]">
+        <thead>
+          <tr>
+            <th class="th">{{ 'studentName' | t }}</th>
+            <th class="th">{{ 'class' | t }}</th>
+            <th class="th">{{ 'amountDue' | t }}</th>
+            <th class="th">{{ 'dueDate' | t }}</th>
+            <th class="th">{{ 'parentPhone' | t }}</th>
+            <th class="th">{{ 'action' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of pendingRows(); track row.fee.id) {
+            <tr class="hover:bg-blue-50/40">
+              <td class="td font-bold">{{ row.student?.name }}</td>
+              <td class="td"><span class="badge badge-blue">{{ row.student?.classId }}</span></td>
+              <td class="td text-danger font-bold">₹{{ row.fee.amount }}</td>
+              <td class="td"><span class="badge badge-yellow">{{ row.fee.dueDate }}</span></td>
+              <td class="td">📞 {{ row.student?.parentPhone }}</td>
+              <td class="td">
+                <button class="btn-green btn-sm" (click)="data.markFeePaid(row.fee.id)">✓ {{ 'markPaid' | t }}</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td class="td text-success font-semibold" colspan="6">✓ {{ 'paid' | t }} — 100%</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+} @else {
+  <!-- PARENT / STUDENT FEE DETAILS -->
+  <div class="card max-w-2xl">
+    <div class="card-title">💰 {{ 'feeDetails' | t }} — {{ myStudent()?.name }} | {{ myStudent()?.classId }}</div>
+    @for (f of myFees(); track f.id) {
+      <div class="flex items-center justify-between py-3 border-b border-line last:border-b-0">
+        <div>
+          <div class="text-[13px] font-medium">{{ f.label }}</div>
+          <div class="text-[11px] text-muted">{{ 'due' | t }}: {{ f.dueDate }}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-sm font-bold">₹{{ f.amount }}</div>
+          <span class="badge mt-1" [class]="f.status === 'paid' ? 'badge-green' : 'badge-yellow'">
+            {{ (f.status === 'paid' ? 'paid' : 'pending') | t }}
+          </span>
+        </div>
+      </div>
+    }
+    @if (myPending() > 0) {
+      <div class="bg-danger-light rounded-xl px-4 py-3 mt-3.5 flex justify-between items-center">
+        <div>
+          <div class="text-[13px] font-bold text-danger">{{ 'totalPending' | t }}</div>
+          <div class="text-[11px] text-red-800">{{ 'payBefore' | t }} 2026-06-20</div>
+        </div>
+        <div class="text-xl font-extrabold text-danger">₹{{ myPending() }}</div>
+      </div>
+    }
+  </div>
+}

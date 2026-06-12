@@ -1,0 +1,43 @@
+@if (isStaff()) {
+  <div class="card mb-4">
+    <div class="card-title">📢 {{ 'postNewNotice' | t }}</div>
+    <div class="flex gap-2.5 mb-2.5 flex-wrap">
+      <input class="input flex-1 min-w-[200px]" [placeholder]="'noticeTitlePh' | t" [ngModel]="title()" (ngModelChange)="title.set($event)" />
+      <select class="input max-w-[150px]" [ngModel]="type()" (ngModelChange)="type.set($event)">
+        <option value="general">📌 {{ 'general' | t }}</option>
+        <option value="urgent">⚠️ {{ 'urgent' | t }}</option>
+        <option value="event">🎉 {{ 'event' | t }}</option>
+      </select>
+      <select class="input max-w-[170px]" [ngModel]="audience()" (ngModelChange)="audience.set($event)">
+        <option value="all">{{ 'everyone' | t }}</option>
+        <option value="teachers">{{ 'teachersOnly' | t }}</option>
+        <option value="parents">{{ 'parentsOnly' | t }}</option>
+        <option value="students">{{ 'studentsOnly' | t }}</option>
+      </select>
+    </div>
+    <textarea class="input mb-2.5 resize-none" rows="3" [placeholder]="'noticeBodyPh' | t" [ngModel]="body()" (ngModelChange)="body.set($event)"></textarea>
+    <div class="flex items-center gap-2">
+      <button class="btn-blue" (click)="post()">📢 {{ 'postNotice' | t }}</button>
+      @if (posted()) {
+        <span class="badge badge-green">✓ {{ 'noticePosted' | t }}</span>
+      }
+    </div>
+  </div>
+}
+
+<div class="card">
+  <div class="card-title">📋 {{ 'allNotices' | t }}</div>
+  @for (n of data.notices(); track n.id) {
+    <div class="border-l-4 rounded-r-xl px-3.5 py-3 mb-2.5"
+         [class]="n.type === 'urgent' ? 'border-danger bg-danger-light' : n.type === 'event' ? 'border-accent bg-accent-light' : 'border-primary bg-primary-light'">
+      <div class="flex justify-between items-start gap-2 flex-wrap">
+        <div class="text-[13px] font-bold">{{ n.title }}</div>
+        <span class="badge" [class]="n.type === 'urgent' ? 'badge-red' : n.type === 'event' ? 'badge-yellow' : 'badge-blue'">
+          {{ n.type | t }}
+        </span>
+      </div>
+      <div class="text-xs text-muted leading-relaxed mt-1">{{ n.body }}</div>
+      <div class="text-[11px] text-muted mt-1.5">📅 {{ 'posted' | t }}: {{ n.date }} | {{ 'by' | t }}: {{ n.postedBy }}</div>
+    </div>
+  }
+</div>

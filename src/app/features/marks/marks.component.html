@@ -1,0 +1,129 @@
+@if (isStaff()) {
+  <!-- ENTRY MODE -->
+  <div class="flex gap-2.5 mb-4 flex-wrap items-center">
+    <select class="input max-w-[130px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
+      @for (c of classes; track c) {
+        <option [value]="c">{{ c }}</option>
+      }
+    </select>
+    <select class="input max-w-[170px]" [ngModel]="examId()" (ngModelChange)="examId.set($event)">
+      @for (e of exams; track e.id) {
+        <option [value]="e.id">{{ e.label }}</option>
+      }
+    </select>
+    <select class="input max-w-[140px]" [ngModel]="subject()" (ngModelChange)="subject.set($event)">
+      @for (s of subjects; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="card !p-0 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
+      <div class="text-[15px] font-bold">📝 {{ 'enterMarks' | t }} — {{ subject() }} | {{ classId() }}</div>
+      <div class="flex items-center gap-2">
+        @if (saved()) {
+          <span class="badge badge-green">✓ {{ 'marksSaved' | t }}</span>
+        }
+        <button class="btn-green" (click)="save()">💾 {{ 'saveMarks' | t }}</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-[13.5px]">
+        <thead>
+          <tr>
+            <th class="th">{{ 'rollNo' | t }}</th>
+            <th class="th">{{ 'studentName' | t }}</th>
+            <th class="th">{{ 'maxMarks' | t }}</th>
+            <th class="th">{{ 'obtainedMarks' | t }}</th>
+            <th class="th">{{ 'grade' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of students(); track s.id) {
+            <tr class="hover:bg-blue-50/40">
+              <td class="td font-bold">{{ s.roll }}</td>
+              <td class="td font-semibold">{{ s.name }}</td>
+              <td class="td">100</td>
+              <td class="td">
+                <input class="input !w-20 text-center" type="number" min="0" max="100"
+                       [ngModel]="scores()[s.id]" (ngModelChange)="setScore(s.id, $event)" />
+              </td>
+              <td class="td">
+                <span class="badge" [class]="scoreBadge(s.id)">
+                  {{ grade(scores()[s.id]) }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+} @else {
+  <!-- RESULT VIEW -->
+  <div class="flex gap-1 mb-4 bg-white border border-line p-1 rounded-xl max-w-md">
+    @for (e of exams; track e.id) {
+      <button
+        class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
+        [class]="viewExamId() === e.id ? 'bg-primary text-white' : 'text-muted hover:bg-page'"
+        (click)="viewExamId.set(e.id)"
+      >{{ e.label }}</button>
+    }
+  </div>
+
+  @if (myMarks().length) {
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div class="card">
+        <div class="card-title">📝 {{ 'subjectMarks' | t }}</div>
+        @for (m of myMarks(); track m.subject) {
+          <div class="mb-3">
+            <div class="flex justify-between text-[12.5px] mb-1">
+              <span class="font-semibold">{{ m.subject }}</span>
+              <span class="font-bold" [style.color]="barColor(m.score)">{{ m.score }}/100</span>
+            </div>
+            <div class="bg-line rounded-full h-2">
+              <div class="h-2 rounded-full" [style.width.%]="m.score" [style.background]="barColor(m.score)"></div>
+            </div>
+          </div>
+        }
+        <div class="border-t-2 border-line mt-3 pt-3 flex justify-between font-bold">
+          <span>{{ 'total' | t }}</span>
+          <span class="text-primary">{{ myTotal() }}/{{ myMax() }} ({{ myPct() }}%)</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🏆 {{ 'resultCard' | t }}</div>
+        <div class="rounded-xl p-5 text-white text-center mb-3.5"
+             style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))">
+          <div class="text-[11px] opacity-80 mb-1 uppercase tracking-wide">{{ 'overallPercentage' | t }}</div>
+          <div class="font-display text-[44px] font-extrabold leading-none">{{ myPct() }}%</div>
+          <div class="text-[13px] opacity-90 mt-2">{{ 'rank' | t }}: {{ myRank() }} / {{ classSize() }}</div>
+        </div>
+        @if (best(); as b) {
+          <div class="flex justify-between py-3 border-b border-line text-[13px]">
+            <span class="font-medium">{{ 'highestMark' | t }}</span>
+            <span class="font-bold">{{ b.score }} ({{ b.subject }})</span>
+          </div>
+        }
+        @if (worst(); as w) {
+          <div class="flex justify-between py-3 border-b border-line text-[13px]">
+            <span class="font-medium">{{ 'lowestMark' | t }}</span>
+            <span class="font-bold">{{ w.score }} ({{ w.subject }})</span>
+          </div>
+        }
+        <div class="flex justify-between py-3 border-b border-line text-[13px]">
+          <span class="font-medium">{{ 'status' | t }}</span>
+          <span class="font-bold text-success">✓ {{ 'pass' | t }}</span>
+        </div>
+        <div class="flex justify-between py-3 text-[13px]">
+          <span class="font-medium">{{ 'nextExam' | t }}</span>
+          <span class="font-bold">Jul 5, 2026</span>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="card text-center text-muted text-sm py-10">—</div>
+  }
+}

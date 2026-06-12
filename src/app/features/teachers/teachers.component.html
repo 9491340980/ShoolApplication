@@ -1,0 +1,35 @@
+<div class="flex gap-2.5 mb-3.5 flex-wrap">
+  <input class="input max-w-[250px]" [placeholder]="'🔍 ' + ('search' | t) + '...'" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+  @if (auth.role() === 'headmaster') {
+    <button class="btn-blue">＋ {{ 'addTeacher' | t }}</button>
+  }
+</div>
+
+<div class="card !p-0 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-[13.5px]">
+      <thead>
+        <tr>
+          <th class="th">{{ 'teacherName' | t }}</th>
+          <th class="th">{{ 'subjects' | t }}</th>
+          <th class="th">{{ 'classes' | t }}</th>
+          <th class="th">{{ 'experience' | t }}</th>
+          <th class="th">{{ 'phone' | t }}</th>
+          <th class="th">{{ 'status' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (tch of filtered(); track tch.id) {
+          <tr class="hover:bg-blue-50/40">
+            <td class="td font-bold">{{ tch.name }}</td>
+            <td class="td"><span class="badge badge-blue">{{ tch.subjects.join(', ') }}</span></td>
+            <td class="td">{{ tch.classes.join(', ') }}</td>
+            <td class="td">{{ tch.experienceYears }} yrs</td>
+            <td class="td">📞 {{ tch.phone }}</td>
+            <td class="td"><span class="badge badge-green">✓ {{ 'active' | t }}</span></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

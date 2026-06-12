@@ -1,0 +1,178 @@
+<!-- WELCOME BANNER -->
+<div class="rounded-2xl px-6 py-5 text-white flex items-center justify-between mb-5 relative overflow-hidden"
+     style="background: linear-gradient(135deg, #1a56db 0%, #2563eb 60%, #1e40af 100%)">
+  <div class="relative z-10">
+    <h2 class="font-display text-xl font-bold">{{ 'welcome' | t }}, {{ auth.user()?.name }}! 🙏</h2>
+    <p class="text-[13px] opacity-85 mt-1">
+      @if (isStaff()) {
+        {{ 'todayAttendance' | t }}: {{ todayAttendancePct() }}%
+      } @else {
+        {{ 'watchChildProgress' | t }}
+      }
+    </p>
+  </div>
+  @if (isStaff()) {
+    <a routerLink="/notices" class="relative z-10 btn bg-white/20 border border-white/40 text-white hover:bg-white/30">📢 {{ 'postNotice' | t }}</a>
+  }
+  <span class="absolute right-5 -bottom-3 text-[90px] opacity-10 select-none">🏫</span>
+</div>
+
+@if (isStaff()) {
+  <!-- STAFF STATS -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center text-[22px] shrink-0">🧒</div>
+      <div>
+        <div class="font-display text-2xl font-extrabold text-primary leading-none">{{ totalStudents() }}</div>
+        <div class="text-xs text-muted mt-1">{{ 'totalStudents' | t }}</div>
+      </div>
+    </div>
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-success-light flex items-center justify-center text-[22px] shrink-0">👩‍🏫</div>
+      <div>
+        <div class="font-display text-2xl font-extrabold text-success leading-none">{{ totalTeachers() }}</div>
+        <div class="text-xs text-muted mt-1">{{ 'teachersCount' | t }}</div>
+        <div class="text-[11px] font-semibold text-success mt-0.5">{{ 'allPresentToday' | t }}</div>
+      </div>
+    </div>
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-accent-light flex items-center justify-center text-[22px] shrink-0">✅</div>
+      <div>
+        <div class="font-display text-2xl font-extrabold text-amber-600 leading-none">{{ todayAttendancePct() }}%</div>
+        <div class="text-xs text-muted mt-1">{{ 'todayAttendance' | t }}</div>
+      </div>
+    </div>
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-violet-light flex items-center justify-center text-[22px] shrink-0">💰</div>
+      <div>
+        <div class="font-display text-2xl font-extrabold text-violet-600 leading-none">₹{{ collectedTotal().toLocaleString('en-IN') }}</div>
+        <div class="text-xs text-muted mt-1">{{ 'feesCollected' | t }}</div>
+        <div class="text-[11px] font-semibold text-success mt-0.5">↑ {{ 'thisMonth' | t }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+    <a routerLink="/attendance" class="card text-center cursor-pointer transition-all hover:border-primary hover:bg-primary-light hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 !p-4">
+      <div class="text-[28px] mb-1.5">✅</div>
+      <div class="text-xs font-semibold">{{ 'markAttendance' | t }}</div>
+    </a>
+    <a routerLink="/marks" class="card text-center cursor-pointer transition-all hover:border-primary hover:bg-primary-light hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 !p-4">
+      <div class="text-[28px] mb-1.5">📝</div>
+      <div class="text-xs font-semibold">{{ 'enterMarks' | t }}</div>
+    </a>
+    <a routerLink="/fees" class="card text-center cursor-pointer transition-all hover:border-primary hover:bg-primary-light hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 !p-4">
+      <div class="text-[28px] mb-1.5">💰</div>
+      <div class="text-xs font-semibold">{{ 'feeCollection' | t }}</div>
+    </a>
+    <a routerLink="/notices" class="card text-center cursor-pointer transition-all hover:border-primary hover:bg-primary-light hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 !p-4">
+      <div class="text-[28px] mb-1.5">📢</div>
+      <div class="text-xs font-semibold">{{ 'postNotice' | t }}</div>
+    </a>
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-4">
+    <!-- CLASS-WISE ATTENDANCE CHART -->
+    <div class="card">
+      <div class="card-title">📊 {{ 'classwiseAttendance' | t }}</div>
+      <div class="flex items-end gap-2 h-36 px-1">
+        @for (row of data.classAttendanceToday; track row.classId) {
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="text-[10px] font-bold">{{ row.pct }}%</div>
+            <div class="w-full rounded-t-md transition-all"
+                 [style.height.px]="row.pct * 1.1"
+                 [style.background]="row.pct >= 90 ? 'var(--color-success)' : 'var(--color-primary)'"></div>
+            <div class="text-[10px] text-muted">{{ row.classId }}</div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- RECENT NOTICES -->
+    <div class="card">
+      <div class="card-title">📢 {{ 'recentNotices' | t }}</div>
+      @for (n of recentNotices(); track n.id) {
+        <div class="border-l-4 rounded-r-xl px-3.5 py-3 mb-2.5"
+             [class]="n.type === 'urgent' ? 'border-danger bg-danger-light' : n.type === 'event' ? 'border-accent bg-accent-light' : 'border-primary bg-primary-light'">
+          <div class="text-[13px] font-bold mb-1">{{ n.title }}</div>
+          <div class="text-xs text-muted leading-relaxed">{{ n.body }}</div>
+          <div class="text-[11px] text-muted mt-1.5">{{ n.date }}</div>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <!-- PARENT / STUDENT -->
+  @if (auth.role() === 'parent' && myStudent(); as stu) {
+    <div class="rounded-2xl border-[1.5px] border-blue-200 px-4.5 py-4 flex gap-3.5 items-center mb-4"
+         style="background: linear-gradient(135deg, #f0f7ff, #e8f0fe)">
+      <div class="w-[52px] h-[52px] rounded-full bg-primary flex items-center justify-center text-2xl shrink-0">🧒</div>
+      <div>
+        <div class="text-[15px] font-bold">{{ stu.name }}</div>
+        <div class="text-xs text-muted mt-0.5">{{ 'class' | t }} {{ stu.classId }} | {{ 'rollNo' | t }}: {{ stu.roll }}</div>
+      </div>
+      <div class="ml-auto text-right">
+        <div class="text-xl font-extrabold text-primary">{{ stu.attendancePct }}%</div>
+        <div class="text-[11px] text-muted">{{ 'attendance' | t }}</div>
+      </div>
+    </div>
+  }
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-success-light flex items-center justify-center text-[22px] shrink-0">✅</div>
+      <div>
+        <div class="font-display text-2xl font-extrabold text-success leading-none">{{ myStudent()?.attendancePct }}%</div>
+        <div class="text-xs text-muted mt-1">{{ 'attendance' | t }}</div>
+      </div>
+    </div>
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center text-[22px] shrink-0">📝</div>
+      <div>
+        <div class="font-display text-2xl font-extrabold text-primary leading-none">{{ myAvg() }}%</div>
+        <div class="text-xs text-muted mt-1">{{ 'avgMarks' | t }}</div>
+      </div>
+    </div>
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-accent-light flex items-center justify-center text-[22px] shrink-0">🏆</div>
+      <div>
+        <div class="font-display text-2xl font-extrabold text-amber-600 leading-none">{{ myRank() }}</div>
+        <div class="text-xs text-muted mt-1">{{ 'classRank' | t }}</div>
+      </div>
+    </div>
+    <div class="card flex items-center gap-3.5 !p-4">
+      <div class="w-12 h-12 rounded-xl bg-danger-light flex items-center justify-center text-[22px] shrink-0">💰</div>
+      <div>
+        <div class="font-display text-2xl font-extrabold text-danger leading-none">₹{{ myPendingFee() }}</div>
+        <div class="text-xs text-muted mt-1">{{ 'feePending' | t }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-4">
+    <div class="card">
+      <div class="card-title">📝 {{ 'subjectMarks' | t }}</div>
+      @for (m of myMarks(); track m.subject) {
+        <div class="flex items-center gap-2.5 mb-2.5 text-xs">
+          <span class="w-16 font-medium">{{ m.subject }}</span>
+          <div class="flex-1 bg-line rounded-full h-2">
+            <div class="h-2 rounded-full transition-all" [style.width.%]="m.score" [style.background]="barColor(m.score)"></div>
+          </div>
+          <span class="font-bold w-8 text-right">{{ m.score }}</span>
+        </div>
+      }
+    </div>
+    <div class="card">
+      <div class="card-title">📢 {{ 'latestNotices' | t }}</div>
+      @for (n of recentNotices(); track n.id) {
+        <div class="border-l-4 rounded-r-xl px-3.5 py-3 mb-2.5"
+             [class]="n.type === 'urgent' ? 'border-danger bg-danger-light' : n.type === 'event' ? 'border-accent bg-accent-light' : 'border-primary bg-primary-light'">
+          <div class="text-[13px] font-bold mb-1">{{ n.title }}</div>
+          <div class="text-xs text-muted leading-relaxed">{{ n.body }}</div>
+          <div class="text-[11px] text-muted mt-1.5">{{ n.date }}</div>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,66 @@
+@if (auth.user(); as user) {
+  <div class="rounded-2xl p-6 text-white flex items-center gap-5 mb-4 flex-wrap"
+       style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))">
+    <div class="w-[72px] h-[72px] rounded-full bg-white/25 border-[3px] border-white/40 flex items-center justify-center text-[32px] font-bold shrink-0">
+      {{ initial() }}
+    </div>
+    <div>
+      <div class="font-display text-xl font-bold">{{ user.name }}</div>
+      <div class="text-[13px] opacity-80 mt-1">{{ roleLabels[user.role].label | t }} | {{ schoolName }}</div>
+      <div class="flex gap-2 mt-2.5 flex-wrap">
+        <span class="bg-white/20 px-3 py-1 rounded-full text-[11.5px] font-semibold">{{ roleLabels[user.role].icon }} {{ roleLabels[user.role].label | t }}</span>
+        @if (myStudent(); as stu) {
+          <span class="bg-white/20 px-3 py-1 rounded-full text-[11.5px] font-semibold">{{ 'class' | t }} {{ stu.classId }} | {{ 'rollNo' | t }} {{ stu.roll }}</span>
+        }
+        @if (user.classId && user.role === 'teacher') {
+          <span class="bg-white/20 px-3 py-1 rounded-full text-[11.5px] font-semibold">{{ 'class' | t }} {{ user.classId }}</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-4">
+    <div class="card">
+      <div class="card-title">👤 {{ 'personalInfo' | t }}</div>
+      <div class="grid grid-cols-2 gap-2.5">
+        <div class="bg-page rounded-xl px-3.5 py-3">
+          <div class="text-[11px] text-muted font-semibold uppercase tracking-wide mb-1">{{ 'fullName' | t }}</div>
+          <div class="text-sm font-semibold">{{ user.name }}</div>
+        </div>
+        <div class="bg-page rounded-xl px-3.5 py-3">
+          <div class="text-[11px] text-muted font-semibold uppercase tracking-wide mb-1">{{ 'phone' | t }}</div>
+          <div class="text-sm font-semibold">📞 {{ user.phone }}</div>
+        </div>
+        <div class="bg-page rounded-xl px-3.5 py-3">
+          <div class="text-[11px] text-muted font-semibold uppercase tracking-wide mb-1">{{ 'email' | t }}</div>
+          <div class="text-xs font-semibold break-all">{{ user.email }}</div>
+        </div>
+        <div class="bg-page rounded-xl px-3.5 py-3">
+          <div class="text-[11px] text-muted font-semibold uppercase tracking-wide mb-1">{{ 'address' | t }}</div>
+          <div class="text-xs font-semibold">Vijayawada, AP</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔒 {{ 'accountSettings' | t }}</div>
+      <div class="mb-3">
+        <label class="text-xs font-semibold mb-1.5 block">{{ 'currentPassword' | t }}</label>
+        <input class="input" type="password" [ngModel]="currentPassword()" (ngModelChange)="currentPassword.set($event)" />
+      </div>
+      <div class="mb-3">
+        <label class="text-xs font-semibold mb-1.5 block">{{ 'newPassword' | t }}</label>
+        <input class="input" type="password" [ngModel]="newPassword()" (ngModelChange)="newPassword.set($event)" />
+      </div>
+      @if (message(); as msg) {
+        <div class="bg-danger-light text-red-700 rounded-lg px-3 py-2 text-xs font-medium mb-3">{{ msg }}</div>
+      }
+      <div class="flex items-center gap-2">
+        <button class="btn-blue" (click)="updatePassword()">🔒 {{ 'updatePassword' | t }}</button>
+        @if (updated()) {
+          <span class="badge badge-green">✓ {{ 'passwordUpdated' | t }}</span>
+        }
+      </div>
+    </div>
+  </div>
+}

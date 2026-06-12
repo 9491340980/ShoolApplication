@@ -1,0 +1,97 @@
+<div class="flex min-h-screen">
+  <!-- Mobile drawer backdrop -->
+  @if (drawerOpen()) {
+    <div class="fixed inset-0 bg-black/40 z-40 lg:hidden" (click)="closeDrawer()"></div>
+  }
+
+  <!-- SIDEBAR -->
+  <aside
+    class="fixed top-0 left-0 h-screen w-60 bg-primary-dark flex flex-col z-50 transition-transform duration-200 lg:translate-x-0"
+    [class.-translate-x-full]="!drawerOpen()"
+  >
+    <div class="px-4 py-5 border-b border-white/10">
+      <div class="font-display text-white text-sm font-bold leading-tight">{{ schoolName }}</div>
+      @if (auth.role(); as role) {
+        <span class="inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-accent/25 text-amber-300">
+          {{ roleLabels[role].icon }} {{ roleLabels[role].label | t }}
+        </span>
+      }
+    </div>
+
+    <nav class="flex-1 py-3 overflow-y-auto">
+      @for (section of nav(); track section.label) {
+        <div class="px-4 pt-2 pb-1 text-[10px] font-semibold text-white/35 tracking-widest uppercase">
+          {{ section.label | t }}
+        </div>
+        @for (item of section.items; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="bg-white/10 !text-white border-accent"
+            class="flex items-center gap-2.5 px-4 py-2.5 text-white/65 text-[13.5px] font-medium border-l-[3px] border-transparent transition-colors hover:bg-white/5 hover:text-white"
+            (click)="closeDrawer()"
+          >
+            <app-icon [name]="item.icon" [size]="18" />
+            {{ item.label | t }}
+          </a>
+        }
+      }
+    </nav>
+
+    <div class="px-4 py-3.5 border-t border-white/10 flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-white font-bold shrink-0">
+        {{ initial() }}
+      </div>
+      <div class="min-w-0">
+        <div class="text-[13px] font-semibold text-white truncate">{{ auth.user()?.name }}</div>
+        @if (auth.role(); as role) {
+          <div class="text-[11px] text-white/50">{{ roleLabels[role].label | t }}</div>
+        }
+      </div>
+      <button class="ml-auto text-white/40 hover:text-white cursor-pointer p-1" [title]="'logout' | t" (click)="auth.logout()">
+        <app-icon name="logout" [size]="18" />
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="flex-1 flex flex-col min-w-0 lg:ml-60">
+    <header class="bg-white px-4 lg:px-7 py-3.5 border-b border-line flex items-center justify-between sticky top-0 z-30 shadow-sm">
+      <div class="flex items-center gap-3">
+        <button class="lg:hidden cursor-pointer p-1 text-ink" (click)="drawerOpen.set(true)" aria-label="Menu">
+          <app-icon name="menu" [size]="22" />
+        </button>
+        <h1 class="text-lg font-bold">{{ pageTitle() | t }}</h1>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <button
+          class="bg-page border border-line rounded-xl px-3 py-1.5 text-xs font-bold cursor-pointer hover:border-primary"
+          (click)="i18n.toggle()"
+          title="Switch language"
+        >
+          {{ i18n.lang() === 'te' ? 'EN' : 'తెలుగు' }}
+        </button>
+        <div class="hidden sm:block bg-primary-light text-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold">
+          📅 {{ today }}
+        </div>
+      </div>
+    </header>
+
+    <main class="p-4 lg:p-7 flex-1 pb-24 lg:pb-7">
+      <router-outlet />
+    </main>
+  </div>
+
+  <!-- MOBILE BOTTOM NAV (app-style) -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-line flex lg:hidden z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
+    @for (item of bottomNav(); track item.path) {
+      <a
+        [routerLink]="item.path"
+        routerLinkActive="!text-primary bg-primary-light"
+        class="flex-1 flex flex-col items-center gap-1 py-2 text-muted min-h-[56px] justify-center"
+      >
+        <app-icon [name]="item.icon" [size]="20" />
+        <span class="text-[10px] font-semibold leading-tight text-center">{{ item.label | t }}</span>
+      </a>
+    }
+  </nav>
+</div>

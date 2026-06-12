@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(ng new vidyasetu --directory . --style=css --ssr=false --skip-git --zoneless --defaults)",
+      "PowerShell(npm install tailwindcss @tailwindcss/postcss postcss)",
+      "PowerShell(npm install @angular/fire firebase)",
+      "PowerShell(ng build 2>&1)"
+    ]
+  }
+}

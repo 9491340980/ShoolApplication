@@ -1,0 +1,47 @@
+<div class="flex gap-2.5 mb-4 flex-wrap items-center">
+  <input class="input max-w-[250px]" [placeholder]="'🔍 ' + ('search' | t) + '...'" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+  <select class="input max-w-[150px]" [ngModel]="classFilter()" (ngModelChange)="classFilter.set($event)">
+    <option value="">{{ 'allClasses' | t }}</option>
+    @for (c of classes; track c) {
+      <option [value]="c">{{ c }}</option>
+    }
+  </select>
+  @if (auth.role() === 'headmaster') {
+    <button class="btn-blue">＋ {{ 'newStudent' | t }}</button>
+  }
+</div>
+
+<div class="card !p-0 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-[13.5px]">
+      <thead>
+        <tr>
+          <th class="th">{{ 'rollNo' | t }}</th>
+          <th class="th">{{ 'studentName' | t }}</th>
+          <th class="th">{{ 'class' | t }}</th>
+          <th class="th">{{ 'parentPhone' | t }}</th>
+          <th class="th">{{ 'attendance' | t }}</th>
+          <th class="th">{{ 'feeStatus' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of filtered(); track s.id) {
+          <tr class="hover:bg-blue-50/40">
+            <td class="td font-bold">{{ s.roll }}</td>
+            <td class="td font-semibold">{{ s.name }}</td>
+            <td class="td"><span class="badge badge-blue">{{ s.classId }}</span></td>
+            <td class="td">📞 {{ s.parentPhone }}</td>
+            <td class="td"><span class="badge" [class]="s.attendancePct >= 85 ? 'badge-green' : 'badge-red'">{{ s.attendancePct }}%</span></td>
+            <td class="td">
+              <span class="badge" [class]="s.feeStatus === 'paid' ? 'badge-green' : 'badge-yellow'">
+                {{ (s.feeStatus === 'paid' ? 'paid' : 'pending') | t }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td class="td text-muted" colspan="6">—</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

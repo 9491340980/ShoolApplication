@@ -1,0 +1,41 @@
+<div class="flex items-center gap-2.5 mb-3.5 flex-wrap">
+  <select class="input max-w-[160px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
+    @for (c of classes; track c) {
+      <option [value]="c">{{ 'class' | t }} {{ c }}</option>
+    }
+  </select>
+  <span class="badge badge-blue">{{ 'academicYear' | t }}</span>
+</div>
+
+@if (doc(); as tt) {
+  <div class="card !p-0 overflow-x-auto">
+    <table class="w-full border-collapse min-w-[700px]">
+      <thead>
+        <tr>
+          <th class="bg-primary text-white text-xs px-3 py-2.5 border border-white/15 text-center">{{ 'period' | t }}</th>
+          @for (d of days(); track d) {
+            <th class="bg-primary text-white text-xs px-3 py-2.5 border border-white/15 text-center">{{ d }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of tt.periods; track $index; let pi = $index) {
+          <tr>
+            <td class="bg-slate-50 text-[11px] font-bold text-muted px-3 py-2 border border-line text-center whitespace-nowrap">{{ p }}</td>
+            @for (day of tt.grid; track $index) {
+              @if (day[pi] === 'BREAK') {
+                <td class="bg-accent-light text-amber-600 text-[11px] font-semibold border border-line px-1.5 py-2 text-center">☕ {{ 'breakLabel' | t }}</td>
+              } @else if (day[pi] === '---') {
+                <td class="bg-success-light text-emerald-600 text-[11px] font-semibold border border-line px-1.5 py-2 text-center">{{ 'free' | t }}</td>
+              } @else {
+                <td class="bg-white border border-line px-1.5 py-2 text-center">
+                  <span class="text-[11.5px] font-bold text-primary">{{ day[pi] }}</span>
+                </td>
+              }
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
