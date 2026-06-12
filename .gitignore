@@ -42,3 +42,10 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Service account keys - never commit
+service-account.json
+
+# Firebase CLI artifacts
+.firebase/
+firebase-debug.log
