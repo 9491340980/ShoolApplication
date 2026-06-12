@@ -14,7 +14,9 @@ export class LoginComponent {
   auth = inject(AuthService);
   i18n = inject(TranslateService);
 
-  roles = Object.entries(ROLE_LABELS) as [Role, { icon: string; label: any }][];
+  roles = (Object.entries(ROLE_LABELS) as [Role, { icon: string; label: any }][]).filter(
+    ([role]) => role !== 'superadmin',
+  ) as [Exclude<Role, 'superadmin'>, { icon: string; label: any }][];
 
   identifier = signal('');
   password = signal('');
@@ -25,6 +27,14 @@ export class LoginComponent {
     this.busy.set(true);
     this.error.set(null);
     const err = await this.auth.loginWithPassword(this.identifier(), this.password());
+    this.error.set(err);
+    this.busy.set(false);
+  }
+
+  async google() {
+    this.busy.set(true);
+    this.error.set(null);
+    const err = await this.auth.loginWithGoogle();
     this.error.set(err);
     this.busy.set(false);
   }

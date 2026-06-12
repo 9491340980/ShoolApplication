@@ -31,13 +31,35 @@
     </div>
   </div>
 
+  @if (showAdd()) {
+    <div class="card mb-4">
+      <div class="card-title">＋ {{ 'addFee' | t }}</div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-2.5">
+        <select class="input" [ngModel]="feeStudentId()" (ngModelChange)="feeStudentId.set($event)">
+          <option value="">{{ 'studentName' | t }}...</option>
+          @for (s of data.students(); track s.id) {
+            <option [value]="s.id">{{ s.name }} ({{ s.classId }})</option>
+          }
+        </select>
+        <input class="input" [placeholder]="'feeName' | t" [ngModel]="feeLabel()" (ngModelChange)="feeLabel.set($event)" />
+        <input class="input" type="number" min="1" [placeholder]="('amount' | t) + ' ₹'" [ngModel]="feeAmount()" (ngModelChange)="feeAmount.set($event)" />
+        <input class="input" type="date" [ngModel]="feeDue()" (ngModelChange)="feeDue.set($event)" />
+      </div>
+      <button class="btn-green" (click)="addFee()">💾 {{ 'save' | t }}</button>
+    </div>
+  }
+
   <div class="card !p-0 overflow-hidden">
     <div class="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
       <div class="text-[15px] font-bold">{{ 'feePendingStudents' | t }}</div>
       <div class="flex items-center gap-2">
+        @if (feeAdded()) {
+          <span class="badge badge-green">✓ {{ 'feeAdded' | t }}</span>
+        }
         @if (smsSent) {
           <span class="badge badge-green">✓ {{ 'smsSent' | t }}</span>
         }
+        <button class="btn-blue btn-sm" (click)="showAdd.set(!showAdd())">＋ {{ 'addFee' | t }}</button>
         <button class="btn-blue btn-sm" (click)="sendSms()">📱 {{ 'sendReminderSms' | t }}</button>
       </div>
     </div>

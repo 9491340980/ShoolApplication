@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { TPipe } from '../../core/translate.service';
@@ -12,6 +12,13 @@ import { TPipe } from '../../core/translate.service';
 export class DashboardComponent {
   auth = inject(AuthService);
   data = inject(DataService);
+
+  constructor() {
+    // The super admin's home is the schools panel.
+    if (this.auth.role() === 'superadmin') {
+      void inject(Router).navigateByUrl('/admin');
+    }
+  }
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
 

@@ -6,10 +6,30 @@
       <option [value]="c">{{ c }}</option>
     }
   </select>
-  @if (auth.role() === 'headmaster') {
-    <button class="btn-blue">＋ {{ 'newStudent' | t }}</button>
+  @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
+    <button class="btn-blue" (click)="showAdd.set(!showAdd())">＋ {{ 'newStudent' | t }}</button>
+  }
+  @if (added()) {
+    <span class="badge badge-green">✓ {{ 'studentAdded' | t }}</span>
   }
 </div>
+
+@if (showAdd()) {
+  <div class="card mb-4">
+    <div class="card-title">＋ {{ 'newStudent' | t }}</div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-2.5">
+      <input class="input" [placeholder]="'rollNo' | t" [ngModel]="newRoll()" (ngModelChange)="newRoll.set($event)" />
+      <input class="input" [placeholder]="'studentName' | t" [ngModel]="newName()" (ngModelChange)="newName.set($event)" />
+      <select class="input" [ngModel]="newClass()" (ngModelChange)="newClass.set($event)">
+        @for (c of classes; track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </select>
+      <input class="input" [placeholder]="'parentPhone' | t" [ngModel]="newPhone()" (ngModelChange)="newPhone.set($event)" />
+    </div>
+    <button class="btn-green" (click)="addStudent()">💾 {{ 'save' | t }}</button>
+  </div>
+}
 
 <div class="card !p-0 overflow-hidden">
   <div class="overflow-x-auto">

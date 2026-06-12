@@ -3,6 +3,8 @@
 export const environment = {
   appName: 'VidyaSetu',
   schoolName: 'ZP High School, Vijayawada',
+  // Google accounts allowed to act as VidyaSetu super admin (you, the developer).
+  superAdminEmails: ['claudesubuser@gmail.com', 'sandeepreddy1248@gmail.com'],
   firebase: {
     apiKey: 'AIzaSyAF0tOkHMGTDZYUxy2TpE9I9PPOd8PGNGA',
     authDomain: 'vidyasetu-d0ee7.firebaseapp.com',

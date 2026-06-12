@@ -13,6 +13,18 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
+        path: 'admin',
+        canActivate: [roleGuard],
+        data: { roles: ['superadmin'] },
+        loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+      },
+      {
+        path: 'users',
+        canActivate: [roleGuard],
+        data: { roles: ['headmaster'] },
+        loadComponent: () => import('./features/users/users.component').then((m) => m.UsersComponent),
+      },
+      {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },

@@ -19,6 +19,7 @@ export class TimetableComponent {
   classId = signal(this.auth.user()?.classId ?? this.data.student(this.auth.user()?.studentId ?? '')?.classId ?? '8A');
 
   doc = computed(() => this.data.timetable(this.classId()));
+  isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
 
   daysTe = ['సోమవారం', 'మంగళవారం', 'బుధవారం', 'గురువారం', 'శుక్రవారం', 'శనివారం'];
   daysEn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];

@@ -1,11 +1,12 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
   selector: 'app-fees',
-  imports: [TPipe],
+  imports: [FormsModule, TPipe],
   templateUrl: './fees.component.html',
 })
 export class FeesComponent {
@@ -28,6 +29,29 @@ export class FeesComponent {
   sendSms() {
     this.smsSent = true;
     setTimeout(() => (this.smsSent = false), 2500);
+  }
+
+  showAdd = signal(false);
+  feeStudentId = signal('');
+  feeLabel = signal('');
+  feeAmount = signal<number | null>(null);
+  feeDue = signal(new Date().toISOString().slice(0, 10));
+  feeAdded = signal(false);
+
+  addFee() {
+    if (!this.feeStudentId() || !this.feeLabel().trim() || !this.feeAmount()) return;
+    this.data.addFee({
+      studentId: this.feeStudentId(),
+      label: this.feeLabel().trim(),
+      amount: Number(this.feeAmount()),
+      dueDate: this.feeDue(),
+      status: 'pending',
+    });
+    this.feeLabel.set('');
+    this.feeAmount.set(null);
+    this.showAdd.set(false);
+    this.feeAdded.set(true);
+    setTimeout(() => this.feeAdded.set(false), 2500);
   }
 
   // ---- parent / student ----

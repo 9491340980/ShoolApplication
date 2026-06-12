@@ -1,9 +1,26 @@
 <div class="flex gap-2.5 mb-3.5 flex-wrap">
   <input class="input max-w-[250px]" [placeholder]="'🔍 ' + ('search' | t) + '...'" [ngModel]="search()" (ngModelChange)="search.set($event)" />
   @if (auth.role() === 'headmaster') {
-    <button class="btn-blue">＋ {{ 'addTeacher' | t }}</button>
+    <button class="btn-blue" (click)="showAdd.set(!showAdd())">＋ {{ 'addTeacher' | t }}</button>
+  }
+  @if (added()) {
+    <span class="badge badge-green">✓ {{ 'teacherAdded' | t }}</span>
   }
 </div>
+
+@if (showAdd()) {
+  <div class="card mb-4">
+    <div class="card-title">＋ {{ 'addTeacher' | t }}</div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-2.5">
+      <input class="input" [placeholder]="'teacherName' | t" [ngModel]="newName()" (ngModelChange)="newName.set($event)" />
+      <input class="input" [placeholder]="'subjectsCsv' | t" [ngModel]="newSubjects()" (ngModelChange)="newSubjects.set($event)" />
+      <input class="input" [placeholder]="'classesCsv' | t" [ngModel]="newClasses()" (ngModelChange)="newClasses.set($event)" />
+      <input class="input" type="number" min="0" [placeholder]="'experience' | t" [ngModel]="newExp()" (ngModelChange)="newExp.set($event)" />
+      <input class="input" [placeholder]="'phone' | t" [ngModel]="newPhone()" (ngModelChange)="newPhone.set($event)" />
+    </div>
+    <button class="btn-green" (click)="addTeacher()">💾 {{ 'save' | t }}</button>
+  </div>
+}
 
 <div class="card !p-0 overflow-hidden">
   <div class="overflow-x-auto">

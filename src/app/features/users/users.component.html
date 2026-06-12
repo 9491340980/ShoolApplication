@@ -1,0 +1,66 @@
+<div class="card mb-4">
+  <div class="card-title">👥 {{ 'addUser' | t }}</div>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-2.5">
+    <input class="input" [placeholder]="'fullName' | t" [ngModel]="name()" (ngModelChange)="name.set($event)" />
+    <input class="input" type="email" [placeholder]="'email' | t" [ngModel]="email()" (ngModelChange)="email.set($event)" />
+    <input class="input" type="text" [placeholder]="'tempPassword' | t" [ngModel]="password()" (ngModelChange)="password.set($event)" />
+    <select class="input" [ngModel]="role()" (ngModelChange)="role.set($event)">
+      @for (r of creatableRoles; track r) {
+        <option [value]="r">{{ roleLabels[r].icon }} {{ roleLabels[r].label | t }}</option>
+      }
+    </select>
+    @if (needsClass()) {
+      <select class="input" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
+        <option value="">{{ 'class' | t }}...</option>
+        @for (c of classes; track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </select>
+    }
+    @if (needsStudent()) {
+      <select class="input" [ngModel]="studentId()" (ngModelChange)="studentId.set($event)">
+        <option value="">{{ 'linkedStudent' | t }}...</option>
+        @for (s of data.students(); track s.id) {
+          <option [value]="s.id">{{ s.name }} ({{ s.classId }})</option>
+        }
+      </select>
+    }
+  </div>
+  @if (error(); as err) {
+    <div class="bg-danger-light text-red-700 rounded-lg px-3 py-2 text-xs font-medium mb-2.5">{{ err }}</div>
+  }
+  <div class="flex items-center gap-2 flex-wrap">
+    <button class="btn-blue" [disabled]="busy()" (click)="addUser()">＋ {{ 'addUser' | t }}</button>
+    @if (created()) {
+      <span class="badge badge-green">✓ {{ 'userCreated' | t }}</span>
+    }
+  </div>
+</div>
+
+<div class="card !p-0 overflow-hidden">
+  <div class="px-5 py-4 text-[15px] font-bold">👥 {{ 'userManagement' | t }}</div>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-[13.5px]">
+      <thead>
+        <tr>
+          <th class="th">{{ 'fullName' | t }}</th>
+          <th class="th">{{ 'email' | t }}</th>
+          <th class="th">{{ 'roleLabel' | t }}</th>
+          <th class="th">{{ 'class' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (u of schoolSvc.schoolUsers(); track u.id) {
+          <tr class="hover:bg-blue-50/40">
+            <td class="td font-bold">{{ u.name }}</td>
+            <td class="td">{{ u.email }}</td>
+            <td class="td"><span class="badge badge-blue">{{ roleLabels[u.role].icon }} {{ roleLabels[u.role].label | t }}</span></td>
+            <td class="td">{{ u.classId ?? '—' }}</td>
+          </tr>
+        } @empty {
+          <tr><td class="td text-muted" colspan="4">{{ 'noUsersYet' | t }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

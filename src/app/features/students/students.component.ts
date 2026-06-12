@@ -18,6 +18,13 @@ export class StudentsComponent {
   search = signal('');
   classFilter = signal(this.auth.user()?.classId ?? '');
 
+  showAdd = signal(false);
+  newRoll = signal('');
+  newName = signal('');
+  newClass = signal('8A');
+  newPhone = signal('');
+  added = signal(false);
+
   filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
     const cls = this.classFilter();
@@ -25,4 +32,22 @@ export class StudentsComponent {
       .students()
       .filter((s) => (!cls || s.classId === cls) && (!q || s.name.toLowerCase().includes(q)));
   });
+
+  addStudent() {
+    if (!this.newName().trim() || !this.newRoll().trim()) return;
+    this.data.addStudent({
+      roll: this.newRoll().trim(),
+      name: this.newName().trim(),
+      classId: this.newClass(),
+      parentPhone: this.newPhone().trim(),
+      attendancePct: 100,
+      feeStatus: 'paid',
+    });
+    this.newRoll.set('');
+    this.newName.set('');
+    this.newPhone.set('');
+    this.showAdd.set(false);
+    this.added.set(true);
+    setTimeout(() => this.added.set(false), 2500);
+  }
 }

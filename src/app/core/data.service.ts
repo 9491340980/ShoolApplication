@@ -1,15 +1,18 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Auth, authState } from '@angular/fire/auth';
 import {
   Firestore,
   collection,
   doc,
   onSnapshot,
+  query,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
 } from '@angular/fire/firestore';
 import { firebaseEnabled } from '../../environments/environment';
+import { AuthService } from './auth.service';
 import {
   DEMO_ATTENDANCE,
   DEMO_CLASS_ATTENDANCE_TODAY,
@@ -22,7 +25,17 @@ import {
   DEMO_TIMETABLES,
   DEMO_USERS,
 } from './demo-data';
-import { AttendanceDoc, AttendanceStatus, FeeItem, MarksDoc, Notice, Student, Teacher, TimetableDoc } from './models';
+import {
+  AttendanceDoc,
+  AttendanceStatus,
+  DEMO_SCHOOL_ID,
+  FeeItem,
+  MarksDoc,
+  Notice,
+  Student,
+  Teacher,
+  TimetableDoc,
+} from './models';
 
 const DB_KEY = 'vidyasetu-db-v1';
 
@@ -47,20 +60,23 @@ const EMPTY_DB: Db = {
 };
 
 /**
- * Data store with two modes behind one API:
- * - Firebase connected → real-time Firestore listeners; mutations write to Firestore.
- * - No Firebase config → localStorage-persisted demo store (offline demos always work).
+ * Tenant-scoped data store with two modes behind one API:
+ * - Firebase connected → real-time Firestore listeners filtered by the signed-in
+ *   user's schoolId; every write is stamped with that schoolId.
+ * - No Firebase config → localStorage-persisted demo store.
  *
- * The head-master demo account auto-seeds Firestore with demo data on first login
- * if the database is empty.
+ * The head-master demo account auto-seeds the demo school on first login.
  */
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private fs = firebaseEnabled() ? inject(Firestore) : null;
   private fbAuth = firebaseEnabled() ? inject(Auth) : null;
+  private auth = inject(AuthService);
 
   private db = signal<Db>(this.fs ? EMPTY_DB : this.loadLocal());
-  private listening = false;
+  private fbSignedIn = signal(false);
+  private listeningFor: string | null = null;
+  private unsubs: (() => void)[] = [];
   private seedAttempted = false;
 
   readonly students = computed(() => this.db().students);
@@ -75,62 +91,101 @@ export class DataService {
 
   constructor() {
     if (this.fbAuth) {
-      authState(this.fbAuth).subscribe((user) => {
-        if (user) {
-          this.startListeners();
-        } else if (!this.listening) {
+      authState(this.fbAuth).subscribe((u) => this.fbSignedIn.set(!!u));
+      effect(() => {
+        const session = this.auth.user();
+        if (this.fbSignedIn() && session && session.role !== 'superadmin') {
+          this.startListeners(session.schoolId ?? DEMO_SCHOOL_ID);
+        } else if (!this.fbSignedIn()) {
           // Not signed into Firebase (e.g. demo account missing) — show the
           // offline demo data instead of an empty app.
+          this.stopListeners();
           this.db.set(this.loadLocal());
         }
       });
     }
   }
 
+  /** Current tenant id for reads/writes. */
+  private get sid(): string {
+    return this.auth.user()?.schoolId ?? DEMO_SCHOOL_ID;
+  }
+
+  /** Firestore doc ids are prefixed with the school id so tenants never collide. */
+  private docId(parts: string): string {
+    return this.fs ? `${this.sid}_${parts}` : parts;
+  }
+
   // ---------- Firestore mode ----------
 
-  private startListeners() {
+  private startListeners(schoolId: string) {
     const fs = this.fs;
-    if (this.listening || !fs) return;
-    this.listening = true;
+    if (!fs || this.listeningFor === schoolId) return;
+    this.stopListeners();
+    this.listeningFor = schoolId;
+    this.db.set(EMPTY_DB);
 
     const plain = ['students', 'teachers', 'notices', 'fees', 'attendance', 'marks'] as const;
     for (const name of plain) {
-      onSnapshot(collection(fs, name), (snap) => {
-        const rows = snap.docs.map((d) => ({ ...(d.data() as object), id: d.id }));
-        this.db.update((db) => ({ ...db, [name]: rows }) as Db);
-        if (name === 'students' && snap.empty) void this.seedIfHeadmaster();
-      });
+      this.unsubs.push(
+        onSnapshot(query(collection(fs, name), where('schoolId', '==', schoolId)), (snap) => {
+          const rows = snap.docs.map((d) => ({ ...(d.data() as object), id: d.id }));
+          this.db.update((db) => ({ ...db, [name]: rows }) as Db);
+          if (name === 'students' && snap.empty) void this.seedDemoSchool();
+        }),
+      );
     }
 
     // Firestore can't store nested arrays, so the grid travels as JSON.
-    onSnapshot(collection(fs, 'timetables'), (snap) => {
-      const rows = snap.docs.map((d) => {
-        const data = d.data();
-        return {
-          classId: d.id,
-          periods: data['periods'],
-          grid: JSON.parse(data['gridJson']),
-        } as TimetableDoc;
-      });
-      this.db.update((db) => ({ ...db, timetables: rows }));
-    });
+    this.unsubs.push(
+      onSnapshot(query(collection(fs, 'timetables'), where('schoolId', '==', schoolId)), (snap) => {
+        const rows = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            schoolId: data['schoolId'],
+            classId: data['classId'],
+            periods: data['periods'],
+            grid: JSON.parse(data['gridJson']),
+          } as TimetableDoc;
+        });
+        this.db.update((db) => ({ ...db, timetables: rows }));
+      }),
+    );
   }
 
-  private async seedIfHeadmaster() {
+  private stopListeners() {
+    this.unsubs.forEach((u) => u());
+    this.unsubs = [];
+    this.listeningFor = null;
+  }
+
+  /** Seeds the demo school once, only for the demo head master. */
+  private async seedDemoSchool() {
     const fs = this.fs;
     if (this.seedAttempted || !fs) return;
     if (this.fbAuth?.currentUser?.email !== DEMO_USERS.headmaster.email) return;
+    if (this.sid !== DEMO_SCHOOL_ID) return;
     this.seedAttempted = true;
 
+    const sid = DEMO_SCHOOL_ID;
     const batch = writeBatch(fs);
-    for (const s of DEMO_STUDENTS) batch.set(doc(fs, 'students', s.id), s);
-    for (const t of DEMO_TEACHERS) batch.set(doc(fs, 'teachers', t.id), t);
-    for (const n of DEMO_NOTICES) batch.set(doc(fs, 'notices', n.id), n);
-    for (const f of DEMO_FEES) batch.set(doc(fs, 'fees', f.id), f);
-    for (const m of DEMO_MARKS) batch.set(doc(fs, 'marks', m.id), m);
+    batch.set(doc(fs, 'schools', sid), {
+      name: 'ZP High School, Vijayawada',
+      adminEmail: DEMO_USERS.headmaster.email,
+      phone: DEMO_USERS.headmaster.phone,
+      address: 'Vijayawada, AP',
+      active: true,
+      createdAt: new Date().toISOString().slice(0, 10),
+    });
+    for (const s of DEMO_STUDENTS) batch.set(doc(fs, 'students', `${sid}_${s.id}`), { ...s, schoolId: sid });
+    for (const t of DEMO_TEACHERS) batch.set(doc(fs, 'teachers', `${sid}_${t.id}`), { ...t, schoolId: sid });
+    for (const n of DEMO_NOTICES) batch.set(doc(fs, 'notices', `${sid}_${n.id}`), { ...n, schoolId: sid });
+    for (const f of DEMO_FEES) batch.set(doc(fs, 'fees', `${sid}_${f.id}`), { ...f, schoolId: sid });
+    for (const m of DEMO_MARKS) batch.set(doc(fs, 'marks', `${sid}_${m.id}`), { ...m, schoolId: sid });
     for (const tt of DEMO_TIMETABLES) {
-      batch.set(doc(fs, 'timetables', tt.classId), {
+      batch.set(doc(fs, 'timetables', `${sid}_${tt.classId}`), {
+        schoolId: sid,
+        classId: tt.classId,
         periods: tt.periods,
         gridJson: JSON.stringify(tt.grid),
       });
@@ -175,33 +230,44 @@ export class DataService {
     this.db.set(this.loadLocal());
   }
 
-  // ---------- queries ----------
+  // ---------- queries (already school-scoped by the listeners) ----------
 
   studentsOf(classId: string): Student[] {
     return this.db().students.filter((s) => s.classId === classId);
   }
 
   student(id: string): Student | undefined {
-    return this.db().students.find((s) => s.id === id);
+    // Accept both raw ids (local/demo links like 's14') and prefixed Firestore ids.
+    return this.db().students.find((s) => s.id === id || s.id === `${this.sid}_${id}`);
   }
 
   attendanceDoc(classId: string, date: string): AttendanceDoc | undefined {
-    return this.db().attendance.find((a) => a.id === `${classId}_${date}`);
+    const id = this.docId(`${classId}_${date}`);
+    return this.db().attendance.find((a) => a.id === id);
   }
 
   marksDoc(classId: string, examId: string, subject: string): MarksDoc | undefined {
-    return this.db().marks.find((m) => m.id === `${classId}_${examId}_${subject}`);
+    const id = this.docId(`${classId}_${examId}_${subject}`);
+    return this.db().marks.find((m) => m.id === id);
   }
 
   /** All subject scores of one student for an exam: [{subject, score}] */
   studentMarks(studentId: string, examId: string): { subject: string; score: number }[] {
+    const stu = this.student(studentId);
+    const keys = stu ? [studentId, stu.id, stu.id.replace(`${this.sid}_`, '')] : [studentId];
     return this.db()
-      .marks.filter((m) => m.examId === examId && m.scores[studentId] !== undefined)
-      .map((m) => ({ subject: m.subject, score: m.scores[studentId] }));
+      .marks.filter((m) => m.examId === examId)
+      .map((m) => {
+        const key = keys.find((k) => m.scores[k] !== undefined);
+        return key === undefined ? null : { subject: m.subject, score: m.scores[key] };
+      })
+      .filter((x): x is { subject: string; score: number } => x !== null);
   }
 
   feesOf(studentId: string): FeeItem[] {
-    return this.db().fees.filter((f) => f.studentId === studentId);
+    const stu = this.student(studentId);
+    const keys = stu ? [studentId, stu.id, stu.id.replace(`${this.sid}_`, '')] : [studentId];
+    return this.db().fees.filter((f) => keys.includes(f.studentId));
   }
 
   pendingFees(): FeeItem[] {
@@ -212,12 +278,12 @@ export class DataService {
     return this.db().timetables.find((t) => t.classId === classId);
   }
 
-  // ---------- mutations ----------
+  // ---------- mutations (stamped with schoolId) ----------
 
   saveAttendance(classId: string, date: string, statuses: Record<string, AttendanceStatus>) {
-    const id = `${classId}_${date}`;
+    const id = this.docId(`${classId}_${date}`);
     if (this.fs) {
-      void setDoc(doc(this.fs, 'attendance', id), { classId, date, statuses });
+      void setDoc(doc(this.fs, 'attendance', id), { schoolId: this.sid, classId, date, statuses });
       return;
     }
     const rest = this.db().attendance.filter((a) => a.id !== id);
@@ -225,9 +291,9 @@ export class DataService {
   }
 
   saveMarks(classId: string, examId: string, subject: string, scores: Record<string, number>) {
-    const id = `${classId}_${examId}_${subject}`;
+    const id = this.docId(`${classId}_${examId}_${subject}`);
     if (this.fs) {
-      void setDoc(doc(this.fs, 'marks', id), { classId, examId, subject, scores });
+      void setDoc(doc(this.fs, 'marks', id), { schoolId: this.sid, classId, examId, subject, scores });
       return;
     }
     const rest = this.db().marks.filter((m) => m.id !== id);
@@ -244,10 +310,54 @@ export class DataService {
     });
   }
 
-  addNotice(notice: Omit<Notice, 'id'>) {
-    const id = `n${Date.now()}`;
+  addStudent(input: Omit<Student, 'id' | 'schoolId'>) {
+    const id = this.docId(`s${Date.now()}`);
     if (this.fs) {
-      void setDoc(doc(this.fs, 'notices', id), notice);
+      void setDoc(doc(this.fs, 'students', id), { ...input, schoolId: this.sid });
+      return;
+    }
+    this.commit({ students: [...this.db().students, { ...input, id }] });
+  }
+
+  addTeacher(input: Omit<Teacher, 'id' | 'schoolId'>) {
+    const id = this.docId(`t${Date.now()}`);
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'teachers', id), { ...input, schoolId: this.sid });
+      return;
+    }
+    this.commit({ teachers: [...this.db().teachers, { ...input, id }] });
+  }
+
+  addFee(input: Omit<FeeItem, 'id' | 'schoolId'>) {
+    const id = this.docId(`f${Date.now()}`);
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'fees', id), { ...input, schoolId: this.sid });
+      return;
+    }
+    this.commit({ fees: [...this.db().fees, { ...input, id }] });
+  }
+
+  /** Gives a brand-new school a sensible weekly timetable to start from. */
+  createDefaultTimetable(classId: string) {
+    const template = DEMO_TIMETABLES[0];
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'timetables', this.docId(classId)), {
+        schoolId: this.sid,
+        classId,
+        periods: template.periods,
+        gridJson: JSON.stringify(template.grid),
+      });
+      return;
+    }
+    this.commit({
+      timetables: [...this.db().timetables, { classId, periods: template.periods, grid: template.grid }],
+    });
+  }
+
+  addNotice(notice: Omit<Notice, 'id'>) {
+    const id = this.docId(`n${Date.now()}`);
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'notices', id), { ...notice, schoolId: this.sid });
       return;
     }
     this.commit({ notices: [{ ...notice, id }, ...this.db().notices] });

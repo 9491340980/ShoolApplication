@@ -14,6 +14,15 @@ export interface NavSection {
 }
 
 export const NAV: Record<Role, NavSection[]> = {
+  superadmin: [
+    {
+      label: 'main',
+      items: [
+        { path: '/admin', icon: 'building', label: 'schools' },
+        { path: '/profile', icon: 'user', label: 'myProfile' },
+      ],
+    },
+  ],
   headmaster: [
     {
       label: 'main',
@@ -36,6 +45,7 @@ export const NAV: Record<Role, NavSection[]> = {
       items: [
         { path: '/timetable', icon: 'calendar', label: 'timetable' },
         { path: '/teachers', icon: 'cap', label: 'teachers' },
+        { path: '/users', icon: 'users', label: 'userManagement' },
         { path: '/profile', icon: 'user', label: 'myProfile' },
       ],
     },
@@ -108,6 +118,8 @@ export const NAV: Record<Role, NavSection[]> = {
 };
 
 export const PAGE_TITLES: Record<string, TKey> = {
+  '/admin': 'schools',
+  '/users': 'userManagement',
   '/dashboard': 'dashboard',
   '/notices': 'noticeBoard',
   '/students': 'studentsList',
@@ -120,6 +132,7 @@ export const PAGE_TITLES: Record<string, TKey> = {
 };
 
 export const ROLE_LABELS: Record<Role, { icon: string; label: TKey }> = {
+  superadmin: { icon: '🛡️', label: 'superAdmin' },
   headmaster: { icon: '👨‍💼', label: 'headmaster' },
   teacher: { icon: '👩‍🏫', label: 'teacher' },
   parent: { icon: '👨‍👩‍👧', label: 'parent' },

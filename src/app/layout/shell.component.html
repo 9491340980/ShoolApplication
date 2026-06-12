@@ -10,7 +10,7 @@
     [class.-translate-x-full]="!drawerOpen()"
   >
     <div class="px-4 py-5 border-b border-white/10">
-      <div class="font-display text-white text-sm font-bold leading-tight">{{ schoolName }}</div>
+      <div class="font-display text-white text-sm font-bold leading-tight">{{ schoolName() }}</div>
       @if (auth.role(); as role) {
         <span class="inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-accent/25 text-amber-300">
           {{ roleLabels[role].icon }} {{ roleLabels[role].label | t }}

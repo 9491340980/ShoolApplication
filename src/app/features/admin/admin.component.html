@@ -1,0 +1,77 @@
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+  <div class="card flex items-center gap-3.5 !p-4">
+    <div class="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center text-[22px] shrink-0">🏫</div>
+    <div>
+      <div class="font-display text-2xl font-extrabold text-primary leading-none">{{ schoolSvc.schools().length }}</div>
+      <div class="text-xs text-muted mt-1">{{ 'totalSchools' | t }}</div>
+    </div>
+  </div>
+  <div class="card flex items-center gap-3.5 !p-4">
+    <div class="w-12 h-12 rounded-xl bg-success-light flex items-center justify-center text-[22px] shrink-0">✅</div>
+    <div>
+      <div class="font-display text-2xl font-extrabold text-success leading-none">{{ activeCount() }}</div>
+      <div class="text-xs text-muted mt-1">{{ 'activeSchools' | t }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-title">🏫 {{ 'addSchool' | t }}</div>
+  <div class="grid sm:grid-cols-2 gap-2.5 mb-2.5">
+    <input class="input" [placeholder]="'schoolNameLabel' | t" [ngModel]="name()" (ngModelChange)="name.set($event)" />
+    <input class="input" type="email" [placeholder]="('adminGmail' | t) + ' — school-owner@gmail.com'" [ngModel]="adminEmail()" (ngModelChange)="adminEmail.set($event)" />
+    <input class="input" [placeholder]="'phone' | t" [ngModel]="phone()" (ngModelChange)="phone.set($event)" />
+    <input class="input" [placeholder]="'cityAddress' | t" [ngModel]="address()" (ngModelChange)="address.set($event)" />
+  </div>
+  @if (error(); as err) {
+    <div class="bg-danger-light text-red-700 rounded-lg px-3 py-2 text-xs font-medium mb-2.5">{{ err }}</div>
+  }
+  <div class="flex items-center gap-2">
+    <button class="btn-blue" [disabled]="busy()" (click)="addSchool()">＋ {{ 'addSchool' | t }}</button>
+    @if (created()) {
+      <span class="badge badge-green">✓ {{ 'schoolCreated' | t }}</span>
+    }
+  </div>
+</div>
+
+<div class="card !p-0 overflow-hidden">
+  <div class="px-5 py-4 text-[15px] font-bold">{{ 'schools' | t }}</div>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-[13.5px]">
+      <thead>
+        <tr>
+          <th class="th">{{ 'schoolNameLabel' | t }}</th>
+          <th class="th">{{ 'adminGmail' | t }}</th>
+          <th class="th">{{ 'phone' | t }}</th>
+          <th class="th">{{ 'createdOn' | t }}</th>
+          <th class="th">{{ 'status' | t }}</th>
+          <th class="th">{{ 'action' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of schoolSvc.schools(); track s.id) {
+          <tr class="hover:bg-blue-50/40">
+            <td class="td font-bold">{{ s.name }}<div class="text-[11px] text-muted font-normal">{{ s.address }}</div></td>
+            <td class="td">{{ s.adminEmail }}</td>
+            <td class="td">📞 {{ s.phone }}</td>
+            <td class="td">{{ s.createdAt }}</td>
+            <td class="td">
+              <span class="badge" [class]="s.active ? 'badge-green' : 'badge-red'">
+                {{ (s.active ? 'active' : 'inactive') | t }}
+              </span>
+            </td>
+            <td class="td">
+              @if (s.active) {
+                <button class="btn-red btn-sm" (click)="schoolSvc.setSchoolActive(s.id, false)">{{ 'deactivate' | t }}</button>
+              } @else {
+                <button class="btn-green btn-sm" (click)="schoolSvc.setSchoolActive(s.id, true)">{{ 'activate' | t }}</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td class="td text-muted" colspan="6">—</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,6 +1,20 @@
-export type Role = 'headmaster' | 'teacher' | 'parent' | 'student';
+export type Role = 'superadmin' | 'headmaster' | 'teacher' | 'parent' | 'student';
 
 export type Lang = 'te' | 'en';
+
+/** The tenant id used by the built-in demo school. */
+export const DEMO_SCHOOL_ID = 'demo';
+
+export interface School {
+  id: string;
+  name: string;
+  /** Gmail of the school's owner — signing in with Google with this address grants Head Master access. */
+  adminEmail: string;
+  phone: string;
+  address: string;
+  active: boolean;
+  createdAt: string; // ISO yyyy-mm-dd
+}
 
 export interface AppUser {
   id: string;
@@ -8,6 +22,8 @@ export interface AppUser {
   name: string;
   phone: string;
   email: string;
+  /** Tenant the user belongs to. Absent for the super admin. */
+  schoolId?: string;
   /** For parents: the student they follow. For students: their own record. */
   studentId?: string;
   /** For teachers: class they are in charge of. */
@@ -16,6 +32,7 @@ export interface AppUser {
 
 export interface Student {
   id: string;
+  schoolId?: string;
   roll: string;
   name: string;
   classId: string;
@@ -26,6 +43,7 @@ export interface Student {
 
 export interface Teacher {
   id: string;
+  schoolId?: string;
   name: string;
   subjects: string[];
   classes: string[];
@@ -38,6 +56,7 @@ export type NoticeType = 'general' | 'urgent' | 'event';
 
 export interface Notice {
   id: string;
+  schoolId?: string;
   title: string;
   body: string;
   type: NoticeType;
@@ -48,6 +67,7 @@ export interface Notice {
 
 export interface FeeItem {
   id: string;
+  schoolId?: string;
   studentId: string;
   label: string;
   amount: number;
@@ -58,14 +78,16 @@ export interface FeeItem {
 export type AttendanceStatus = 'present' | 'absent';
 
 export interface AttendanceDoc {
-  id: string; // `${classId}_${date}`
+  id: string; // `${schoolId}_${classId}_${date}` in Firestore, `${classId}_${date}` locally
+  schoolId?: string;
   classId: string;
   date: string;
   statuses: Record<string, AttendanceStatus>; // studentId -> status
 }
 
 export interface MarksDoc {
-  id: string; // `${classId}_${examId}_${subject}`
+  id: string; // `${schoolId}_${classId}_${examId}_${subject}` in Firestore
+  schoolId?: string;
   classId: string;
   examId: string;
   subject: string;
@@ -73,6 +95,7 @@ export interface MarksDoc {
 }
 
 export interface TimetableDoc {
+  schoolId?: string;
   classId: string;
   /** periods[p] = label like "8:30-9:20"; grid[day][p] = subject or BREAK/--- */
   periods: string[];

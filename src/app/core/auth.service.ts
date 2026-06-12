@@ -1,10 +1,17 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Auth, signInWithEmailAndPassword, signOut, updatePassword } from '@angular/fire/auth';
-import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
-import { firebaseEnabled } from '../../environments/environment';
+import {
+  Auth,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updatePassword,
+} from '@angular/fire/auth';
+import { Firestore, collection, doc, getDoc, getDocs, limit, query, setDoc, where } from '@angular/fire/firestore';
+import { environment, firebaseEnabled } from '../../environments/environment';
 import { DEMO_PASSWORD, DEMO_USERS } from './demo-data';
-import { AppUser, Role } from './models';
+import { AppUser, Role, School } from './models';
 
 const SESSION_KEY = 'vidyasetu-session';
 
@@ -30,7 +37,7 @@ export class AuthService {
    * account (so Firestore reads work); falls back to a local session if the
    * account doesn't exist yet — demos never break.
    */
-  async loginDemo(role: Role) {
+  async loginDemo(role: Exclude<Role, 'superadmin'>) {
     const demoUser = DEMO_USERS[role];
     if (this.fbAuth) {
       try {
@@ -42,6 +49,77 @@ export class AuthService {
     }
     this.setSession(demoUser);
     this.router.navigateByUrl('/dashboard');
+  }
+
+  /**
+   * Google sign-in for school owners and the super admin.
+   * - Super admin emails (environment.superAdminEmails) land on /admin.
+   * - A Gmail registered as a school's adminEmail becomes that school's Head Master.
+   */
+  async loginWithGoogle(): Promise<string | null> {
+    if (!this.fbAuth) return 'Google sign-in needs Firebase connected.';
+    let uid: string;
+    let email: string;
+    let displayName: string;
+    try {
+      const cred = await signInWithPopup(this.fbAuth, new GoogleAuthProvider());
+      uid = cred.user.uid;
+      email = (cred.user.email ?? '').toLowerCase();
+      displayName = cred.user.displayName ?? email;
+    } catch {
+      return 'Google sign-in was cancelled.';
+    }
+
+    if (environment.superAdminEmails.includes(email)) {
+      const profile: AppUser = { id: uid, role: 'superadmin', name: displayName, phone: '', email };
+      await this.ensureUserDoc(uid, profile);
+      this.setSession(profile);
+      this.router.navigateByUrl('/admin');
+      return null;
+    }
+
+    const existing = await this.loadUserDoc(uid);
+    if (existing) {
+      this.setSession(existing);
+      this.router.navigateByUrl('/dashboard');
+      return null;
+    }
+
+    const school = await this.findSchoolByAdminEmail(email);
+    if (!school) {
+      void signOut(this.fbAuth);
+      return 'No school is registered for this Google account. Please contact VidyaSetu support.';
+    }
+    if (!school.active) {
+      void signOut(this.fbAuth);
+      return 'This school account is deactivated. Please contact VidyaSetu support.';
+    }
+    const profile: AppUser = {
+      id: uid,
+      role: 'headmaster',
+      name: displayName,
+      phone: school.phone,
+      email,
+      schoolId: school.id,
+    };
+    await this.ensureUserDoc(uid, profile);
+    this.setSession(profile);
+    this.router.navigateByUrl('/dashboard');
+    return null;
+  }
+
+  private async findSchoolByAdminEmail(email: string): Promise<School | null> {
+    if (!this.fs) return null;
+    try {
+      const snap = await getDocs(
+        query(collection(this.fs, 'schools'), where('adminEmail', '==', email), limit(1)),
+      );
+      if (snap.empty) return null;
+      const d = snap.docs[0];
+      return { ...(d.data() as Omit<School, 'id'>), id: d.id };
+    } catch {
+      return null;
+    }
   }
 
   /** Email/phone + password login. Uses Firebase when configured, demo accounts otherwise. */
@@ -58,13 +136,11 @@ export class AuthService {
       } catch {
         return 'Invalid credentials. Please check and try again.';
       }
-      const profile = demoUser ?? (await this.loadUserDoc(uid)) ?? {
-        id: uid,
-        role: 'headmaster' as Role,
-        name: email,
-        phone: '',
-        email,
-      };
+      const profile = demoUser ?? (await this.loadUserDoc(uid));
+      if (!profile) {
+        void signOut(this.fbAuth);
+        return 'This account has no school profile yet. Ask your Head Master to add you.';
+      }
       await this.ensureUserDoc(uid, profile);
       this.setSession(profile);
       this.router.navigateByUrl('/dashboard');
@@ -90,6 +166,7 @@ export class AuthService {
           name: profile.name,
           phone: profile.phone,
           email: profile.email,
+          schoolId: profile.schoolId ?? null,
           studentId: profile.studentId ?? null,
           classId: profile.classId ?? null,
         },
@@ -112,6 +189,7 @@ export class AuthService {
         name: d['name'],
         phone: d['phone'] ?? '',
         email: d['email'] ?? '',
+        schoolId: d['schoolId'] ?? undefined,
         studentId: d['studentId'] ?? undefined,
         classId: d['classId'] ?? undefined,
       };

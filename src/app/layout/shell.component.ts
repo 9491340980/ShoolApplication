@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/auth.service';
+import { SchoolService } from '../core/school.service';
 import { TPipe, TranslateService } from '../core/translate.service';
 import { IconComponent } from './icon.component';
 import { NAV, PAGE_TITLES, ROLE_LABELS } from './nav-config';
@@ -16,9 +17,14 @@ import { NAV, PAGE_TITLES, ROLE_LABELS } from './nav-config';
 export class ShellComponent {
   auth = inject(AuthService);
   i18n = inject(TranslateService);
+  schoolSvc = inject(SchoolService);
   private router = inject(Router);
 
-  schoolName = environment.schoolName;
+  /** White-label: the school's own name is the app name for its users. */
+  schoolName = computed(() => {
+    if (this.auth.role() === 'superadmin') return 'VidyaSetu — Admin';
+    return this.schoolSvc.currentSchool()?.name ?? environment.schoolName;
+  });
   roleLabels = ROLE_LABELS;
   drawerOpen = signal(false);
 

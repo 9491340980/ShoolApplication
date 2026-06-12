@@ -1,10 +1,10 @@
 import { AppUser, AttendanceDoc, FeeItem, MarksDoc, Notice, Role, Student, Teacher, TimetableDoc } from './models';
 
-export const DEMO_USERS: Record<Role, AppUser> = {
-  headmaster: { id: 'u-hm', role: 'headmaster', name: 'Ramesh Kumar', phone: '9876543210', email: 'demo-hm@vidyasetu.app' },
-  teacher: { id: 'u-t1', role: 'teacher', name: 'Sunitha Devi', phone: '9876500001', email: 'demo-teacher@vidyasetu.app', classId: '8A' },
-  parent: { id: 'u-p1', role: 'parent', name: 'Lakshmi Reddy', phone: '9876543211', email: 'demo-parent@vidyasetu.app', studentId: 's14' },
-  student: { id: 'u-s1', role: 'student', name: 'Ravi Kumar', phone: '9876543211', email: 'demo-student@vidyasetu.app', studentId: 's14', classId: '8A' },
+export const DEMO_USERS: Record<Exclude<Role, 'superadmin'>, AppUser> = {
+  headmaster: { id: 'u-hm', role: 'headmaster', name: 'Ramesh Kumar', phone: '9876543210', email: 'demo-hm@vidyasetu.app', schoolId: 'demo' },
+  teacher: { id: 'u-t1', role: 'teacher', name: 'Sunitha Devi', phone: '9876500001', email: 'demo-teacher@vidyasetu.app', classId: '8A', schoolId: 'demo' },
+  parent: { id: 'u-p1', role: 'parent', name: 'Lakshmi Reddy', phone: '9876543211', email: 'demo-parent@vidyasetu.app', studentId: 's14', schoolId: 'demo' },
+  student: { id: 'u-s1', role: 'student', name: 'Ravi Kumar', phone: '9876543211', email: 'demo-student@vidyasetu.app', studentId: 's14', classId: '8A', schoolId: 'demo' },
 };
 
 /** Demo password for the email/password form (all four demo accounts). */
