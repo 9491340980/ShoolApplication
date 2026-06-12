@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
+import { CLASSES } from '../../core/models';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -14,6 +15,7 @@ export class FeesComponent {
   data = inject(DataService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
+  classes = CLASSES;
 
   // ---- staff ----
   collected = computed(() =>
@@ -32,21 +34,31 @@ export class FeesComponent {
   }
 
   showAdd = signal(false);
+  applyMode = signal<'one' | 'class'>('one');
   feeStudentId = signal('');
+  feeClassId = signal('8A');
   feeLabel = signal('');
   feeAmount = signal<number | null>(null);
   feeDue = signal(new Date().toISOString().slice(0, 10));
   feeAdded = signal(false);
 
   addFee() {
-    if (!this.feeStudentId() || !this.feeLabel().trim() || !this.feeAmount()) return;
-    this.data.addFee({
-      studentId: this.feeStudentId(),
+    if (!this.feeLabel().trim() || !this.feeAmount()) return;
+    const base = {
       label: this.feeLabel().trim(),
       amount: Number(this.feeAmount()),
       dueDate: this.feeDue(),
-      status: 'pending',
-    });
+      status: 'pending' as const,
+    };
+    if (this.applyMode() === 'class') {
+      // e.g. "Term 1 Tuition ₹2000" assigned to every student of the class at once
+      for (const s of this.data.studentsOf(this.feeClassId())) {
+        this.data.addFee({ ...base, studentId: s.id });
+      }
+    } else {
+      if (!this.feeStudentId()) return;
+      this.data.addFee({ ...base, studentId: this.feeStudentId() });
+    }
     this.feeLabel.set('');
     this.feeAmount.set(null);
     this.showAdd.set(false);

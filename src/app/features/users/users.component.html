@@ -1,27 +1,36 @@
 <div class="card mb-4">
   <div class="card-title">👥 {{ 'addUser' | t }}</div>
+  <p class="text-xs text-muted mb-3">💡 {{ 'autoFillHint' | t }}</p>
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-2.5">
-    <input class="input" [placeholder]="'fullName' | t" [ngModel]="name()" (ngModelChange)="name.set($event)" />
-    <input class="input" type="email" [placeholder]="'email' | t" [ngModel]="email()" (ngModelChange)="email.set($event)" />
-    <input class="input" type="text" [placeholder]="'tempPassword' | t" [ngModel]="password()" (ngModelChange)="password.set($event)" />
-    <select class="input" [ngModel]="role()" (ngModelChange)="role.set($event)">
+    <select class="input" [ngModel]="role()" (ngModelChange)="setRole($event)">
       @for (r of creatableRoles; track r) {
         <option [value]="r">{{ roleLabels[r].icon }} {{ roleLabels[r].label | t }}</option>
       }
     </select>
+    @if (role() === 'teacher') {
+      <select class="input" [ngModel]="linkedTeacherId()" (ngModelChange)="pickTeacher($event)">
+        <option value="">{{ 'selectTeacher' | t }}...</option>
+        @for (tch of data.teachers(); track tch.id) {
+          <option [value]="tch.id">{{ tch.name }} ({{ tch.subjects.join(', ') }})</option>
+        }
+      </select>
+    }
+    @if (needsStudent()) {
+      <select class="input" [ngModel]="studentId()" (ngModelChange)="pickStudent($event)">
+        <option value="">{{ 'selectStudent' | t }}...</option>
+        @for (s of data.students(); track s.id) {
+          <option [value]="s.id">{{ s.name }} ({{ s.classId }})</option>
+        }
+      </select>
+    }
+    <input class="input" [placeholder]="'fullName' | t" [ngModel]="name()" (ngModelChange)="name.set($event)" />
+    <input class="input" type="email" [placeholder]="'email' | t" [ngModel]="email()" (ngModelChange)="email.set($event)" />
+    <input class="input" type="text" [placeholder]="'tempPassword' | t" [ngModel]="password()" (ngModelChange)="password.set($event)" />
     @if (needsClass()) {
       <select class="input" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
         <option value="">{{ 'class' | t }}...</option>
         @for (c of classes; track c) {
           <option [value]="c">{{ c }}</option>
-        }
-      </select>
-    }
-    @if (needsStudent()) {
-      <select class="input" [ngModel]="studentId()" (ngModelChange)="studentId.set($event)">
-        <option value="">{{ 'linkedStudent' | t }}...</option>
-        @for (s of data.students(); track s.id) {
-          <option [value]="s.id">{{ s.name }} ({{ s.classId }})</option>
         }
       </select>
     }

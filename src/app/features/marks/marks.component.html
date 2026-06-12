@@ -1,5 +1,14 @@
 @if (isStaff()) {
-  <!-- ENTRY MODE -->
+  <!-- ENTRY / SHEET tabs -->
+  <div class="flex gap-1 mb-4 bg-white border border-line p-1 rounded-xl max-w-md">
+    <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
+            [class]="viewMode() === 'entry' ? 'bg-primary text-white' : 'text-muted hover:bg-page'"
+            (click)="viewMode.set('entry')">📝 {{ 'enterMarksTab' | t }}</button>
+    <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
+            [class]="viewMode() === 'sheet' ? 'bg-primary text-white' : 'text-muted hover:bg-page'"
+            (click)="viewMode.set('sheet')">📊 {{ 'resultSheet' | t }}</button>
+  </div>
+
   <div class="flex gap-2.5 mb-4 flex-wrap items-center">
     <select class="input max-w-[130px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
       @for (c of classes; track c) {
@@ -11,13 +20,76 @@
         <option [value]="e.id">{{ e.label }}</option>
       }
     </select>
-    <select class="input max-w-[140px]" [ngModel]="subject()" (ngModelChange)="subject.set($event)">
-      @for (s of subjects; track s) {
-        <option [value]="s">{{ s }}</option>
-      }
-    </select>
+    @if (viewMode() === 'entry') {
+      <select class="input max-w-[140px]" [ngModel]="subject()" (ngModelChange)="subject.set($event)">
+        @for (s of subjects(); track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    }
+    <button class="btn-outline btn-sm" (click)="showSubjects.set(!showSubjects())">⚙️ {{ 'manageSubjects' | t }}</button>
   </div>
 
+  @if (showSubjects()) {
+    <div class="card mb-4">
+      <div class="card-title">⚙️ {{ 'manageSubjects' | t }}</div>
+      <div class="flex flex-wrap gap-2 mb-3">
+        @for (s of subjects(); track s) {
+          <span class="badge badge-blue !text-[12.5px] !py-1.5 gap-1.5">
+            {{ s }}
+            <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-1" (click)="data.removeSubject(s)">✕</button>
+          </span>
+        }
+      </div>
+      <div class="flex gap-2 max-w-md">
+        <input class="input" [placeholder]="'newSubjectPh' | t" [ngModel]="newSubject()" (ngModelChange)="newSubject.set($event)" (keyup.enter)="addSubject()" />
+        <button class="btn-blue shrink-0" (click)="addSubject()">＋</button>
+      </div>
+    </div>
+  }
+
+  @if (viewMode() === 'sheet') {
+    <!-- RESULT SHEET: students × subjects -->
+    <div class="card !p-0 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-[13px]">
+          <thead>
+            <tr>
+              <th class="th">{{ 'rollNo' | t }}</th>
+              <th class="th">{{ 'studentName' | t }}</th>
+              @for (s of subjects(); track s) {
+                <th class="th !text-center">{{ s }}</th>
+              }
+              <th class="th !text-center">{{ 'total' | t }}</th>
+              <th class="th !text-center">%</th>
+              <th class="th !text-center">{{ 'rank' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of sheet(); track row.student.id) {
+              <tr class="hover:bg-blue-50/40">
+                <td class="td font-bold">{{ row.student.roll }}</td>
+                <td class="td font-semibold whitespace-nowrap">{{ row.student.name }}</td>
+                @for (v of row.scores; track $index) {
+                  <td class="td text-center"
+                      [class.text-success]="(v ?? 0) >= 75"
+                      [class.text-danger]="v !== undefined && v < 35"
+                      [class.font-bold]="v !== undefined">{{ v ?? '—' }}</td>
+                }
+                <td class="td text-center font-bold text-primary">{{ row.total }}</td>
+                <td class="td text-center font-bold">{{ row.pct }}%</td>
+                <td class="td text-center">
+                  <span class="badge" [class]="row.rank <= 3 ? 'badge-yellow' : 'badge-blue'">{{ row.rank }}</span>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td class="td text-muted" colspan="10">—</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else {
   <div class="card !p-0 overflow-hidden">
     <div class="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
       <div class="text-[15px] font-bold">📝 {{ 'enterMarks' | t }} — {{ subject() }} | {{ classId() }}</div>
@@ -60,6 +132,7 @@
       </table>
     </div>
   </div>
+  }
 } @else {
   <!-- RESULT VIEW -->
   <div class="flex gap-1 mb-4 bg-white border border-line p-1 rounded-xl max-w-md">

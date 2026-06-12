@@ -32,6 +32,7 @@ import {
   FeeItem,
   MarksDoc,
   Notice,
+  SUBJECTS,
   Student,
   Teacher,
   TimetableDoc,
@@ -47,6 +48,8 @@ interface Db {
   attendance: AttendanceDoc[];
   marks: MarksDoc[];
   timetables: TimetableDoc[];
+  /** School's own subject list (subject master); empty → default SUBJECTS. */
+  subjectsList?: string[];
 }
 
 const EMPTY_DB: Db = {
@@ -57,6 +60,7 @@ const EMPTY_DB: Db = {
   attendance: [],
   marks: [],
   timetables: [],
+  subjectsList: [],
 };
 
 /**
@@ -85,6 +89,11 @@ export class DataService {
     [...this.db().notices].sort((a, b) => b.date.localeCompare(a.date)),
   );
   readonly fees = computed(() => this.db().fees);
+  /** Subject master — the school's own list, falling back to sensible defaults. */
+  readonly subjects = computed(() => {
+    const list = this.db().subjectsList;
+    return list && list.length ? list : SUBJECTS;
+  });
 
   readonly monthlyAttendance = DEMO_MONTHLY_ATTENDANCE;
   readonly classAttendanceToday = DEMO_CLASS_ATTENDANCE_TODAY;
@@ -135,6 +144,13 @@ export class DataService {
         }),
       );
     }
+
+    this.unsubs.push(
+      onSnapshot(query(collection(fs, 'subjects'), where('schoolId', '==', schoolId)), (snap) => {
+        const names = snap.empty ? [] : ((snap.docs[0].data()['names'] as string[]) ?? []);
+        this.db.update((db) => ({ ...db, subjectsList: names }));
+      }),
+    );
 
     // Firestore can't store nested arrays, so the grid travels as JSON.
     this.unsubs.push(
@@ -329,7 +345,8 @@ export class DataService {
   }
 
   addFee(input: Omit<FeeItem, 'id' | 'schoolId'>) {
-    const id = this.docId(`f${Date.now()}`);
+    // Random suffix: class-wide assignment creates many fees in the same millisecond.
+    const id = this.docId(`f${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
     if (this.fs) {
       void setDoc(doc(this.fs, 'fees', id), { ...input, schoolId: this.sid });
       return;
@@ -352,6 +369,24 @@ export class DataService {
     this.commit({
       timetables: [...this.db().timetables, { classId, periods: template.periods, grid: template.grid }],
     });
+  }
+
+  addSubject(name: string) {
+    const clean = name.trim();
+    if (!clean || this.subjects().includes(clean)) return;
+    this.saveSubjects([...this.subjects(), clean]);
+  }
+
+  removeSubject(name: string) {
+    this.saveSubjects(this.subjects().filter((s) => s !== name));
+  }
+
+  private saveSubjects(names: string[]) {
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'subjects', this.docId('list')), { schoolId: this.sid, names });
+      return;
+    }
+    this.commit({ subjectsList: names });
   }
 
   addNotice(notice: Omit<Notice, 'id'>) {

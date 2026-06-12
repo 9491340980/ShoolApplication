@@ -7,6 +7,7 @@
       }
     </select>
     <input class="input max-w-[180px]" type="date" [ngModel]="date()" (ngModelChange)="date.set($event)" />
+    <button class="btn-outline" (click)="markAllPresent()">✓ {{ 'allPresent' | t }}</button>
     <button class="btn-green" (click)="save()">💾 {{ 'saveAttendance' | t }}</button>
     @if (saved()) {
       <span class="badge badge-green">✓ {{ 'attendanceSaved' | t }}</span>

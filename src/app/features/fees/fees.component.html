@@ -34,13 +34,25 @@
   @if (showAdd()) {
     <div class="card mb-4">
       <div class="card-title">＋ {{ 'addFee' | t }}</div>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-2.5">
-        <select class="input" [ngModel]="feeStudentId()" (ngModelChange)="feeStudentId.set($event)">
-          <option value="">{{ 'studentName' | t }}...</option>
-          @for (s of data.students(); track s.id) {
-            <option [value]="s.id">{{ s.name }} ({{ s.classId }})</option>
-          }
+      <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2.5 mb-2.5">
+        <select class="input" [ngModel]="applyMode()" (ngModelChange)="applyMode.set($event)">
+          <option value="one">👤 {{ 'oneStudent' | t }}</option>
+          <option value="class">🏫 {{ 'wholeClass' | t }}</option>
         </select>
+        @if (applyMode() === 'one') {
+          <select class="input" [ngModel]="feeStudentId()" (ngModelChange)="feeStudentId.set($event)">
+            <option value="">{{ 'studentName' | t }}...</option>
+            @for (s of data.students(); track s.id) {
+              <option [value]="s.id">{{ s.name }} ({{ s.classId }})</option>
+            }
+          </select>
+        } @else {
+          <select class="input" [ngModel]="feeClassId()" (ngModelChange)="feeClassId.set($event)">
+            @for (c of classes; track c) {
+              <option [value]="c">{{ 'class' | t }} {{ c }}</option>
+            }
+          </select>
+        }
         <input class="input" [placeholder]="'feeName' | t" [ngModel]="feeLabel()" (ngModelChange)="feeLabel.set($event)" />
         <input class="input" type="number" min="1" [placeholder]="('amount' | t) + ' ₹'" [ngModel]="feeAmount()" (ngModelChange)="feeAmount.set($event)" />
         <input class="input" type="date" [ngModel]="feeDue()" (ngModelChange)="feeDue.set($event)" />

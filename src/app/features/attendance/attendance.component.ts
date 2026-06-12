@@ -39,6 +39,14 @@ export class AttendanceComponent {
     this.saved.set(false);
   }
 
+  /** Real-world flow: mark everyone present in one tap, then flip the few absentees. */
+  markAllPresent() {
+    const all: Record<string, AttendanceStatus> = {};
+    for (const s of this.students()) all[s.id] = 'present';
+    this.statuses.set(all);
+    this.saved.set(false);
+  }
+
   save() {
     this.data.saveAttendance(this.classId(), this.date(), this.statuses());
     this.saved.set(true);
