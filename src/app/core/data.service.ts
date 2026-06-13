@@ -506,6 +506,27 @@ export class DataService {
     this.commit({ students: [...this.db().students, { ...input, id }] });
   }
 
+  /** Bulk-create students (Excel/CSV import). Batched for Firestore's 500-op limit. */
+  async addStudentsBulk(rows: Omit<Student, 'id' | 'schoolId'>[]): Promise<number> {
+    if (this.fs) {
+      const fs = this.fs;
+      let written = 0;
+      for (let i = 0; i < rows.length; i += 400) {
+        const batch = writeBatch(fs);
+        rows.slice(i, i + 400).forEach((r, j) => {
+          const id = this.docId(`s${Date.now()}-${i + j}-${Math.random().toString(36).slice(2, 6)}`);
+          batch.set(doc(fs, 'students', id), this.clean({ ...r, schoolId: this.sid }));
+        });
+        await batch.commit();
+        written += Math.min(400, rows.length - i);
+      }
+      return written;
+    }
+    const next = rows.map((r, i) => ({ ...r, id: `s${Date.now()}-${i}` }));
+    this.commit({ students: [...this.db().students, ...next] });
+    return next.length;
+  }
+
   addTeacher(input: Omit<Teacher, 'id' | 'schoolId'>) {
     const id = this.docId(`t${Date.now()}`);
     if (this.fs) {

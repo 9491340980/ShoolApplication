@@ -9,8 +9,23 @@
   @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
     <button class="btn-blue" (click)="showAdd.set(!showAdd())">＋ {{ 'newStudent' | t }}</button>
   }
+  @if (auth.role() === 'headmaster') {
+    <label class="btn-outline cursor-pointer" [class.opacity-60]="importBusy()">
+      ⬆️ {{ importBusy() ? ('importing' | t) : ('importExcel' | t) }}
+      <input type="file" accept=".xlsx,.xls,.csv" class="hidden" (change)="onImportFile($event)" [disabled]="importBusy()" />
+    </label>
+    <button class="btn-outline" (click)="downloadTemplate()">⬇️ {{ 'template' | t }}</button>
+  }
+  <!-- grid / card view toggle -->
+  <div class="flex gap-0.5 bg-page rounded-lg p-0.5 ml-auto">
+    <button class="px-2.5 py-1.5 rounded-md text-xs font-semibold" [class]="viewMode() === 'grid' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="viewMode.set('grid')">▦ {{ 'gridView' | t }}</button>
+    <button class="px-2.5 py-1.5 rounded-md text-xs font-semibold" [class]="viewMode() === 'card' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="viewMode.set('card')">▤ {{ 'cardView' | t }}</button>
+  </div>
   @if (added()) {
     <span class="badge badge-green">✓ {{ 'studentAdded' | t }}</span>
+  }
+  @if (importMsg(); as msg) {
+    <span class="badge" [class]="msg.startsWith('✓') ? 'badge-green' : 'badge-yellow'">{{ msg }}</span>
   }
 </div>
 
@@ -60,7 +75,7 @@
 
 <div class="card !p-0 overflow-hidden">
   <div class="overflow-x-auto">
-    <table class="rtable w-full border-collapse text-[13.5px]">
+    <table class="w-full border-collapse text-[13.5px]" [class.rtable]="viewMode() === 'card'">
       <thead>
         <tr>
           <th class="th">{{ 'studentName' | t }}</th>

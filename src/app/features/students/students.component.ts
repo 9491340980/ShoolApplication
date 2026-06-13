@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import * as XLSX from 'xlsx';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { CLASSES, Student } from '../../core/models';
@@ -17,6 +18,9 @@ export class StudentsComponent {
 
   search = signal('');
   classFilter = signal('');
+
+  /** Grid (table) is the default — easier to scan many rows; card view is opt-in. */
+  viewMode = signal<'grid' | 'card'>('grid');
 
   /** Fees/fee status are visible to the Head Master only. */
   isHM = computed(() => this.auth.role() === 'headmaster');
@@ -123,5 +127,78 @@ export class StudentsComponent {
     this.showAdd.set(false);
     this.added.set(true);
     setTimeout(() => this.added.set(false), 2500);
+  }
+
+  // ---------- bulk import (Excel / CSV) ----------
+  importBusy = signal(false);
+  importMsg = signal<string | null>(null);
+
+  /** First matching header value from a row (headers are case/space-insensitive). */
+  private pick(row: Record<string, unknown>, ...names: string[]): string {
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const map = new Map(Object.keys(row).map((k) => [norm(k), row[k]]));
+    for (const n of names) {
+      const v = map.get(norm(n));
+      if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+    }
+    return '';
+  }
+
+  async onImportFile(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.importBusy.set(true);
+    this.importMsg.set(null);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+
+      const students = rows
+        .map((r) => ({
+          roll: this.pick(r, 'roll', 'rollno', 'sno', 'serialno'),
+          name: this.pick(r, 'name', 'studentname'),
+          classId: this.pick(r, 'class', 'classid', 'section') || this.classFilter() || this.classes()[0] || '',
+          parentPhone: this.pick(r, 'parentphone', 'phone', 'mobile', 'contact'),
+          admissionNo: this.pick(r, 'admissionno', 'admno') || undefined,
+          fatherName: this.pick(r, 'fathername', 'father') || undefined,
+          motherName: this.pick(r, 'mothername', 'mother') || undefined,
+          dob: this.pick(r, 'dob', 'dateofbirth') || undefined,
+          doa: this.pick(r, 'doa', 'dateofadmission') || undefined,
+          caste: this.pick(r, 'caste') || undefined,
+          motherTongue: this.pick(r, 'mothertongue') || undefined,
+          aadhaar: this.pick(r, 'aadhaar', 'aadhar') || undefined,
+          pen: this.pick(r, 'pen') || undefined,
+          apaarId: this.pick(r, 'apaar', 'apaarid') || undefined,
+          address: this.pick(r, 'address') || undefined,
+        }))
+        .filter((s) => s.name && s.roll);
+
+      if (!students.length) {
+        this.importMsg.set('No valid rows found. Check the column headers (Roll, Name, Class…).');
+      } else {
+        const n = await this.data.addStudentsBulk(students);
+        this.importMsg.set(`✓ Imported ${n} students.`);
+      }
+    } catch {
+      this.importMsg.set('Could not read the file. Use the template format (.xlsx or .csv).');
+    } finally {
+      this.importBusy.set(false);
+      input.value = '';
+    }
+  }
+
+  downloadTemplate() {
+    const headers = [
+      'Roll', 'Name', 'Class', 'ParentPhone', 'AdmissionNo', 'FatherName', 'MotherName',
+      'DOB', 'DOA', 'Caste', 'MotherTongue', 'Aadhaar', 'PEN', 'APAAR', 'Address',
+    ];
+    const sample = ['1', 'Aarav Reddy', '8A', '9876500011', 'ADM1001', 'Suresh Reddy', 'Latha', '2014-05-10', '2020-06-12', 'OC', 'Telugu', '', '', '', 'Vijayawada'];
+    const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+    XLSX.writeFile(wb, 'VidyaSetu-Students-Template.xlsx');
   }
 }

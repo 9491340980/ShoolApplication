@@ -255,6 +255,11 @@ export const DICT = {
     bulkHint: 'Tap to open this parent’s WhatsApp, hit send, then continue.',
     sendPdf: 'Send PDF',
     sendImage: 'Send Image',
+    gridView: 'Grid',
+    cardView: 'Cards',
+    importExcel: 'Import Excel/CSV',
+    template: 'Template',
+    importing: 'Importing…',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -494,5 +499,10 @@ export const DICT = {
     bulkHint: 'ఈ తల్లిదండ్రుల వాట్సాప్ తెరిచి పంపండి, తర్వాత కొనసాగండి.',
     sendPdf: 'PDF పంపండి',
     sendImage: 'ఇమేజ్ పంపండి',
+    gridView: 'గ్రిడ్',
+    cardView: 'కార్డులు',
+    importExcel: 'Excel/CSV దిగుమతి',
+    template: 'టెంప్లేట్',
+    importing: 'దిగుమతి అవుతోంది…',
   },
 } satisfies Record<Lang, Record<string, string>>;
