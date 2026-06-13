@@ -22,15 +22,25 @@ export class MarksComponent {
   auth = inject(AuthService);
   data = inject(DataService);
 
-  classes = CLASSES;
   exams = EXAMS;
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
   subjects = computed(() => this.data.subjects());
 
+  /** Teacher sees only their assigned classes; Head Master sees all. */
+  classes = computed(() => {
+    if (this.auth.role() === 'teacher') return this.data.classesForTeacher(this.auth.user()!.id);
+    return CLASSES;
+  });
+
   // ---- staff entry (whole class × all subjects in one grid) ----
   viewMode = signal<'entry' | 'sheet'>('entry');
-  classId = signal(this.auth.user()?.classId ?? '8A');
+  classId = signal('');
+
+  private classGuard = effect(() => {
+    const allowed = this.classes();
+    if (allowed.length && !allowed.includes(this.classId())) this.classId.set(allowed[0]);
+  });
   examId = signal('quarterly');
   maxMarks = signal(100);
   /** studentId -> subject -> score */

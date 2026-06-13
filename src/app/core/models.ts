@@ -37,8 +37,21 @@ export interface Student {
   name: string;
   classId: string;
   parentPhone: string;
-  attendancePct: number;
-  feeStatus: 'paid' | 'pending';
+  /** Legacy/demo fallback only — real values are computed from attendance & fee records. */
+  attendancePct?: number;
+  feeStatus?: 'paid' | 'pending';
+  // Full register details (from the school attendance register)
+  admissionNo?: string;
+  pen?: string; // Permanent Education Number
+  apaarId?: string;
+  fatherName?: string;
+  motherName?: string;
+  caste?: string;
+  dob?: string; // date of birth (yyyy-mm-dd)
+  doa?: string; // date of admission (yyyy-mm-dd)
+  motherTongue?: string;
+  aadhaar?: string;
+  address?: string;
 }
 
 export interface Teacher {

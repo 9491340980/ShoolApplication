@@ -11,7 +11,7 @@
 
   <div class="flex gap-2.5 mb-4 flex-wrap items-center">
     <select class="input max-w-[130px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
-      @for (c of classes; track c) {
+      @for (c of classes(); track c) {
         <option [value]="c">{{ c }}</option>
       }
     </select>

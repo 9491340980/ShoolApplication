@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isSuper() { return signedIn() && me().role == 'superadmin'; }
+    function isHM() { return signedIn() && me().role == 'headmaster'; }
+    function isStaff() { return signedIn() && me().role in ['headmaster', 'teacher']; }
+    function sameSchool() { return signedIn() && resource.data.schoolId == me().schoolId; }
+    function writingOwnSchool() { return signedIn() && request.resource.data.schoolId == me().schoolId; }
+
+    match /schools/{id} {
+      allow read: if signedIn();
+      allow write: if isSuper();
+    }
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isSuper() || (isHM() && resource.data.schoolId == me().schoolId));
+      allow create: if signedIn() && (request.auth.uid == uid || isSuper() || (isHM() && request.resource.data.schoolId == me().schoolId));
+      allow update: if signedIn() && (request.auth.uid == uid || isSuper() || (isHM() && resource.data.schoolId == me().schoolId));
+      allow delete: if isSuper() || (isHM() && sameSchool());
+    }
+    match /students/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /teachers/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /timetables/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /subjects/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /fees/{id}       { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /attendance/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /marks/{id}      { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /notices/{id}    { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    // Class-teacher assignments & teacher attendance — Head Master or Super Admin managed.
+    match /assignments/{id}      { allow read: if sameSchool() || isSuper(); allow create, update: if isSuper() || (isHM() && writingOwnSchool()); allow delete: if isSuper() || (isHM() && sameSchool()); }
+    match /teacherAttendance/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isSuper() || (isHM() && writingOwnSchool()); }
+  }
+}

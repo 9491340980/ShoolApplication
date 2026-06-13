@@ -3,6 +3,7 @@ import { Auth, authState } from '@angular/fire/auth';
 import {
   Firestore,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   query,
@@ -98,6 +99,35 @@ export class DataService {
   readonly monthlyAttendance = DEMO_MONTHLY_ATTENDANCE;
   readonly classAttendanceToday = DEMO_CLASS_ATTENDANCE_TODAY;
 
+  readonly todayStr = new Date().toISOString().slice(0, 10);
+
+  /** classId -> assigned class teacher (the teacher who takes that class's attendance). */
+  private assignmentsSig = signal<Record<string, { teacherId: string; teacherName: string }>>(
+    this.fs ? {} : this.loadJson('vidyasetu-assign', {}),
+  );
+  readonly assignments = this.assignmentsSig.asReadonly();
+
+  /** teacherId -> present/absent for today (teacher attendance). */
+  private teacherAttSig = signal<Record<string, 'present' | 'absent'>>(this.loadTeacherAttLocal());
+  readonly teacherAttToday = this.teacherAttSig.asReadonly();
+
+  private loadJson<T>(key: string, fallback: T): T {
+    try {
+      return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  private loadTeacherAttLocal(): Record<string, 'present' | 'absent'> {
+    if (this.fs) return {};
+    const saved = this.loadJson<{ date: string; statuses: Record<string, 'present' | 'absent'> }>(
+      'vidyasetu-teacheratt',
+      { date: '', statuses: {} },
+    );
+    return saved.date === this.todayStr ? saved.statuses : {};
+  }
+
   constructor() {
     if (this.fbAuth) {
       authState(this.fbAuth).subscribe((u) => this.fbSignedIn.set(!!u));
@@ -165,6 +195,25 @@ export class DataService {
           } as TimetableDoc;
         });
         this.db.update((db) => ({ ...db, timetables: rows }));
+      }),
+    );
+
+    // Class-teacher assignments.
+    this.unsubs.push(
+      onSnapshot(query(collection(fs, 'assignments'), where('schoolId', '==', schoolId)), (snap) => {
+        const map: Record<string, { teacherId: string; teacherName: string }> = {};
+        snap.docs.forEach((d) => {
+          const x = d.data();
+          map[x['classId']] = { teacherId: x['teacherId'], teacherName: x['teacherName'] };
+        });
+        this.assignmentsSig.set(map);
+      }),
+    );
+
+    // Today's teacher attendance.
+    this.unsubs.push(
+      onSnapshot(doc(fs, 'teacherAttendance', `${schoolId}_${this.todayStr}`), (snap) => {
+        this.teacherAttSig.set(snap.exists() ? (snap.data()['statuses'] ?? {}) : {});
       }),
     );
   }
@@ -284,6 +333,90 @@ export class DataService {
     const stu = this.student(studentId);
     const keys = stu ? [studentId, stu.id, stu.id.replace(`${this.sid}_`, '')] : [studentId];
     return this.db().fees.filter((f) => keys.includes(f.studentId));
+  }
+
+  /**
+   * Real attendance from saved records (present days / marked days).
+   * Falls back to the stored demo value only when no attendance has been marked.
+   */
+  studentAttendance(studentId: string): { present: number; total: number; pct: number | null } {
+    const stu = this.student(studentId);
+    if (!stu) return { present: 0, total: 0, pct: null };
+    const keys = [studentId, stu.id, stu.id.replace(`${this.sid}_`, '')];
+    let present = 0;
+    let total = 0;
+    for (const a of this.db().attendance) {
+      if (a.classId !== stu.classId) continue;
+      const k = keys.find((key) => a.statuses[key] !== undefined);
+      if (k === undefined) continue;
+      total++;
+      if (a.statuses[k] === 'present') present++;
+    }
+    if (total > 0) return { present, total, pct: Math.round((present / total) * 100) };
+    return { present: 0, total: 0, pct: stu.attendancePct ?? null };
+  }
+
+  /** Real fee status from fee records; falls back to stored demo value. */
+  studentFeeStatus(studentId: string): 'paid' | 'pending' | null {
+    const fees = this.feesOf(studentId);
+    if (fees.length) return fees.some((f) => f.status === 'pending') ? 'pending' : 'paid';
+    return this.student(studentId)?.feeStatus ?? null;
+  }
+
+  // ---------- class-teacher assignments ----------
+
+  classTeacherOf(classId: string): { teacherId: string; teacherName: string } | undefined {
+    return this.assignments()[classId];
+  }
+
+  /** Classes this teacher is the (current) class teacher of — the only ones they may manage. */
+  classesForTeacher(userId: string): string[] {
+    return Object.entries(this.assignments())
+      .filter(([, v]) => v.teacherId === userId)
+      .map(([classId]) => classId)
+      .sort();
+  }
+
+  assignClassTeacher(classId: string, teacherId: string, teacherName: string) {
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'assignments', this.docId(classId)), {
+        schoolId: this.sid,
+        classId,
+        teacherId,
+        teacherName,
+      });
+      return;
+    }
+    const next = { ...this.assignmentsSig(), [classId]: { teacherId, teacherName } };
+    this.assignmentsSig.set(next);
+    localStorage.setItem('vidyasetu-assign', JSON.stringify(next));
+  }
+
+  clearClassTeacher(classId: string) {
+    if (this.fs) {
+      void deleteDoc(doc(this.fs, 'assignments', this.docId(classId)));
+      return;
+    }
+    const next = { ...this.assignmentsSig() };
+    delete next[classId];
+    this.assignmentsSig.set(next);
+    localStorage.setItem('vidyasetu-assign', JSON.stringify(next));
+  }
+
+  // ---------- teacher attendance (today) ----------
+
+  markTeacher(teacherId: string, status: 'present' | 'absent') {
+    const next = { ...this.teacherAttSig(), [teacherId]: status };
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'teacherAttendance', `${this.sid}_${this.todayStr}`), {
+        schoolId: this.sid,
+        date: this.todayStr,
+        statuses: next,
+      });
+      return;
+    }
+    this.teacherAttSig.set(next);
+    localStorage.setItem('vidyasetu-teacheratt', JSON.stringify({ date: this.todayStr, statuses: next }));
   }
 
   pendingFees(): FeeItem[] {

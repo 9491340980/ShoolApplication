@@ -5,7 +5,7 @@
     <h2 class="font-display text-xl font-bold">{{ 'welcome' | t }}, {{ auth.user()?.name }}! 🙏</h2>
     <p class="text-[13px] opacity-85 mt-1">
       @if (isStaff()) {
-        {{ 'todayAttendance' | t }}: {{ todayAttendancePct() }}%
+        {{ 'todayAttendance' | t }}: {{ todayAttendancePct() === null ? ('notMarkedToday' | t) : todayAttendancePct() + '%' }}
       } @else {
         {{ 'watchChildProgress' | t }}
       }
@@ -32,24 +32,28 @@
       <div>
         <div class="font-display text-2xl font-extrabold text-success leading-none">{{ totalTeachers() }}</div>
         <div class="text-xs text-muted mt-1">{{ 'teachersCount' | t }}</div>
-        <div class="text-[11px] font-semibold text-success mt-0.5">{{ 'allPresentToday' | t }}</div>
+        @if (isHM()) {
+          <div class="text-[11px] font-semibold text-success mt-0.5">✅ {{ 'teachersPresent' | t }}: {{ teachersPresent() }}</div>
+        }
       </div>
     </div>
     <div class="card flex items-center gap-3.5 !p-4">
       <div class="w-12 h-12 rounded-xl bg-accent-light flex items-center justify-center text-[22px] shrink-0">✅</div>
       <div>
-        <div class="font-display text-2xl font-extrabold text-amber-600 leading-none">{{ todayAttendancePct() }}%</div>
+        <div class="font-display text-2xl font-extrabold text-amber-600 leading-none">{{ todayAttendancePct() === null ? '—' : todayAttendancePct() + '%' }}</div>
         <div class="text-xs text-muted mt-1">{{ 'todayAttendance' | t }}</div>
       </div>
     </div>
-    <div class="card flex items-center gap-3.5 !p-4">
-      <div class="w-12 h-12 rounded-xl bg-violet-light flex items-center justify-center text-[22px] shrink-0">💰</div>
-      <div>
-        <div class="font-display text-2xl font-extrabold text-violet-600 leading-none">₹{{ collectedTotal().toLocaleString('en-IN') }}</div>
-        <div class="text-xs text-muted mt-1">{{ 'feesCollected' | t }}</div>
-        <div class="text-[11px] font-semibold text-success mt-0.5">↑ {{ 'thisMonth' | t }}</div>
+    @if (isHM()) {
+      <div class="card flex items-center gap-3.5 !p-4">
+        <div class="w-12 h-12 rounded-xl bg-violet-light flex items-center justify-center text-[22px] shrink-0">💰</div>
+        <div>
+          <div class="font-display text-2xl font-extrabold text-violet-600 leading-none">₹{{ collectedTotal().toLocaleString('en-IN') }}</div>
+          <div class="text-xs text-muted mt-1">{{ 'feesCollected' | t }}</div>
+          <div class="text-[11px] font-semibold text-success mt-0.5">↑ {{ 'thisMonth' | t }}</div>
+        </div>
       </div>
-    </div>
+    }
   </div>
 
   <!-- QUICK ACTIONS -->
@@ -62,10 +66,12 @@
       <div class="text-[28px] mb-1.5">📝</div>
       <div class="text-xs font-semibold">{{ 'enterMarks' | t }}</div>
     </a>
-    <a routerLink="/fees" class="card text-center cursor-pointer transition-all hover:border-primary hover:bg-primary-light hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 !p-4">
-      <div class="text-[28px] mb-1.5">💰</div>
-      <div class="text-xs font-semibold">{{ 'feeCollection' | t }}</div>
-    </a>
+    @if (isHM()) {
+      <a routerLink="/fees" class="card text-center cursor-pointer transition-all hover:border-primary hover:bg-primary-light hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 !p-4">
+        <div class="text-[28px] mb-1.5">💰</div>
+        <div class="text-xs font-semibold">{{ 'feeCollection' | t }}</div>
+      </a>
+    }
     <a routerLink="/notices" class="card text-center cursor-pointer transition-all hover:border-primary hover:bg-primary-light hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 !p-4">
       <div class="text-[28px] mb-1.5">📢</div>
       <div class="text-xs font-semibold">{{ 'postNotice' | t }}</div>
@@ -76,17 +82,33 @@
     <!-- CLASS-WISE ATTENDANCE CHART -->
     <div class="card">
       <div class="card-title">📊 {{ 'classwiseAttendance' | t }}</div>
-      <div class="flex items-end gap-2 h-36 px-1">
-        @for (row of data.classAttendanceToday; track row.classId) {
-          <div class="flex-1 flex flex-col items-center gap-1">
-            <div class="text-[10px] font-bold">{{ row.pct }}%</div>
-            <div class="w-full rounded-t-md transition-all"
-                 [style.height.px]="row.pct * 1.1"
-                 [style.background]="row.pct >= 90 ? 'var(--color-success)' : 'var(--color-primary)'"></div>
-            <div class="text-[10px] text-muted">{{ row.classId }}</div>
-          </div>
-        }
-      </div>
+      @if (classRows().length) {
+        <div class="flex items-end gap-2 h-40 px-1 pt-8">
+          @for (row of classRows(); track row.classId) {
+            <div class="flex-1 flex flex-col items-center gap-1 group relative cursor-default"
+                 [title]="row.marked ? (('present' | t) + ': ' + row.present + ' | ' + ('absent' | t) + ': ' + (row.marked - row.present) + (row.total > row.marked ? ' | ' + ('notMarkedToday' | t) + ': ' + (row.total - row.marked) : '')) : ('notMarkedToday' | t)">
+              <!-- hover tooltip -->
+              <div class="hidden group-hover:block absolute -top-7 z-10 bg-ink text-white text-[10px] rounded-lg px-2 py-1 whitespace-nowrap shadow-lg">
+                @if (row.marked) {
+                  <span class="text-emerald-300 font-bold">✓ {{ row.present }}</span>
+                  <span class="mx-1 text-white/40">/</span>
+                  <span class="text-red-300 font-bold">✗ {{ row.marked - row.present }}</span>
+                } @else {
+                  {{ 'notMarkedToday' | t }}
+                }
+              </div>
+              <div class="text-[10px] font-bold">{{ row.marked ? row.pct + '%' : '—' }}</div>
+              <div class="w-full rounded-t-md transition-all bg-line" style="min-height:4px"
+                   [style.height.px]="row.marked ? row.pct * 1.1 : 4"
+                   [style.background]="row.marked ? (row.pct >= 90 ? 'var(--color-success)' : 'var(--color-primary)') : ''"></div>
+              <div class="text-[10px] text-muted">{{ row.classId }}</div>
+              <div class="text-[9px] text-muted">{{ row.present }}/{{ row.total }}</div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="text-center text-muted text-sm py-10">{{ 'notMarkedToday' | t }}</div>
+      }
     </div>
 
     <!-- RECENT NOTICES -->
@@ -113,7 +135,7 @@
         <div class="text-xs text-muted mt-0.5">{{ 'class' | t }} {{ stu.classId }} | {{ 'rollNo' | t }}: {{ stu.roll }}</div>
       </div>
       <div class="ml-auto text-right">
-        <div class="text-xl font-extrabold text-primary">{{ stu.attendancePct }}%</div>
+        <div class="text-xl font-extrabold text-primary">{{ myAttendancePct() === null ? '—' : myAttendancePct() + '%' }}</div>
         <div class="text-[11px] text-muted">{{ 'attendance' | t }}</div>
       </div>
     </div>
@@ -123,7 +145,7 @@
     <div class="card flex items-center gap-3.5 !p-4">
       <div class="w-12 h-12 rounded-xl bg-success-light flex items-center justify-center text-[22px] shrink-0">✅</div>
       <div>
-        <div class="font-display text-2xl font-extrabold text-success leading-none">{{ myStudent()?.attendancePct }}%</div>
+        <div class="font-display text-2xl font-extrabold text-success leading-none">{{ myAttendancePct() === null ? '—' : myAttendancePct() + '%' }}</div>
         <div class="text-xs text-muted mt-1">{{ 'attendance' | t }}</div>
       </div>
     </div>

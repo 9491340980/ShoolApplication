@@ -46,6 +46,53 @@
   </div>
 </div>
 
+<!-- CLASS TEACHERS -->
+<div class="card mb-4">
+  <div class="card-title">🧑‍🏫 {{ 'classTeachers' | t }}</div>
+  <p class="text-xs text-muted mb-3">💡 {{ 'reassignHint' | t }}</p>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+    @for (c of classes; track c) {
+      <div class="flex items-center gap-2 bg-page rounded-lg px-3 py-2">
+        <span class="font-bold text-[13px] w-12 shrink-0">{{ c }}</span>
+        <select class="input !py-1.5 !text-[13px]"
+                [ngModel]="data.classTeacherOf(c)?.teacherId ?? ''"
+                (ngModelChange)="assignTeacher(c, $event)">
+          <option value="">{{ 'notAssigned' | t }}</option>
+          @for (t of teacherUsers(); track t.id) {
+            <option [value]="t.id">{{ t.name }}</option>
+          }
+        </select>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- TEACHER ATTENDANCE (TODAY) -->
+<div class="card mb-4">
+  <div class="card-title">
+    ✅ {{ 'teacherAttendanceToday' | t }}
+    <span class="badge badge-green ml-auto">{{ 'teachersPresent' | t }}: {{ teachersPresent() }}/{{ teacherUsers().length }}</span>
+  </div>
+  <div class="divide-y divide-line">
+    @for (t of teacherUsers(); track t.id) {
+      <div class="flex items-center gap-3 py-2"
+           [class]="data.teacherAttToday()[t.id] === 'absent' ? 'bg-danger-light/30' : data.teacherAttToday()[t.id] === 'present' ? 'bg-success-light/30' : ''">
+        <span class="flex-1 min-w-0 font-semibold text-[14px] truncate">{{ t.name }}</span>
+        <div class="flex gap-1.5 shrink-0">
+          <button class="w-11 h-9 rounded-lg border text-[13px] font-bold cursor-pointer"
+                  [class]="data.teacherAttToday()[t.id] === 'present' ? 'bg-success text-white border-success' : 'bg-white text-muted border-line hover:border-success'"
+                  (click)="data.markTeacher(t.id, 'present')">P</button>
+          <button class="w-11 h-9 rounded-lg border text-[13px] font-bold cursor-pointer"
+                  [class]="data.teacherAttToday()[t.id] === 'absent' ? 'bg-danger text-white border-danger' : 'bg-white text-muted border-line hover:border-danger'"
+                  (click)="data.markTeacher(t.id, 'absent')">A</button>
+        </div>
+      </div>
+    } @empty {
+      <div class="py-4 text-center text-muted text-sm">{{ 'noUsersYet' | t }}</div>
+    }
+  </div>
+</div>
+
 <div class="card !p-0 overflow-hidden">
   <div class="px-5 py-4 text-[15px] font-bold">👥 {{ 'userManagement' | t }}</div>
   <div class="overflow-x-auto">

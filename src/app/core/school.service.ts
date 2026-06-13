@@ -2,6 +2,7 @@ import { Injectable, effect, inject, signal } from '@angular/core';
 import {
   Firestore,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   query,
@@ -33,9 +34,14 @@ export class SchoolService {
   /** The signed-in user's school (white-label branding). */
   readonly currentSchool = signal<School | null>(null);
 
+  /** Super-admin: teachers & class-teacher assignments of the school being managed. */
+  readonly mgmtTeachers = signal<AppUser[]>([]);
+  readonly mgmtAssignments = signal<Record<string, { teacherId: string; teacherName: string }>>({});
+
   private schoolsUnsub?: () => void;
   private usersUnsub?: () => void;
   private schoolUnsub?: () => void;
+  private mgmtUnsubs: (() => void)[] = [];
 
   constructor() {
     effect(() => {
@@ -103,6 +109,55 @@ export class SchoolService {
   async setSchoolActive(schoolId: string, active: boolean) {
     if (!this.fs) return;
     await updateDoc(doc(this.fs, 'schools', schoolId), { active });
+  }
+
+  // ---- super admin: manage a specific school's class teachers ----
+
+  /** Start live-loading the chosen school's teachers + class-teacher assignments. */
+  openSchoolManagement(schoolId: string) {
+    this.closeSchoolManagement();
+    if (!this.fs) return;
+    this.mgmtUnsubs.push(
+      onSnapshot(query(collection(this.fs, 'users'), where('schoolId', '==', schoolId)), (snap) => {
+        this.mgmtTeachers.set(
+          snap.docs
+            .map((d) => ({ ...(d.data() as Omit<AppUser, 'id'>), id: d.id }))
+            .filter((u) => u.role === 'teacher'),
+        );
+      }),
+    );
+    this.mgmtUnsubs.push(
+      onSnapshot(query(collection(this.fs, 'assignments'), where('schoolId', '==', schoolId)), (snap) => {
+        const map: Record<string, { teacherId: string; teacherName: string }> = {};
+        snap.docs.forEach((d) => {
+          const x = d.data();
+          map[x['classId']] = { teacherId: x['teacherId'], teacherName: x['teacherName'] };
+        });
+        this.mgmtAssignments.set(map);
+      }),
+    );
+  }
+
+  closeSchoolManagement() {
+    this.mgmtUnsubs.forEach((u) => u());
+    this.mgmtUnsubs = [];
+    this.mgmtTeachers.set([]);
+    this.mgmtAssignments.set({});
+  }
+
+  assignClassTeacherFor(schoolId: string, classId: string, teacherId: string, teacherName: string) {
+    if (!this.fs) return;
+    void setDoc(doc(this.fs, 'assignments', `${schoolId}_${classId}`), {
+      schoolId,
+      classId,
+      teacherId,
+      teacherName,
+    });
+  }
+
+  clearClassTeacherFor(schoolId: string, classId: string) {
+    if (!this.fs) return;
+    void deleteDoc(doc(this.fs, 'assignments', `${schoolId}_${classId}`));
   }
 
   // ---- head master: create school users ----

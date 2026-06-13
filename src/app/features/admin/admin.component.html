@@ -63,11 +63,14 @@
               </span>
             </td>
             <td class="td" [attr.data-label]="'action' | t">
-              @if (s.active) {
-                <button class="btn-red btn-sm" (click)="schoolSvc.setSchoolActive(s.id, false)">{{ 'deactivate' | t }}</button>
-              } @else {
-                <button class="btn-green btn-sm" (click)="schoolSvc.setSchoolActive(s.id, true)">{{ 'activate' | t }}</button>
-              }
+              <div class="flex gap-1.5 flex-wrap justify-end">
+                <button class="btn-outline btn-sm" (click)="manageClassTeachers(s)">🧑‍🏫 {{ 'classTeachers' | t }}</button>
+                @if (s.active) {
+                  <button class="btn-red btn-sm" (click)="schoolSvc.setSchoolActive(s.id, false)">{{ 'deactivate' | t }}</button>
+                } @else {
+                  <button class="btn-green btn-sm" (click)="schoolSvc.setSchoolActive(s.id, true)">{{ 'activate' | t }}</button>
+                }
+              </div>
             </td>
           </tr>
         } @empty {
@@ -77,3 +80,42 @@
     </table>
   </div>
 </div>
+
+<!-- CLASS TEACHER MANAGEMENT (super admin) -->
+@if (managing(); as school) {
+  <div class="fixed inset-0 bg-black/40 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4" (click)="closeManage()">
+    <div class="bg-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-line sticky top-0 bg-white">
+        <div>
+          <div class="font-bold text-[15px]">🧑‍🏫 {{ 'classTeachers' | t }}</div>
+          <div class="text-xs text-muted">{{ school.name }}</div>
+        </div>
+        <button class="text-muted hover:text-ink cursor-pointer text-xl" (click)="closeManage()">✕</button>
+      </div>
+      <div class="p-5">
+        <p class="text-xs text-muted mb-3">💡 {{ 'reassignHint' | t }}</p>
+        @if (schoolSvc.mgmtTeachers().length === 0) {
+          <div class="bg-accent-light text-amber-800 rounded-lg px-3 py-2.5 text-xs font-medium">
+            {{ 'noUsersYet' | t }}
+          </div>
+        } @else {
+          <div class="grid sm:grid-cols-2 gap-2.5">
+            @for (c of classes; track c) {
+              <div class="flex items-center gap-2 bg-page rounded-lg px-3 py-2">
+                <span class="font-bold text-[13px] w-12 shrink-0">{{ c }}</span>
+                <select class="input !py-1.5 !text-[13px]"
+                        [ngModel]="schoolSvc.mgmtAssignments()[c]?.teacherId ?? ''"
+                        (ngModelChange)="assign(school.id, c, $event)">
+                  <option value="">{{ 'notAssigned' | t }}</option>
+                  @for (t of schoolSvc.mgmtTeachers(); track t.id) {
+                    <option [value]="t.id">{{ t.name }}</option>
+                  }
+                </select>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

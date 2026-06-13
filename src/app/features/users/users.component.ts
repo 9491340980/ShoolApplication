@@ -38,6 +38,21 @@ export class UsersComponent {
   needsClass = computed(() => this.role() === 'teacher' || this.role() === 'student');
   needsStudent = computed(() => this.role() === 'parent' || this.role() === 'student');
 
+  // ---- class teachers + teacher attendance ----
+  teacherUsers = computed(() => this.schoolSvc.schoolUsers().filter((u) => u.role === 'teacher'));
+  teachersPresent = computed(
+    () => Object.values(this.data.teacherAttToday()).filter((v) => v === 'present').length,
+  );
+
+  assignTeacher(classId: string, teacherId: string) {
+    if (!teacherId) {
+      this.data.clearClassTeacher(classId);
+      return;
+    }
+    const t = this.teacherUsers().find((u) => u.id === teacherId);
+    this.data.assignClassTeacher(classId, teacherId, t?.name ?? '');
+  }
+
   setRole(role: CreatableRole) {
     this.role.set(role);
     this.linkedTeacherId.set('');

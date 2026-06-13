@@ -21,14 +21,50 @@ export class DashboardComponent {
   }
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
+  isHM = computed(() => this.auth.role() === 'headmaster');
+
+  private today = new Date().toISOString().slice(0, 10);
+
+  /** Teacher: only their assigned classes. Head Master: all. */
+  private myClasses = computed(() =>
+    this.auth.role() === 'teacher' ? this.data.classesForTeacher(this.auth.user()!.id) : null,
+  );
 
   // ---- staff stats (live from the store) ----
-  totalStudents = computed(() => this.data.students().length);
-  totalTeachers = computed(() => this.data.teachers().length);
-  todayAttendancePct = computed(() => {
-    const rows = this.data.classAttendanceToday;
-    return Math.round(rows.reduce((sum, r) => sum + r.pct, 0) / rows.length);
+  totalStudents = computed(() => {
+    const mine = this.myClasses();
+    const all = this.data.students();
+    return mine ? all.filter((s) => mine.includes(s.classId)).length : all.length;
   });
+  totalTeachers = computed(() => this.data.teachers().length);
+  teachersPresent = computed(
+    () => Object.values(this.data.teacherAttToday()).filter((v) => v === 'present').length,
+  );
+
+  /** Real per-class attendance for today, computed from saved attendance docs. */
+  classRows = computed(() => {
+    const mine = this.myClasses();
+    let classIds = [...new Set(this.data.students().map((s) => s.classId))].sort();
+    if (mine) classIds = classIds.filter((c) => mine.includes(c));
+    return classIds.map((classId) => {
+      const studs = this.data.studentsOf(classId);
+      const doc = this.data.attendanceDoc(classId, this.today);
+      const present = doc ? studs.filter((s) => doc.statuses[s.id] === 'present').length : 0;
+      const marked = doc ? Object.keys(doc.statuses).length : 0;
+      const pct = studs.length ? Math.round((present / studs.length) * 100) : 0;
+      return { classId, total: studs.length, present, marked, pct };
+    });
+  });
+
+  /** Overall today's attendance — null when nothing has been marked yet. */
+  todayAttendancePct = computed<number | null>(() => {
+    const marked = this.classRows().filter((r) => r.marked > 0);
+    if (!marked.length) return null;
+    const present = marked.reduce((s, r) => s + r.present, 0);
+    const total = marked.reduce((s, r) => s + r.total, 0);
+    return total ? Math.round((present / total) * 100) : 0;
+  });
+
   pendingFeeTotal = computed(() =>
     this.data.pendingFees().reduce((sum, f) => sum + f.amount, 0),
   );
@@ -42,6 +78,10 @@ export class DashboardComponent {
   myStudent = computed(() => {
     const sid = this.auth.user()?.studentId;
     return sid ? this.data.student(sid) : undefined;
+  });
+  myAttendancePct = computed(() => {
+    const sid = this.auth.user()?.studentId;
+    return sid ? this.data.studentAttendance(sid).pct : null;
   });
   myMarks = computed(() => {
     const sid = this.auth.user()?.studentId;

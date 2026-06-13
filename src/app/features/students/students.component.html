@@ -2,7 +2,7 @@
   <input class="input max-w-[250px]" [placeholder]="'🔍 ' + ('search' | t) + '...'" [ngModel]="search()" (ngModelChange)="search.set($event)" />
   <select class="input max-w-[150px]" [ngModel]="classFilter()" (ngModelChange)="classFilter.set($event)">
     <option value="">{{ 'allClasses' | t }}</option>
-    @for (c of classes; track c) {
+    @for (c of classes(); track c) {
       <option [value]="c">{{ c }}</option>
     }
   </select>
@@ -17,16 +17,43 @@
 @if (showAdd()) {
   <div class="card mb-4">
     <div class="card-title">＋ {{ 'newStudent' | t }}</div>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-2.5">
-      <input class="input" [placeholder]="'rollNo' | t" [ngModel]="newRoll()" (ngModelChange)="newRoll.set($event)" />
-      <input class="input" [placeholder]="'studentName' | t" [ngModel]="newName()" (ngModelChange)="newName.set($event)" />
+
+    <div class="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">{{ 'basicDetails' | t }}</div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4">
+      <input class="input" [placeholder]="('rollNo' | t) + ' *'" [ngModel]="newRoll()" (ngModelChange)="newRoll.set($event)" />
+      <input class="input" [placeholder]="('studentName' | t) + ' *'" [ngModel]="newName()" (ngModelChange)="newName.set($event)" />
       <select class="input" [ngModel]="newClass()" (ngModelChange)="newClass.set($event)">
-        @for (c of classes; track c) {
+        @for (c of classes(); track c) {
           <option [value]="c">{{ c }}</option>
         }
       </select>
       <input class="input" [placeholder]="'parentPhone' | t" [ngModel]="newPhone()" (ngModelChange)="newPhone.set($event)" />
     </div>
+
+    <button class="text-[12px] font-semibold text-primary mb-3 cursor-pointer" (click)="showMore.set(!showMore())">
+      {{ showMore() ? '▾' : '▸' }} {{ 'moreDetails' | t }}
+    </button>
+
+    @if (showMore()) {
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-4">
+        <input class="input" [placeholder]="'admissionNo' | t" [ngModel]="newAdmissionNo()" (ngModelChange)="newAdmissionNo.set($event)" />
+        <input class="input" [placeholder]="'fatherName' | t" [ngModel]="newFather()" (ngModelChange)="newFather.set($event)" />
+        <input class="input" [placeholder]="'motherName' | t" [ngModel]="newMother()" (ngModelChange)="newMother.set($event)" />
+        <label class="text-[11px] text-muted">{{ 'dob' | t }}
+          <input class="input mt-0.5" type="date" [ngModel]="newDob()" (ngModelChange)="newDob.set($event)" />
+        </label>
+        <label class="text-[11px] text-muted">{{ 'doa' | t }}
+          <input class="input mt-0.5" type="date" [ngModel]="newDoa()" (ngModelChange)="newDoa.set($event)" />
+        </label>
+        <input class="input self-end" [placeholder]="'caste' | t" [ngModel]="newCaste()" (ngModelChange)="newCaste.set($event)" />
+        <input class="input" [placeholder]="'motherTongue' | t" [ngModel]="newMotherTongue()" (ngModelChange)="newMotherTongue.set($event)" />
+        <input class="input" [placeholder]="'aadhaar' | t" [ngModel]="newAadhaar()" (ngModelChange)="newAadhaar.set($event)" />
+        <input class="input" [placeholder]="'pen' | t" [ngModel]="newPen()" (ngModelChange)="newPen.set($event)" />
+        <input class="input" [placeholder]="'apaarId' | t" [ngModel]="newApaar()" (ngModelChange)="newApaar.set($event)" />
+        <input class="input sm:col-span-2 lg:col-span-3" [placeholder]="'address' | t" [ngModel]="newAddress()" (ngModelChange)="newAddress.set($event)" />
+      </div>
+    }
+
     <button class="btn-green" (click)="addStudent()">💾 {{ 'save' | t }}</button>
   </div>
 }
@@ -41,7 +68,10 @@
           <th class="th">{{ 'class' | t }}</th>
           <th class="th">{{ 'parentPhone' | t }}</th>
           <th class="th">{{ 'attendance' | t }}</th>
-          <th class="th">{{ 'feeStatus' | t }}</th>
+          @if (isHM()) {
+            <th class="th">{{ 'feeStatus' | t }}</th>
+          }
+          <th class="th">{{ 'action' | t }}</th>
         </tr>
       </thead>
       <tbody>
@@ -51,17 +81,59 @@
             <td class="td" [attr.data-label]="'rollNo' | t">{{ s.roll }}</td>
             <td class="td" [attr.data-label]="'class' | t"><span class="badge badge-blue">{{ s.classId }}</span></td>
             <td class="td" [attr.data-label]="'parentPhone' | t">📞 {{ s.parentPhone }}</td>
-            <td class="td" [attr.data-label]="'attendance' | t"><span class="badge" [class]="s.attendancePct >= 85 ? 'badge-green' : 'badge-red'">{{ s.attendancePct }}%</span></td>
-            <td class="td" [attr.data-label]="'feeStatus' | t">
-              <span class="badge" [class]="s.feeStatus === 'paid' ? 'badge-green' : 'badge-yellow'">
-                {{ (s.feeStatus === 'paid' ? 'paid' : 'pending') | t }}
-              </span>
+            <td class="td" [attr.data-label]="'attendance' | t">
+              @if (attPct(s.id) === null) {
+                <span class="text-muted">—</span>
+              } @else {
+                <span class="badge" [class]="attPct(s.id)! >= 85 ? 'badge-green' : 'badge-red'">{{ attPct(s.id) }}%</span>
+              }
+            </td>
+            @if (isHM()) {
+              <td class="td" [attr.data-label]="'feeStatus' | t">
+                @if (feeStatus(s.id); as fs) {
+                  <span class="badge" [class]="fs === 'paid' ? 'badge-green' : 'badge-yellow'">{{ fs | t }}</span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+            }
+            <td class="td" [attr.data-label]="'action' | t">
+              <button class="btn-outline btn-sm" (click)="viewing.set(s)">{{ 'viewDetails' | t }}</button>
             </td>
           </tr>
         } @empty {
-          <tr><td class="td text-muted" colspan="6">—</td></tr>
+          <tr><td class="td text-muted" colspan="7">—</td></tr>
         }
       </tbody>
     </table>
   </div>
 </div>
+
+<!-- STUDENT DETAILS -->
+@if (viewing(); as s) {
+  <div class="fixed inset-0 bg-black/40 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4" (click)="viewing.set(null)">
+    <div class="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-line sticky top-0 bg-white">
+        <div class="font-bold text-[15px]">👤 {{ 'studentDetails' | t }}</div>
+        <button class="text-muted hover:text-ink cursor-pointer text-xl" (click)="viewing.set(null)">✕</button>
+      </div>
+      <div class="p-5">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center text-xl">🧒</div>
+          <div>
+            <div class="font-bold text-[16px]">{{ s.name }}</div>
+            <div class="text-xs text-muted">{{ 'class' | t }} {{ s.classId }} | {{ 'rollNo' | t }} {{ s.roll }}</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          @for (f of detailFields; track f.key) {
+            <div class="bg-page rounded-lg px-3 py-2">
+              <div class="text-[10px] text-muted font-semibold uppercase tracking-wide">{{ f.label | t }}</div>
+              <div class="text-[13px] font-semibold break-words">{{ s[f.key] || '—' }}</div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

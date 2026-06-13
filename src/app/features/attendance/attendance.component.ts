@@ -15,13 +15,27 @@ export class AttendanceComponent {
   data = inject(DataService);
   i18n = inject(TranslateService);
 
-  classes = CLASSES;
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
 
-  classId = signal(this.auth.user()?.classId ?? '8A');
+  /** Head Master: all classes. Teacher: only the classes they are class teacher of. */
+  classes = computed(() => {
+    if (this.auth.role() === 'teacher') return this.data.classesForTeacher(this.auth.user()!.id);
+    return CLASSES;
+  });
+  /** A teacher with no class-teacher assignment cannot mark any attendance. */
+  blocked = computed(() => this.auth.role() === 'teacher' && this.classes().length === 0);
+
+  classId = signal('');
   date = signal(new Date().toISOString().slice(0, 10));
   statuses = signal<Record<string, AttendanceStatus>>({});
   saved = signal(false);
+
+  // Keep the selected class valid for the current role's allowed classes.
+  private classGuard = effect(() => {
+    const allowed = this.classes();
+    if (!allowed.length) return;
+    if (!allowed.includes(this.classId())) this.classId.set(allowed[0]);
+  });
 
   students = computed(() => this.data.studentsOf(this.classId()));
 
@@ -58,6 +72,8 @@ export class AttendanceComponent {
     const sid = this.auth.user()?.studentId;
     return sid ? this.data.student(sid) : undefined;
   });
-  presentDays = 142;
-  absentDays = 21;
+  myAtt = computed(() => {
+    const sid = this.auth.user()?.studentId;
+    return sid ? this.data.studentAttendance(sid) : { present: 0, total: 0, pct: null };
+  });
 }

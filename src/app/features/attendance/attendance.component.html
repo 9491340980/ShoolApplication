@@ -1,8 +1,15 @@
 @if (isStaff()) {
+  @if (blocked()) {
+    <!-- Teacher with no class-teacher assignment -->
+    <div class="card text-center py-10">
+      <div class="text-4xl mb-3">🔒</div>
+      <div class="text-sm text-muted max-w-md mx-auto">{{ 'notClassTeacher' | t }}</div>
+    </div>
+  } @else {
   <!-- MARKING MODE -->
   <div class="flex gap-2.5 mb-3.5 flex-wrap items-center">
     <select class="input max-w-[150px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
-      @for (c of classes; track c) {
+      @for (c of classes(); track c) {
         <option [value]="c">{{ c }}</option>
       }
     </select>
@@ -25,7 +32,7 @@
     @for (s of students(); track s.id) {
       <div class="flex items-center gap-3 px-3 sm:px-4 py-2.5"
            [class]="statuses()[s.id] === 'absent' ? 'bg-danger-light/40' : statuses()[s.id] === 'present' ? 'bg-success-light/30' : ''">
-        <span class="w-9 h-9 shrink-0 rounded-full bg-page flex items-center justify-center text-[12px] font-bold text-muted">{{ s.roll }}</span>
+        <span class="shrink-0 text-[11px] font-bold text-muted tabular-nums min-w-[3rem]">{{ s.roll }}</span>
         <span class="flex-1 min-w-0 font-semibold text-[14px] truncate">{{ s.name }}</span>
         <div class="flex gap-1.5 shrink-0">
           <button
@@ -46,26 +53,27 @@
       <div class="px-4 py-6 text-center text-muted text-sm">—</div>
     }
   </div>
+  }
 } @else {
   <!-- PARENT / STUDENT VIEW -->
   <div class="grid lg:grid-cols-2 gap-4">
     <div class="card">
       <div class="card-title">📊 {{ 'attendanceSummary' | t }}</div>
       <div class="text-center py-4">
-        <div class="font-display text-[56px] font-extrabold text-primary leading-none">{{ myStudent()?.attendancePct }}%</div>
+        <div class="font-display text-[56px] font-extrabold text-primary leading-none">{{ myAtt().pct === null ? '—' : myAtt().pct + '%' }}</div>
         <div class="text-[13px] text-muted mt-2">{{ 'overallAttendance' | t }}</div>
         <div class="flex justify-center gap-8 mt-5">
           <div class="text-center">
-            <div class="text-xl font-bold text-success">{{ presentDays }}</div>
+            <div class="text-xl font-bold text-success">{{ myAtt().present }}</div>
             <div class="text-[11px] text-muted">{{ 'presentDays' | t }}</div>
           </div>
           <div class="text-center">
-            <div class="text-xl font-bold text-danger">{{ absentDays }}</div>
+            <div class="text-xl font-bold text-danger">{{ myAtt().total - myAtt().present }}</div>
             <div class="text-[11px] text-muted">{{ 'absentDays' | t }}</div>
           </div>
         </div>
       </div>
-      @if ((myStudent()?.attendancePct ?? 100) < 90) {
+      @if (myAtt().pct !== null && myAtt().pct! < 90) {
         <div class="bg-accent-light rounded-xl px-3.5 py-2.5 text-xs text-amber-800 font-medium">
           ⚠️ {{ 'lowAttendanceWarning' | t }}
         </div>
