@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { Role } from '../../core/models';
 import { TPipe, TranslateService } from '../../core/translate.service';
@@ -7,7 +8,7 @@ import { ROLE_LABELS } from '../../layout/nav-config';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, TPipe],
+  imports: [FormsModule, TPipe, RouterLink],
   templateUrl: './login.component.html',
 })
 export class LoginComponent {

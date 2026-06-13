@@ -1,0 +1,101 @@
+<div class="min-h-screen bg-page py-8 px-4">
+  <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-line shadow-sm p-6 sm:p-8">
+    <button class="text-primary text-sm font-semibold mb-4 cursor-pointer" (click)="back()">← Back</button>
+
+    <h1 class="font-display text-2xl font-extrabold text-primary">{{ appName }} — Privacy Policy</h1>
+    <p class="text-xs text-muted mt-1 mb-6">Last updated: {{ updated }}</p>
+
+    <div class="space-y-5 text-[14px] leading-relaxed text-ink">
+      <p>
+        {{ appName }} is a school management application provided to schools. This policy explains
+        what information we handle, how we use it, and how we protect it. We keep it simple and
+        plain.
+      </p>
+
+      <section>
+        <h2 class="font-bold text-[15px] mb-1">1. Who controls the data</h2>
+        <p>
+          Each school owns the data it enters. {{ appName }} stores and processes that data
+          <strong>on behalf of the school</strong> solely to provide the service. We do not own,
+          sell, rent, or trade school or student data.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-bold text-[15px] mb-1">2. What we collect</h2>
+        <p>Only what a school enters to run its operations, such as:</p>
+        <ul class="list-disc pl-5 mt-1 space-y-0.5">
+          <li>Student details (name, roll/admission number, class, parents' names, contact, and optional records like date of birth, address)</li>
+          <li>Attendance, marks, fees, timetables, and notices</li>
+          <li>Login accounts for staff and parents (name, email/phone)</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="font-bold text-[15px] mb-1">3. How we use it</h2>
+        <p>
+          Strictly to operate the app for the school — recording attendance and marks, managing
+          fees, sending the school's own notices/alerts to its parents, and generating the school's
+          reports and report cards. We do not use it for advertising.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-bold text-[15px] mb-1">4. Data separation &amp; access</h2>
+        <p>
+          Every school's data is <strong>isolated</strong> — one school can never see another
+          school's data. Within a school, access is limited by role (Head Master, Teacher, Parent,
+          Student). Our team accesses a school's data only when needed to provide support or fix an
+          issue, and never shares it with third parties for their own use.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-bold text-[15px] mb-1">5. Where it is stored &amp; security</h2>
+        <p>
+          Data is stored securely on Google Firebase (Cloud Firestore) with access controls and
+          security rules that enforce the separation described above. Connections are encrypted
+          (HTTPS).
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-bold text-[15px] mb-1">6. Children's information</h2>
+        <p>
+          Student records are provided by the school in its role as the educational institution. We
+          process them only to deliver the service to that school and its authorised parents and
+          staff.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-bold text-[15px] mb-1">7. Messages to parents</h2>
+        <p>
+          Absence alerts, fee reminders, and report cards are sent by the school's own staff through
+          their own WhatsApp/SMS. {{ appName }} only helps prepare these messages.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-bold text-[15px] mb-1">8. Data retention &amp; deletion</h2>
+        <p>
+          A school may request export or deletion of its data at any time. On ending the service, a
+          school's data is removed within a reasonable period.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-bold text-[15px] mb-1">9. Contact</h2>
+        <p>
+          For any privacy question or request, contact us at
+          <strong>{{ supportEmail }}</strong> or <strong>{{ supportPhone }}</strong>.
+        </p>
+      </section>
+
+      <p class="text-xs text-muted pt-2">
+        We may update this policy as the app evolves; the "last updated" date above will change
+        accordingly.
+      </p>
+    </div>
+  </div>
+</div>

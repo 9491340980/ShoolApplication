@@ -7,6 +7,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'privacy',
+    loadComponent: () => import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),
