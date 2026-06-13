@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SwUpdate } from '@angular/service-worker';
 
 @Component({
   selector: 'app-root',
@@ -8,5 +9,20 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('vidyasetu');
+  private swUpdate = inject(SwUpdate);
+
+  constructor() {
+    // Auto-update: when a new deployed version is downloaded, activate it and
+    // reload so users always get the latest (no manual cache clearing).
+    if (this.swUpdate.isEnabled) {
+      this.swUpdate.versionUpdates.subscribe((evt) => {
+        if (evt.type === 'VERSION_READY') {
+          this.swUpdate.activateUpdate().then(() => document.location.reload());
+        }
+      });
+      // Check again shortly after load and then hourly.
+      this.swUpdate.checkForUpdate();
+      setInterval(() => this.swUpdate.checkForUpdate(), 60 * 60 * 1000);
+    }
+  }
 }
