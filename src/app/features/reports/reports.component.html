@@ -1,0 +1,118 @@
+<!-- TABS -->
+<div class="flex gap-1 mb-4 bg-white border border-line p-1 rounded-xl max-w-lg">
+  <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
+          [class]="tab() === 'fee' ? 'bg-primary text-white' : 'text-muted hover:bg-page'" (click)="tab.set('fee')">💰 {{ 'feeManagement' | t }}</button>
+  <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
+          [class]="tab() === 'attendance' ? 'bg-primary text-white' : 'text-muted hover:bg-page'" (click)="tab.set('attendance')">✅ {{ 'attendance' | t }}</button>
+  <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
+          [class]="tab() === 'exam' ? 'bg-primary text-white' : 'text-muted hover:bg-page'" (click)="tab.set('exam')">📝 {{ 'marksResults' | t }}</button>
+</div>
+
+@if (tab() === 'fee') {
+  <!-- FEE REPORT -->
+  <div class="grid grid-cols-3 gap-3 mb-4">
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold text-primary leading-none">₹{{ feeTotals().total.toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'totalFee' | t }}</div>
+    </div>
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ feeTotals().collected.toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'collected' | t }}</div>
+    </div>
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ feeTotals().pending.toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'pending' | t }}</div>
+    </div>
+  </div>
+  <div class="card !p-0 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-[13px]">
+        <thead><tr>
+          <th class="th">{{ 'class' | t }}</th>
+          <th class="th !text-center">{{ 'totalStudents' | t }}</th>
+          <th class="th !text-center">{{ 'totalFee' | t }}</th>
+          <th class="th !text-center">{{ 'collected' | t }}</th>
+          <th class="th !text-center">{{ 'pending' | t }}</th>
+        </tr></thead>
+        <tbody>
+          @for (r of feeRows(); track r.classId) {
+            <tr class="hover:bg-blue-50/40">
+              <td class="td font-bold">{{ r.classId }}</td>
+              <td class="td text-center">{{ r.students }}</td>
+              <td class="td text-center">₹{{ r.total.toLocaleString('en-IN') }}</td>
+              <td class="td text-center text-success font-semibold">₹{{ r.collected.toLocaleString('en-IN') }}</td>
+              <td class="td text-center font-bold" [class]="r.pending > 0 ? 'text-danger' : 'text-success'">₹{{ r.pending.toLocaleString('en-IN') }}</td>
+            </tr>
+          } @empty { <tr><td class="td text-muted" colspan="5">—</td></tr> }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+@if (tab() === 'attendance') {
+  <!-- ATTENDANCE REPORT -->
+  @if (attOverall() !== null) {
+    <div class="card !p-4 text-center mb-4 max-w-xs">
+      <div class="font-display text-2xl font-extrabold text-primary leading-none">{{ attOverall() }}%</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'overallAttendance' | t }}</div>
+    </div>
+  }
+  <div class="card !p-0 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-[13px]">
+        <thead><tr>
+          <th class="th">{{ 'class' | t }}</th>
+          <th class="th !text-center">{{ 'totalStudents' | t }}</th>
+          <th class="th !text-center">{{ 'attendance' | t }}</th>
+          <th class="th !text-center">&lt; 75%</th>
+        </tr></thead>
+        <tbody>
+          @for (r of attRows(); track r.classId) {
+            <tr class="hover:bg-blue-50/40">
+              <td class="td font-bold">{{ r.classId }}</td>
+              <td class="td text-center">{{ r.students }}</td>
+              <td class="td text-center font-bold" [class]="r.avg === null ? 'text-muted' : r.avg >= 85 ? 'text-success' : 'text-danger'">
+                {{ r.avg === null ? '—' : r.avg + '%' }}
+              </td>
+              <td class="td text-center" [class.text-danger]="r.below > 0">{{ r.below }}</td>
+            </tr>
+          } @empty { <tr><td class="td text-muted" colspan="4">—</td></tr> }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+@if (tab() === 'exam') {
+  <!-- EXAM REPORT -->
+  <select class="input max-w-[200px] mb-4" [ngModel]="examId()" (ngModelChange)="examId.set($event)">
+    @for (e of exams; track e.id) { <option [value]="e.id">{{ e.label }}</option> }
+  </select>
+  <div class="card !p-0 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-[13px]">
+        <thead><tr>
+          <th class="th">{{ 'class' | t }}</th>
+          <th class="th !text-center">Appeared</th>
+          <th class="th !text-center">Avg %</th>
+          <th class="th !text-center">Pass %</th>
+          <th class="th">🏆 Topper</th>
+        </tr></thead>
+        <tbody>
+          @for (r of examRows(); track r.classId) {
+            <tr class="hover:bg-blue-50/40">
+              <td class="td font-bold">{{ r.classId }}</td>
+              <td class="td text-center">{{ r.appeared }}</td>
+              <td class="td text-center font-bold">{{ r.avg === null ? '—' : r.avg + '%' }}</td>
+              <td class="td text-center font-semibold" [class]="r.passPct >= 90 ? 'text-success' : r.passPct < 50 ? 'text-danger' : ''">
+                {{ r.appeared ? r.passPct + '%' : '—' }}
+              </td>
+              <td class="td">{{ r.topper ? r.topper.name + ' (' + r.topper.pct + '%)' : '—' }}</td>
+            </tr>
+          } @empty { <tr><td class="td text-muted" colspan="5">—</td></tr> }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

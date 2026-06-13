@@ -12,7 +12,9 @@ export type IconName =
   | 'user'
   | 'logout'
   | 'menu'
-  | 'building';
+  | 'building'
+  | 'chart'
+  | 'promote';
 
 /** Crisp stroke icons (Lucide outlines) — emoji glyphs render unreliably on Windows. */
 @Component({
@@ -102,6 +104,17 @@ export type IconName =
           <path d="M8 14h.01" />
           <path d="M16 14h.01" />
           <path d="M12 14h.01" />
+        }
+        @case ('chart') {
+          <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+          <path d="M18 17V9" />
+          <path d="M13 17V5" />
+          <path d="M8 17v-3" />
+        }
+        @case ('promote') {
+          <path d="m17 11-5-5-5 5" />
+          <path d="M12 6v12" />
+          <path d="M5 21h14" />
         }
       }
     </svg>

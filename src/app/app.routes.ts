@@ -25,6 +25,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/users/users.component').then((m) => m.UsersComponent),
       },
       {
+        path: 'reports',
+        canActivate: [roleGuard],
+        data: { roles: ['headmaster'] },
+        loadComponent: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent),
+      },
+      {
+        path: 'promote',
+        canActivate: [roleGuard],
+        data: { roles: ['headmaster'] },
+        loadComponent: () => import('./features/promote/promote.component').then((m) => m.PromoteComponent),
+      },
+      {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },

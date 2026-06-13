@@ -43,9 +43,11 @@ export const NAV: Record<Role, NavSection[]> = {
     {
       label: 'school',
       items: [
+        { path: '/reports', icon: 'chart', label: 'reports' },
         { path: '/timetable', icon: 'calendar', label: 'timetable' },
         { path: '/teachers', icon: 'cap', label: 'teachers' },
         { path: '/users', icon: 'users', label: 'userManagement' },
+        { path: '/promote', icon: 'promote', label: 'promotion' },
         { path: '/profile', icon: 'user', label: 'myProfile' },
       ],
     },
@@ -120,6 +122,8 @@ export const NAV: Record<Role, NavSection[]> = {
 export const PAGE_TITLES: Record<string, TKey> = {
   '/admin': 'schools',
   '/users': 'userManagement',
+  '/reports': 'reports',
+  '/promote': 'promotion',
   '/dashboard': 'dashboard',
   '/notices': 'noticeBoard',
   '/students': 'studentsList',

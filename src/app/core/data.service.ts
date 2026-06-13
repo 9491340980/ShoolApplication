@@ -569,6 +569,23 @@ export class DataService {
     return next.length;
   }
 
+  /** Promote (or graduate) a whole class: move every student to the target class. */
+  async promoteClass(fromClass: string, toClass: string): Promise<number> {
+    const studs = this.studentsOf(fromClass);
+    if (!studs.length) return 0;
+    if (this.fs) {
+      const fs = this.fs;
+      const batch = writeBatch(fs);
+      studs.forEach((s) => batch.update(doc(fs, 'students', s.id), { classId: toClass }));
+      await batch.commit();
+      return studs.length;
+    }
+    this.commit({
+      students: this.db().students.map((s) => (s.classId === fromClass ? { ...s, classId: toClass } : s)),
+    });
+    return studs.length;
+  }
+
   addTeacher(input: Omit<Teacher, 'id' | 'schoolId'>) {
     const id = this.docId(`t${Date.now()}`);
     if (this.fs) {

@@ -1,0 +1,25 @@
+<div class="card mb-4">
+  <div class="card-title">⬆️ {{ 'promotion' | t }}</div>
+  <p class="text-xs text-muted">⚠️ {{ 'promoteHint' | t }}</p>
+  @if (doneMsg(); as msg) {
+    <span class="badge badge-green mt-2">{{ msg }}</span>
+  }
+</div>
+
+<div class="card !p-0 overflow-hidden divide-y divide-line">
+  @for (r of rows(); track r.classId) {
+    <div class="flex items-center gap-3 px-3 sm:px-4 py-3 flex-wrap">
+      <span class="font-bold text-[15px] w-12 shrink-0">{{ r.classId }}</span>
+      <span class="text-[12px] text-muted shrink-0">{{ r.count }} {{ 'totalStudents' | t }}</span>
+      <span class="text-muted">→</span>
+      <select class="input max-w-[130px]" [ngModel]="target()[r.classId]" (ngModelChange)="setTarget(r.classId, $event)">
+        @for (t of targets; track t) {
+          <option [value]="t">{{ t === 'PASSED' ? ('graduate' | t) : ('class' | t) + ' ' + t }}</option>
+        }
+      </select>
+      <button class="btn-blue btn-sm ml-auto" [disabled]="busy() || r.count === 0" (click)="promote(r.classId, r.count)">
+        ⬆️ {{ 'promote' | t }}
+      </button>
+    </div>
+  }
+</div>
