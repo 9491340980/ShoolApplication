@@ -1,112 +1,62 @@
 @if (isStaff()) {
-  <!-- COLLECTION DASHBOARD -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-    <div class="card flex items-center gap-3.5 !p-4">
-      <div class="w-12 h-12 rounded-xl bg-success-light flex items-center justify-center text-[22px] shrink-0">💰</div>
-      <div>
-        <div class="font-display text-xl font-extrabold text-success leading-none">₹{{ collected().toLocaleString('en-IN') }}</div>
-        <div class="text-xs text-muted mt-1">{{ 'collectedThisMonth' | t }}</div>
-      </div>
+  <!-- SECTION-WISE FEE COLLECTION -->
+  <div class="flex gap-2.5 mb-4 flex-wrap items-center">
+    <select class="input max-w-[120px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
+      @for (c of classes; track c) {
+        <option [value]="c">{{ 'class' | t }} {{ c }}</option>
+      }
+    </select>
+    <input class="input max-w-[200px]" [placeholder]="'feeName' | t" [ngModel]="label()" (ngModelChange)="label.set($event)" />
+    <input class="input max-w-[220px]" [placeholder]="'🔍 ' + ('searchNameId' | t)" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+  </div>
+
+  <!-- live totals -->
+  <div class="grid grid-cols-3 gap-3 mb-4">
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold text-primary leading-none">₹{{ totalFee().toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'totalFee' | t }}</div>
     </div>
-    <div class="card flex items-center gap-3.5 !p-4">
-      <div class="w-12 h-12 rounded-xl bg-danger-light flex items-center justify-center text-[22px] shrink-0">⏳</div>
-      <div>
-        <div class="font-display text-xl font-extrabold text-danger leading-none">₹{{ pendingTotal().toLocaleString('en-IN') }}</div>
-        <div class="text-xs text-muted mt-1">{{ 'totalPending' | t }}</div>
-      </div>
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ collected().toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'collected' | t }}</div>
     </div>
-    <div class="card flex items-center gap-3.5 !p-4">
-      <div class="w-12 h-12 rounded-xl bg-success-light flex items-center justify-center text-[22px] shrink-0">✅</div>
-      <div>
-        <div class="font-display text-xl font-extrabold text-success leading-none">{{ paidStudents() }}</div>
-        <div class="text-xs text-muted mt-1">{{ 'studentsPaid' | t }}</div>
-      </div>
-    </div>
-    <div class="card flex items-center gap-3.5 !p-4">
-      <div class="w-12 h-12 rounded-xl bg-accent-light flex items-center justify-center text-[22px] shrink-0">❗</div>
-      <div>
-        <div class="font-display text-xl font-extrabold text-amber-600 leading-none">{{ pendingRows().length }}</div>
-        <div class="text-xs text-muted mt-1">{{ 'pendingStudents' | t }}</div>
-      </div>
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ pending().toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'pending' | t }}</div>
     </div>
   </div>
 
-  @if (showAdd()) {
-    <div class="card mb-4">
-      <div class="card-title">＋ {{ 'addFee' | t }}</div>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2.5 mb-2.5">
-        <select class="input" [ngModel]="applyMode()" (ngModelChange)="applyMode.set($event)">
-          <option value="one">👤 {{ 'oneStudent' | t }}</option>
-          <option value="class">🏫 {{ 'wholeClass' | t }}</option>
-        </select>
-        @if (applyMode() === 'one') {
-          <select class="input" [ngModel]="feeStudentId()" (ngModelChange)="feeStudentId.set($event)">
-            <option value="">{{ 'studentName' | t }}...</option>
-            @for (s of data.students(); track s.id) {
-              <option [value]="s.id">{{ s.name }} ({{ s.classId }})</option>
-            }
-          </select>
-        } @else {
-          <select class="input" [ngModel]="feeClassId()" (ngModelChange)="feeClassId.set($event)">
-            @for (c of classes; track c) {
-              <option [value]="c">{{ 'class' | t }} {{ c }}</option>
-            }
-          </select>
-        }
-        <input class="input" [placeholder]="'feeName' | t" [ngModel]="feeLabel()" (ngModelChange)="feeLabel.set($event)" />
-        <input class="input" type="number" min="1" [placeholder]="('amount' | t) + ' ₹'" [ngModel]="feeAmount()" (ngModelChange)="feeAmount.set($event)" />
-        <input class="input" type="date" [ngModel]="feeDue()" (ngModelChange)="feeDue.set($event)" />
-      </div>
-      <button class="btn-green" (click)="addFee()">💾 {{ 'save' | t }}</button>
-    </div>
-  }
+  <p class="text-xs text-muted mb-2">💡 {{ 'feeEntryHint' | t }}</p>
 
-  <div class="card !p-0 overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
-      <div class="text-[15px] font-bold">{{ 'feePendingStudents' | t }}</div>
-      <div class="flex items-center gap-2">
-        @if (feeAdded()) {
-          <span class="badge badge-green">✓ {{ 'feeAdded' | t }}</span>
-        }
-        <button class="btn-blue btn-sm" (click)="showAdd.set(!showAdd())">＋ {{ 'addFee' | t }}</button>
-      </div>
-    </div>
-    <div class="overflow-x-auto">
-      <table class="rtable w-full border-collapse text-[13.5px]">
-        <thead>
-          <tr>
-            <th class="th">{{ 'studentName' | t }}</th>
-            <th class="th">{{ 'class' | t }}</th>
-            <th class="th">{{ 'amountDue' | t }}</th>
-            <th class="th">{{ 'dueDate' | t }}</th>
-            <th class="th">{{ 'parentPhone' | t }}</th>
-            <th class="th">{{ 'action' | t }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of pendingRows(); track row.fee.id) {
-            <tr class="hover:bg-blue-50/40">
-              <td class="td font-bold" [attr.data-label]="'studentName' | t">{{ row.student?.name }}</td>
-              <td class="td" [attr.data-label]="'class' | t"><span class="badge badge-blue">{{ row.student?.classId }}</span></td>
-              <td class="td text-danger font-bold" [attr.data-label]="'amountDue' | t">₹{{ row.fee.amount }}</td>
-              <td class="td" [attr.data-label]="'dueDate' | t"><span class="badge badge-yellow">{{ row.fee.dueDate }}</span></td>
-              <td class="td" [attr.data-label]="'parentPhone' | t">📞 {{ row.student?.parentPhone }}</td>
-              <td class="td" [attr.data-label]="'action' | t">
-                <div class="flex gap-1.5 flex-wrap justify-end">
-                  <a [href]="waFee(row.fee, row.student)" target="_blank" rel="noopener"
-                     class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold inline-flex items-center gap-1 px-2.5 py-1.5" [title]="'whatsapp' | t">🟢 {{ 'whatsapp' | t }}</a>
-                  <a [href]="smsFee(row.fee, row.student)"
-                     class="btn-sm rounded-lg bg-primary text-white font-semibold inline-flex items-center gap-1 px-2.5 py-1.5" [title]="'sms' | t">✉️</a>
-                  <button class="btn-green btn-sm" (click)="data.markFeePaid(row.fee.id)">✓ {{ 'markPaid' | t }}</button>
-                </div>
-              </td>
-            </tr>
-          } @empty {
-            <tr><td class="td text-success font-semibold" colspan="6">✓ {{ 'paid' | t }} — 100%</td></tr>
+  <div class="card !p-0 overflow-hidden divide-y divide-line">
+    @for (s of rows(); track s.id) {
+      <div class="flex items-center gap-3 px-3 sm:px-4 py-2.5 flex-wrap"
+           [class.bg-success-light]="isPaid(s)">
+        <span class="shrink-0 text-[11px] font-bold text-muted tabular-nums min-w-[2.5rem]">{{ s.roll }}</span>
+        <span class="flex-1 min-w-[100px] font-semibold text-[14px] truncate">{{ s.name }}
+          @if (s.admissionNo) { <span class="text-muted font-normal text-[11px]">· {{ s.admissionNo }}</span> }
+        </span>
+        <div class="flex items-center gap-1 shrink-0">
+          <span class="text-muted text-[14px]">₹</span>
+          <input class="w-24 text-center bg-white border border-line rounded-lg py-1.5 text-[15px]" type="number" min="0"
+                 [ngModel]="amountOf(s)" (ngModelChange)="setAmount(s, $event)" placeholder="0" />
+        </div>
+        @if (amountOf(s)) {
+          <button class="shrink-0 w-24 py-1.5 rounded-lg text-[12px] font-bold border"
+                  [class]="isPaid(s) ? 'bg-success text-white border-success' : 'bg-white text-amber-600 border-accent'"
+                  (click)="togglePaid(s)">
+            {{ (isPaid(s) ? 'paid' : 'markPaid') | t }}
+          </button>
+          @if (!isPaid(s)) {
+            <a [href]="waFee(s)" target="_blank" rel="noopener" class="shrink-0 rounded-lg bg-[#25D366] text-white px-2.5 py-1.5 text-[13px]" [title]="'whatsapp' | t">🟢</a>
           }
-        </tbody>
-      </table>
-    </div>
+        } @else {
+          <span class="shrink-0 w-24 text-center text-[11px] text-muted">—</span>
+        }
+      </div>
+    } @empty {
+      <div class="px-4 py-8 text-center text-muted text-sm">—</div>
+    }
   </div>
 } @else {
   <!-- PARENT / STUDENT FEE DETAILS -->

@@ -260,6 +260,10 @@ export const DICT = {
     importExcel: 'Import Excel/CSV',
     template: 'Template',
     importing: 'Importing…',
+    searchNameId: 'Search name / ID',
+    totalFee: 'Total Fee',
+    collected: 'Collected',
+    feeEntryHint: 'Enter each student’s fee amount (they can differ). Tap the status to mark Paid.',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -504,5 +508,9 @@ export const DICT = {
     importExcel: 'Excel/CSV దిగుమతి',
     template: 'టెంప్లేట్',
     importing: 'దిగుమతి అవుతోంది…',
+    searchNameId: 'పేరు / ID వెతకండి',
+    totalFee: 'మొత్తం ఫీజు',
+    collected: 'వసూలైంది',
+    feeEntryHint: 'ప్రతి విద్యార్థి ఫీజు మొత్తాన్ని నమోదు చేయండి (వేరుగా ఉండవచ్చు). చెల్లించినట్లు గుర్తించడానికి స్థితిని నొక్కండి.',
   },
 } satisfies Record<Lang, Record<string, string>>;

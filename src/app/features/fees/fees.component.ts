@@ -19,57 +19,61 @@ export class FeesComponent {
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
   classes = CLASSES;
 
-  private feeMsg(fee: FeeItem, student?: Student): string {
-    return this.notify.feeMessage(student?.name ?? '', student?.classId ?? '', fee.amount, fee.dueDate);
+  // ---- staff: section-wise fee collection ----
+  classId = signal('8A');
+  label = signal('Annual Fee');
+  search = signal('');
+
+  /** Students of the selected class, filtered by the name/id search. */
+  rows = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    return this.data
+      .studentsOf(this.classId())
+      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.roll.toLowerCase().includes(q) || (s.admissionNo ?? '').toLowerCase().includes(q));
+  });
+
+  fee(s: Student): FeeItem | undefined {
+    return this.data.feeFor(s, this.label());
   }
-  waFee(fee: FeeItem, student?: Student): string {
-    return this.notify.whatsappLink(student?.parentPhone ?? '', this.feeMsg(fee, student));
+  amountOf(s: Student): number | null {
+    return this.fee(s)?.amount ?? null;
   }
-  smsFee(fee: FeeItem, student?: Student): string {
-    return this.notify.smsLink(student?.parentPhone ?? '', this.feeMsg(fee, student));
+  isPaid(s: Student): boolean {
+    return this.fee(s)?.status === 'paid';
   }
 
-  // ---- staff ----
-  collected = computed(() =>
-    this.data.fees().filter((f) => f.status === 'paid').reduce((s, f) => s + f.amount, 0),
-  );
-  pendingTotal = computed(() => this.data.pendingFees().reduce((s, f) => s + f.amount, 0));
-  paidStudents = computed(() => this.data.students().filter((s) => s.feeStatus === 'paid').length);
-  pendingRows = computed(() =>
-    this.data.pendingFees().map((f) => ({ fee: f, student: this.data.student(f.studentId) })),
-  );
+  setAmount(s: Student, value: string) {
+    this.data.setStudentFee(s, this.label(), Number(value) || 0);
+  }
+  togglePaid(s: Student) {
+    const f = this.fee(s);
+    if (!f) return;
+    this.data.setFeeStatus(f.id, f.status === 'paid' ? 'pending' : 'paid');
+  }
 
-  showAdd = signal(false);
-  applyMode = signal<'one' | 'class'>('one');
-  feeStudentId = signal('');
-  feeClassId = signal('8A');
-  feeLabel = signal('');
-  feeAmount = signal<number | null>(null);
-  feeDue = signal(new Date().toISOString().slice(0, 10));
-  feeAdded = signal(false);
+  /** Live totals for the selected class & term. */
+  private classFees = computed(() => {
+    const label = this.label();
+    return this.data
+      .studentsOf(this.classId())
+      .map((s) => this.data.feeFor(s, label))
+      .filter((f): f is FeeItem => !!f);
+  });
+  totalFee = computed(() => this.classFees().reduce((sum, f) => sum + f.amount, 0));
+  collected = computed(() => this.classFees().filter((f) => f.status === 'paid').reduce((sum, f) => sum + f.amount, 0));
+  pending = computed(() => this.totalFee() - this.collected());
 
-  addFee() {
-    if (!this.feeLabel().trim() || !this.feeAmount()) return;
-    const base = {
-      label: this.feeLabel().trim(),
-      amount: Number(this.feeAmount()),
-      dueDate: this.feeDue(),
-      status: 'pending' as const,
-    };
-    if (this.applyMode() === 'class') {
-      // e.g. "Term 1 Tuition ₹2000" assigned to every student of the class at once
-      for (const s of this.data.studentsOf(this.feeClassId())) {
-        this.data.addFee({ ...base, studentId: s.id });
-      }
-    } else {
-      if (!this.feeStudentId()) return;
-      this.data.addFee({ ...base, studentId: this.feeStudentId() });
-    }
-    this.feeLabel.set('');
-    this.feeAmount.set(null);
-    this.showAdd.set(false);
-    this.feeAdded.set(true);
-    setTimeout(() => this.feeAdded.set(false), 2500);
+  // reminders (per student)
+  private feeMsg(s: Student, amount: number, due: string): string {
+    return this.notify.feeMessage(s.name, s.classId, amount, due);
+  }
+  waFee(s: Student): string {
+    const f = this.fee(s)!;
+    return this.notify.whatsappLink(s.parentPhone, this.feeMsg(s, f.amount, f.dueDate));
+  }
+  smsFee(s: Student): string {
+    const f = this.fee(s)!;
+    return this.notify.smsLink(s.parentPhone, this.feeMsg(s, f.amount, f.dueDate));
   }
 
   // ---- parent / student ----

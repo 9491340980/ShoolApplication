@@ -488,13 +488,55 @@ export class DataService {
   }
 
   markFeePaid(feeId: string) {
+    this.setFeeStatus(feeId, 'paid');
+  }
+
+  setFeeStatus(feeId: string, status: 'paid' | 'pending') {
     if (this.fs) {
-      void updateDoc(doc(this.fs, 'fees', feeId), { status: 'paid' });
+      void updateDoc(doc(this.fs, 'fees', feeId), { status });
       return;
     }
     this.commit({
-      fees: this.db().fees.map((f) => (f.id === feeId ? { ...f, status: 'paid' as const } : f)),
+      fees: this.db().fees.map((f) => (f.id === feeId ? { ...f, status } : f)),
     });
+  }
+
+  private feeSlug(label: string): string {
+    return label.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) || 'fee';
+  }
+
+  /** The single fee record for a student under a given label (term). */
+  feeFor(student: Student, label: string): FeeItem | undefined {
+    const id = `${student.id}_fee_${this.feeSlug(label)}`;
+    return this.db().fees.find((f) => f.id === id);
+  }
+
+  /**
+   * Set (or clear) a student's fee amount for a term label. One deterministic
+   * record per student+label, so editing the amount updates rather than dupes.
+   * Amount <= 0 removes the fee. Preserves paid/pending status on edits.
+   */
+  setStudentFee(student: Student, label: string, amount: number) {
+    const id = `${student.id}_fee_${this.feeSlug(label)}`;
+    if (!amount || amount <= 0) {
+      if (this.fs) void deleteDoc(doc(this.fs, 'fees', id));
+      else this.commit({ fees: this.db().fees.filter((f) => f.id !== id) });
+      return;
+    }
+    const existing = this.db().fees.find((f) => f.id === id);
+    const rec = {
+      studentId: student.id,
+      label,
+      amount,
+      dueDate: existing?.dueDate ?? this.todayStr,
+      status: existing?.status ?? ('pending' as const),
+    };
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'fees', id), this.clean({ ...rec, schoolId: this.sid }));
+      return;
+    }
+    const rest = this.db().fees.filter((f) => f.id !== id);
+    this.commit({ fees: [...rest, { ...rec, id }] });
   }
 
   addStudent(input: Omit<Student, 'id' | 'schoolId'>) {
