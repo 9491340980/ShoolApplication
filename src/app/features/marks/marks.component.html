@@ -62,6 +62,7 @@
               <th class="th !text-center">{{ 'total' | t }}</th>
               <th class="th !text-center">%</th>
               <th class="th !text-center">{{ 'rank' | t }}</th>
+              <th class="th !text-center">{{ 'reportCard' | t }}</th>
             </tr>
           </thead>
           <tbody>
@@ -80,9 +81,12 @@
                 <td class="td text-center">
                   <span class="badge" [class]="row.rank <= 3 ? 'badge-yellow' : 'badge-blue'">{{ row.rank }}</span>
                 </td>
+                <td class="td text-center">
+                  <button class="btn-outline btn-sm" (click)="openReport(row.student, examId())">📄</button>
+                </td>
               </tr>
             } @empty {
-              <tr><td class="td text-muted" colspan="10">—</td></tr>
+              <tr><td class="td text-muted" colspan="11">—</td></tr>
             }
           </tbody>
         </table>
@@ -172,6 +176,9 @@
   </div>
 
   @if (myMarks().length) {
+    @if (myStudent(); as ms) {
+      <button class="btn-blue mb-4" (click)="openReport(ms, viewExamId())">📄 {{ 'reportCard' | t }}</button>
+    }
     <div class="grid lg:grid-cols-2 gap-4">
       <div class="card">
         <div class="card-title">📝 {{ 'subjectMarks' | t }}</div>
@@ -225,4 +232,87 @@
   } @else {
     <div class="card text-center text-muted text-sm py-10">—</div>
   }
+}
+
+<!-- ============ PRINTABLE REPORT CARD ============ -->
+@if (reportData(); as r) {
+  <div class="fixed inset-0 bg-black/50 z-[70] flex items-start sm:items-center justify-center p-0 sm:p-4 overflow-y-auto print:p-0 print:bg-white" (click)="closeReport()">
+    <div class="bg-white w-full sm:max-w-2xl my-0 sm:my-4" (click)="$event.stopPropagation()">
+      <!-- toolbar (not printed) -->
+      <div class="no-print flex items-center justify-between px-4 py-3 bg-page border-b border-line sticky top-0">
+        <button class="text-muted hover:text-ink cursor-pointer text-sm font-semibold" (click)="closeReport()">✕ {{ 'close' | t }}</button>
+        <button class="btn-blue btn-sm" (click)="printReport()">🖨️ {{ 'downloadPrint' | t }}</button>
+      </div>
+
+      <!-- printable area -->
+      <div id="report-card" class="p-6 bg-white text-ink">
+        <div class="text-center border-b-2 border-primary pb-3 mb-4">
+          <div class="font-display text-xl font-extrabold text-primary">{{ schoolName() }}</div>
+          <div class="text-[12px] text-muted">{{ 'reportCard' | t }} — {{ r.examLabel }}</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-[12.5px] mb-4">
+          <div><span class="text-muted">{{ 'studentName' | t }}:</span> <b>{{ r.student.name }}</b></div>
+          <div><span class="text-muted">{{ 'class' | t }}:</span> <b>{{ r.student.classId }}</b> &nbsp; <span class="text-muted">{{ 'rollNo' | t }}:</span> <b>{{ r.student.roll }}</b></div>
+          <div><span class="text-muted">{{ 'admissionNo' | t }}:</span> <b>{{ r.student.admissionNo || '—' }}</b></div>
+          <div><span class="text-muted">{{ 'fatherName' | t }}:</span> <b>{{ r.student.fatherName || '—' }}</b></div>
+        </div>
+
+        <table class="w-full border-collapse text-[12.5px] mb-4">
+          <thead>
+            <tr class="bg-page">
+              <th class="border border-line px-2 py-1.5 text-left">{{ 'subjects' | t }}</th>
+              <th class="border border-line px-2 py-1.5 text-center">{{ 'maxMarks' | t }}</th>
+              <th class="border border-line px-2 py-1.5 text-center">{{ 'obtainedMarks' | t }}</th>
+              <th class="border border-line px-2 py-1.5 text-center">{{ 'gradeLabel' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of r.marks; track m.subject) {
+              <tr>
+                <td class="border border-line px-2 py-1.5">{{ m.subject }}</td>
+                <td class="border border-line px-2 py-1.5 text-center">{{ m.max }}</td>
+                <td class="border border-line px-2 py-1.5 text-center font-bold">{{ m.score }}</td>
+                <td class="border border-line px-2 py-1.5 text-center">{{ grade(m.score, m.max) }}</td>
+              </tr>
+            }
+            <tr class="bg-page font-bold">
+              <td class="border border-line px-2 py-1.5">{{ 'total' | t }}</td>
+              <td class="border border-line px-2 py-1.5 text-center">{{ r.maxTotal }}</td>
+              <td class="border border-line px-2 py-1.5 text-center">{{ r.total }}</td>
+              <td class="border border-line px-2 py-1.5 text-center">{{ grade(r.pct, 100) }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="grid grid-cols-3 gap-3 text-center text-[12.5px] mb-5">
+          <div class="border border-line rounded-lg py-2">
+            <div class="text-muted text-[10px] uppercase">%</div>
+            <div class="font-extrabold text-primary text-lg">{{ r.pct }}%</div>
+          </div>
+          <div class="border border-line rounded-lg py-2">
+            <div class="text-muted text-[10px] uppercase">{{ 'rank' | t }}</div>
+            <div class="font-extrabold text-lg">{{ r.rank }}/{{ r.classSize }}</div>
+          </div>
+          <div class="border border-line rounded-lg py-2">
+            <div class="text-muted text-[10px] uppercase">{{ 'attendanceLabel' | t }}</div>
+            <div class="font-extrabold text-lg">{{ r.att.pct === null ? '—' : r.att.pct + '%' }}</div>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center text-[12.5px] mb-6">
+          <div><span class="text-muted">{{ 'resultLabel' | t }}:</span>
+            <b [class]="r.pass ? 'text-success' : 'text-danger'">{{ r.pass ? '✓ ' + ('pass' | t) : 'FAIL' }}</b>
+          </div>
+          <div><span class="text-muted">{{ 'presentDays' | t }}:</span> <b>{{ r.att.present }}/{{ r.att.total }}</b></div>
+        </div>
+
+        <div class="flex justify-between items-end pt-8 text-[11px] text-muted">
+          <div class="text-center"><div class="border-t border-ink w-28 pt-1">{{ 'teacherSign' | t }}</div></div>
+          <div class="text-center"><div class="border-t border-ink w-28 pt-1">{{ 'hmSign' | t }}</div></div>
+          <div class="text-center"><div class="border-t border-ink w-28 pt-1">{{ 'parentSign' | t }}</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
 }

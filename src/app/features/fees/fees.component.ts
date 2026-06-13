@@ -2,7 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { CLASSES } from '../../core/models';
+import { CLASSES, FeeItem, Student } from '../../core/models';
+import { NotifyService } from '../../core/notify.service';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -13,9 +14,20 @@ import { TPipe } from '../../core/translate.service';
 export class FeesComponent {
   auth = inject(AuthService);
   data = inject(DataService);
+  notify = inject(NotifyService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
   classes = CLASSES;
+
+  private feeMsg(fee: FeeItem, student?: Student): string {
+    return this.notify.feeMessage(student?.name ?? '', student?.classId ?? '', fee.amount, fee.dueDate);
+  }
+  waFee(fee: FeeItem, student?: Student): string {
+    return this.notify.whatsappLink(student?.parentPhone ?? '', this.feeMsg(fee, student));
+  }
+  smsFee(fee: FeeItem, student?: Student): string {
+    return this.notify.smsLink(student?.parentPhone ?? '', this.feeMsg(fee, student));
+  }
 
   // ---- staff ----
   collected = computed(() =>
@@ -26,12 +38,6 @@ export class FeesComponent {
   pendingRows = computed(() =>
     this.data.pendingFees().map((f) => ({ fee: f, student: this.data.student(f.studentId) })),
   );
-
-  smsSent = false;
-  sendSms() {
-    this.smsSent = true;
-    setTimeout(() => (this.smsSent = false), 2500);
-  }
 
   showAdd = signal(false);
   applyMode = signal<'one' | 'class'>('one');

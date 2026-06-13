@@ -53,6 +53,32 @@
       <div class="px-4 py-6 text-center text-muted text-sm">—</div>
     }
   </div>
+
+  <!-- ABSENCE ALERTS -->
+  @if (absentees().length) {
+    <div class="card mt-4">
+      <div class="card-title">📲 {{ 'absentAlerts' | t }} ({{ absentees().length }})</div>
+      <div class="divide-y divide-line">
+        @for (s of absentees(); track s.id) {
+          <div class="flex items-center gap-3 py-2.5 flex-wrap">
+            <span class="flex-1 min-w-[120px] font-semibold text-[14px]">{{ s.name }}
+              <span class="text-muted font-normal text-[12px]">· 📞 {{ s.parentPhone }}</span>
+            </span>
+            <div class="flex gap-2 shrink-0">
+              <a [href]="waAbsence(s)" target="_blank" rel="noopener"
+                 class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold inline-flex items-center gap-1.5 px-3 py-1.5">
+                <span>🟢</span> {{ 'whatsapp' | t }}
+              </a>
+              <a [href]="smsAbsence(s)"
+                 class="btn-sm rounded-lg bg-primary text-white font-semibold inline-flex items-center gap-1.5 px-3 py-1.5">
+                <span>✉️</span> {{ 'sms' | t }}
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
   }
 } @else {
   <!-- PARENT / STUDENT VIEW -->

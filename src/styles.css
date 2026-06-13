@@ -72,6 +72,26 @@ body {
   overflow-x: hidden;
 }
 
+/* Print only the report card (everything else hidden). */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #report-card,
+  #report-card * {
+    visibility: visible !important;
+  }
+  #report-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
 /* ===== MOBILE: native-app feel ===== */
 @media (max-width: 1023px) {
   /* iOS zooms the whole page when focusing a field under 16px and never

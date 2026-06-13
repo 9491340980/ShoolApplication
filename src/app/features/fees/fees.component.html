@@ -68,11 +68,7 @@
         @if (feeAdded()) {
           <span class="badge badge-green">✓ {{ 'feeAdded' | t }}</span>
         }
-        @if (smsSent) {
-          <span class="badge badge-green">✓ {{ 'smsSent' | t }}</span>
-        }
         <button class="btn-blue btn-sm" (click)="showAdd.set(!showAdd())">＋ {{ 'addFee' | t }}</button>
-        <button class="btn-blue btn-sm" (click)="sendSms()">📱 {{ 'sendReminderSms' | t }}</button>
       </div>
     </div>
     <div class="overflow-x-auto">
@@ -96,7 +92,13 @@
               <td class="td" [attr.data-label]="'dueDate' | t"><span class="badge badge-yellow">{{ row.fee.dueDate }}</span></td>
               <td class="td" [attr.data-label]="'parentPhone' | t">📞 {{ row.student?.parentPhone }}</td>
               <td class="td" [attr.data-label]="'action' | t">
-                <button class="btn-green btn-sm" (click)="data.markFeePaid(row.fee.id)">✓ {{ 'markPaid' | t }}</button>
+                <div class="flex gap-1.5 flex-wrap justify-end">
+                  <a [href]="waFee(row.fee, row.student)" target="_blank" rel="noopener"
+                     class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold inline-flex items-center gap-1 px-2.5 py-1.5" [title]="'whatsapp' | t">🟢 {{ 'whatsapp' | t }}</a>
+                  <a [href]="smsFee(row.fee, row.student)"
+                     class="btn-sm rounded-lg bg-primary text-white font-semibold inline-flex items-center gap-1 px-2.5 py-1.5" [title]="'sms' | t">✉️</a>
+                  <button class="btn-green btn-sm" (click)="data.markFeePaid(row.fee.id)">✓ {{ 'markPaid' | t }}</button>
+                </div>
               </td>
             </tr>
           } @empty {

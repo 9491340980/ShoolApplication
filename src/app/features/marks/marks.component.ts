@@ -1,8 +1,10 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { CLASSES, DEMO_SCHOOL_ID, EXAMS, Student } from '../../core/models';
+import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
 interface SheetRow {
@@ -21,6 +23,7 @@ interface SheetRow {
 export class MarksComponent {
   auth = inject(AuthService);
   data = inject(DataService);
+  private schoolSvc = inject(SchoolService);
 
   exams = EXAMS;
 
@@ -163,6 +166,50 @@ export class MarksComponent {
     const order = [...rows].sort((a, b) => b.total - a.total);
     rows.forEach((r) => (r.rank = order.indexOf(r) + 1));
     return rows;
+  });
+
+  // ---- report card (printable / save as PDF) ----
+  reportStudent = signal<Student | null>(null);
+  reportExamId = signal('quarterly');
+
+  schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
+
+  openReport(student: Student, examId: string) {
+    this.reportExamId.set(examId);
+    this.reportStudent.set(student);
+  }
+  closeReport() {
+    this.reportStudent.set(null);
+  }
+  printReport() {
+    window.print();
+  }
+
+  reportData = computed(() => {
+    const s = this.reportStudent();
+    if (!s) return null;
+    const exam = this.reportExamId();
+    const marks = this.data.studentMarks(s.id, exam);
+    const total = marks.reduce((a, m) => a + m.score, 0);
+    const maxTotal = marks.reduce((a, m) => a + m.max, 0);
+    const pct = maxTotal ? Math.round((total / maxTotal) * 1000) / 10 : 0;
+    const att = this.data.studentAttendance(s.id);
+    const ranked = this.data
+      .studentsOf(s.classId)
+      .map((st) => ({ id: st.id, total: this.data.studentMarks(st.id, exam).reduce((a, m) => a + m.score, 0) }))
+      .sort((a, b) => b.total - a.total);
+    return {
+      student: s,
+      marks,
+      total,
+      maxTotal,
+      pct,
+      att,
+      rank: ranked.findIndex((t) => t.id === s.id) + 1,
+      classSize: ranked.length,
+      examLabel: EXAMS.find((e) => e.id === exam)?.label ?? exam,
+      pass: pct >= 35,
+    };
   });
 
   // ---- parent / student view ----

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { AttendanceStatus, CLASSES } from '../../core/models';
+import { NotifyService } from '../../core/notify.service';
 import { TPipe, TranslateService } from '../../core/translate.service';
 
 @Component({
@@ -14,6 +15,7 @@ export class AttendanceComponent {
   auth = inject(AuthService);
   data = inject(DataService);
   i18n = inject(TranslateService);
+  notify = inject(NotifyService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
 
@@ -41,6 +43,16 @@ export class AttendanceComponent {
 
   presentCount = computed(() => Object.values(this.statuses()).filter((v) => v === 'present').length);
   absentCount = computed(() => Object.values(this.statuses()).filter((v) => v === 'absent').length);
+
+  /** Absent students (with a parent phone) for sending alerts. */
+  absentees = computed(() => this.students().filter((s) => this.statuses()[s.id] === 'absent'));
+
+  waAbsence(s: { name: string; classId: string; parentPhone: string }): string {
+    return this.notify.whatsappLink(s.parentPhone, this.notify.absenceMessage(s.name, s.classId, this.date()));
+  }
+  smsAbsence(s: { name: string; classId: string; parentPhone: string }): string {
+    return this.notify.smsLink(s.parentPhone, this.notify.absenceMessage(s.name, s.classId, this.date()));
+  }
 
   // Load existing attendance whenever class/date changes
   private loader = effect(() => {
