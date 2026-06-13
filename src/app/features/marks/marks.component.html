@@ -247,9 +247,10 @@
       <!-- toolbar (not printed) -->
       <div class="no-print flex items-center justify-between gap-2 px-4 py-3 bg-page border-b border-line sticky top-0 flex-wrap">
         <button class="text-muted hover:text-ink cursor-pointer text-sm font-semibold" (click)="closeReport()">✕ {{ 'close' | t }}</button>
-        <div class="flex gap-2">
-          <button class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold px-3 py-1.5" (click)="sendReportWa(r.student, reportExamId())">🟢 {{ 'sendOnWhatsapp' | t }}</button>
-          <button class="btn-blue btn-sm" (click)="printReport()">🖨️ {{ 'downloadPrint' | t }}</button>
+        <div class="flex gap-2 flex-wrap">
+          <button class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold px-3 py-1.5" (click)="sendReportPdf(r.student, reportExamId())">📤 {{ 'sendPdf' | t }}</button>
+          <a class="btn-sm rounded-lg bg-primary text-white font-semibold px-3 py-1.5 inline-flex items-center" [href]="smsReportLink(r.student, reportExamId())">✉️ {{ 'sms' | t }}</a>
+          <button class="btn-outline btn-sm" (click)="printReport()">🖨️ {{ 'downloadPrint' | t }}</button>
         </div>
       </div>
 

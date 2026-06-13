@@ -6,6 +6,7 @@ import { DataService } from '../../core/data.service';
 import { BulkSendService } from '../../core/bulk-send.service';
 import { CLASSES, DEMO_SCHOOL_ID, EXAMS, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
+import { buildReportPdf, sharePdf } from '../../core/report-pdf';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
@@ -240,6 +241,34 @@ export class MarksComponent {
   /** Send one student's report card to the parent over WhatsApp (opens chat). */
   sendReportWa(s: Student, exam: string) {
     window.open(this.notify.whatsappLink(s.parentPhone, this.reportText(s, exam)), '_blank');
+  }
+
+  /** Generate the real PDF and share it via the phone's share sheet (WhatsApp etc.). */
+  async sendReportPdf(s: Student, exam: string) {
+    const r = this.reportInfoFor(s, exam);
+    const doc = buildReportPdf({
+      schoolName: this.schoolName(),
+      name: s.name,
+      classId: s.classId,
+      roll: s.roll,
+      admissionNo: s.admissionNo,
+      fatherName: s.fatherName,
+      examLabel: r.examLabel,
+      marks: r.marks,
+      total: r.total,
+      maxTotal: r.maxTotal,
+      pct: r.pct,
+      rank: r.rank,
+      classSize: r.classSize,
+      attPct: r.att.pct,
+      pass: r.pass,
+    });
+    await sharePdf(doc, `ReportCard-${s.name.replace(/\s+/g, '_')}.pdf`, this.reportText(s, exam));
+  }
+
+  /** SMS text fallback for parents without WhatsApp. */
+  smsReportLink(s: Student, exam: string): string {
+    return this.notify.smsLink(s.parentPhone, this.reportText(s, exam));
   }
 
   /** Guided bulk send of report cards for everyone in the selected class who has marks. */
