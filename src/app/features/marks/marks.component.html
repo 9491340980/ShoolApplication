@@ -21,11 +21,10 @@
       }
     </select>
     @if (viewMode() === 'entry') {
-      <select class="input max-w-[140px]" [ngModel]="subject()" (ngModelChange)="subject.set($event)">
-        @for (s of subjects(); track s) {
-          <option [value]="s">{{ s }}</option>
-        }
-      </select>
+      <label class="flex items-center gap-2 text-[13px] font-semibold whitespace-nowrap">
+        {{ 'maxMarks' | t }}:
+        <input class="input !w-20 text-center" type="number" min="1" [ngModel]="maxMarks()" (ngModelChange)="maxMarks.set(+$event || 100)" />
+      </label>
     }
     <button class="btn-outline btn-sm" (click)="showSubjects.set(!showSubjects())">⚙️ {{ 'manageSubjects' | t }}</button>
   </div>
@@ -91,8 +90,8 @@
     </div>
   } @else {
   <div class="card !p-0 overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
-      <div class="text-[15px] font-bold">📝 {{ 'enterMarks' | t }} — {{ subject() }} | {{ classId() }}</div>
+    <div class="flex items-center justify-between px-4 sm:px-5 py-4 flex-wrap gap-2">
+      <div class="text-[15px] font-bold">📝 {{ 'enterMarks' | t }} — {{ 'class' | t }} {{ classId() }}</div>
       <div class="flex items-center gap-2">
         @if (saved()) {
           <span class="badge badge-green">✓ {{ 'marksSaved' | t }}</span>
@@ -100,36 +99,63 @@
         <button class="btn-green" (click)="save()">💾 {{ 'saveMarks' | t }}</button>
       </div>
     </div>
-    <div class="overflow-x-auto">
-      <table class="rtable w-full border-collapse text-[13.5px]">
+
+    <!-- DESKTOP/TABLET: full matrix (students × all subjects) -->
+    <div class="overflow-x-auto hidden md:block">
+      <table class="w-full border-collapse text-[13px]">
         <thead>
           <tr>
-            <th class="th">{{ 'studentName' | t }}</th>
-            <th class="th">{{ 'rollNo' | t }}</th>
-            <th class="th">{{ 'maxMarks' | t }}</th>
-            <th class="th">{{ 'obtainedMarks' | t }}</th>
-            <th class="th">{{ 'grade' | t }}</th>
+            <th class="th sticky left-0 bg-slate-50 z-10">{{ 'studentName' | t }}</th>
+            @for (sub of subjects(); track sub) {
+              <th class="th !text-center">{{ sub }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ maxMarks() }}</div></th>
+            }
+            <th class="th !text-center">{{ 'total' | t }}</th>
+            <th class="th !text-center">%</th>
           </tr>
         </thead>
         <tbody>
           @for (s of students(); track s.id) {
             <tr class="hover:bg-blue-50/40">
-              <td class="td font-bold" [attr.data-label]="'studentName' | t">{{ s.name }}</td>
-              <td class="td" [attr.data-label]="'rollNo' | t">{{ s.roll }}</td>
-              <td class="td" [attr.data-label]="'maxMarks' | t">100</td>
-              <td class="td" [attr.data-label]="'obtainedMarks' | t">
-                <input class="input !w-24 text-center" type="number" min="0" max="100"
-                       [ngModel]="scores()[s.id]" (ngModelChange)="setScore(s.id, $event)" />
+              <td class="td font-semibold whitespace-nowrap sticky left-0 bg-white z-10">
+                <span class="text-muted font-bold mr-1.5">{{ s.roll }}</span>{{ s.name }}
               </td>
-              <td class="td" [attr.data-label]="'grade' | t">
-                <span class="badge" [class]="scoreBadge(s.id)">
-                  {{ grade(scores()[s.id]) }}
-                </span>
-              </td>
+              @for (sub of subjects(); track sub) {
+                <td class="td text-center">
+                  <input class="input !w-16 text-center !px-1" type="number" min="0" [max]="maxMarks()"
+                         [ngModel]="cell(s.id, sub)" (ngModelChange)="setCell(s.id, sub, $event)" />
+                </td>
+              }
+              <td class="td text-center font-bold text-primary">{{ studentTotal(s.id) }}</td>
+              <td class="td text-center font-bold">{{ studentPct(s.id) }}%</td>
             </tr>
+          } @empty {
+            <tr><td class="td text-muted" [attr.colspan]="subjects().length + 3">—</td></tr>
           }
         </tbody>
       </table>
+    </div>
+
+    <!-- MOBILE: one card per student, all subjects stacked -->
+    <div class="md:hidden divide-y divide-line">
+      @for (s of students(); track s.id) {
+        <div class="px-4 py-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="font-bold text-[15px]"><span class="text-muted mr-1.5">{{ s.roll }}</span>{{ s.name }}</div>
+            <div class="text-[12px] font-bold text-primary">{{ studentTotal(s.id) }} · {{ studentPct(s.id) }}%</div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            @for (sub of subjects(); track sub) {
+              <label class="flex items-center justify-between gap-2 bg-page rounded-lg px-2.5 py-1.5">
+                <span class="text-[12px] font-medium truncate">{{ sub }}</span>
+                <input class="w-14 text-center bg-white border border-line rounded-md py-1 text-[15px]" type="number" min="0" [max]="maxMarks()"
+                       [ngModel]="cell(s.id, sub)" (ngModelChange)="setCell(s.id, sub, $event)" />
+              </label>
+            }
+          </div>
+        </div>
+      } @empty {
+        <div class="px-4 py-6 text-center text-muted text-sm">—</div>
+      }
     </div>
   </div>
   }
@@ -153,10 +179,10 @@
           <div class="mb-3">
             <div class="flex justify-between text-[12.5px] mb-1">
               <span class="font-semibold">{{ m.subject }}</span>
-              <span class="font-bold" [style.color]="barColor(m.score)">{{ m.score }}/100</span>
+              <span class="font-bold" [style.color]="barColor(m.score / m.max * 100)">{{ m.score }}/{{ m.max }}</span>
             </div>
             <div class="bg-line rounded-full h-2">
-              <div class="h-2 rounded-full" [style.width.%]="m.score" [style.background]="barColor(m.score)"></div>
+              <div class="h-2 rounded-full" [style.width.%]="m.score / m.max * 100" [style.background]="barColor(m.score / m.max * 100)"></div>
             </div>
           </div>
         }

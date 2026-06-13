@@ -267,17 +267,17 @@ export class DataService {
     return this.db().marks.find((m) => m.id === id);
   }
 
-  /** All subject scores of one student for an exam: [{subject, score}] */
-  studentMarks(studentId: string, examId: string): { subject: string; score: number }[] {
+  /** All subject scores of one student for an exam: [{subject, score, max}] */
+  studentMarks(studentId: string, examId: string): { subject: string; score: number; max: number }[] {
     const stu = this.student(studentId);
     const keys = stu ? [studentId, stu.id, stu.id.replace(`${this.sid}_`, '')] : [studentId];
     return this.db()
       .marks.filter((m) => m.examId === examId)
       .map((m) => {
         const key = keys.find((k) => m.scores[k] !== undefined);
-        return key === undefined ? null : { subject: m.subject, score: m.scores[key] };
+        return key === undefined ? null : { subject: m.subject, score: m.scores[key], max: m.maxMarks ?? 100 };
       })
-      .filter((x): x is { subject: string; score: number } => x !== null);
+      .filter((x): x is { subject: string; score: number; max: number } => x !== null);
   }
 
   feesOf(studentId: string): FeeItem[] {
@@ -306,14 +306,47 @@ export class DataService {
     this.commit({ attendance: [...rest, { id, classId, date, statuses }] });
   }
 
-  saveMarks(classId: string, examId: string, subject: string, scores: Record<string, number>) {
+  saveMarks(classId: string, examId: string, subject: string, scores: Record<string, number>, maxMarks = 100) {
     const id = this.docId(`${classId}_${examId}_${subject}`);
     if (this.fs) {
-      void setDoc(doc(this.fs, 'marks', id), { schoolId: this.sid, classId, examId, subject, scores });
+      void setDoc(doc(this.fs, 'marks', id), { schoolId: this.sid, classId, examId, subject, maxMarks, scores });
       return;
     }
     const rest = this.db().marks.filter((m) => m.id !== id);
-    this.commit({ marks: [...rest, { id, classId, examId, subject, scores }] });
+    this.commit({ marks: [...rest, { id, classId, examId, subject, maxMarks, scores }] });
+  }
+
+  /** Save the whole class × all-subjects grid in one go (one doc per subject). */
+  saveMarksMatrix(
+    classId: string,
+    examId: string,
+    maxMarks: number,
+    bySubject: Record<string, Record<string, number>>,
+  ) {
+    const subjects = Object.keys(bySubject);
+    if (this.fs) {
+      const batch = writeBatch(this.fs);
+      for (const subject of subjects) {
+        const id = this.docId(`${classId}_${examId}_${subject}`);
+        batch.set(doc(this.fs, 'marks', id), {
+          schoolId: this.sid,
+          classId,
+          examId,
+          subject,
+          maxMarks,
+          scores: bySubject[subject],
+        });
+      }
+      void batch.commit();
+      return;
+    }
+    let marks = this.db().marks;
+    for (const subject of subjects) {
+      const id = this.docId(`${classId}_${examId}_${subject}`);
+      marks = marks.filter((m) => m.id !== id);
+      marks = [...marks, { id, classId, examId, subject, maxMarks, scores: bySubject[subject] }];
+    }
+    this.commit({ marks });
   }
 
   markFeePaid(feeId: string) {

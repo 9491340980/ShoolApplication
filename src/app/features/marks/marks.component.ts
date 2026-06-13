@@ -28,12 +28,13 @@ export class MarksComponent {
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
   subjects = computed(() => this.data.subjects());
 
-  // ---- staff entry ----
+  // ---- staff entry (whole class × all subjects in one grid) ----
   viewMode = signal<'entry' | 'sheet'>('entry');
   classId = signal(this.auth.user()?.classId ?? '8A');
   examId = signal('quarterly');
-  subject = signal(this.data.subjects()[0]);
-  scores = signal<Record<string, number>>({});
+  maxMarks = signal(100);
+  /** studentId -> subject -> score */
+  matrix = signal<Record<string, Record<string, number>>>({});
   saved = signal(false);
 
   showSubjects = signal(false);
@@ -47,30 +48,75 @@ export class MarksComponent {
     return id.startsWith(`${sid}_`) ? id.slice(sid.length + 1) : id;
   }
 
-  private keepSubjectValid = effect(() => {
-    if (!this.subjects().includes(this.subject())) this.subject.set(this.subjects()[0]);
-  });
-
+  /** Load every subject's saved marks for this class & exam into the grid. */
   private loader = effect(() => {
-    const doc = this.data.marksDoc(this.classId(), this.examId(), this.subject());
-    const normalized: Record<string, number> = {};
-    if (doc) {
-      for (const s of this.students()) {
-        const v = doc.scores[s.id] ?? doc.scores[this.rawId(s.id)];
-        if (v !== undefined) normalized[s.id] = v;
+    const cls = this.classId();
+    const exam = this.examId();
+    const subs = this.subjects();
+    const studs = this.students();
+    const m: Record<string, Record<string, number>> = {};
+    let loadedMax: number | undefined;
+    for (const stu of studs) m[stu.id] = {};
+    for (const sub of subs) {
+      const docu = this.data.marksDoc(cls, exam, sub);
+      if (!docu) continue;
+      if (loadedMax === undefined) loadedMax = docu.maxMarks ?? 100;
+      for (const stu of studs) {
+        const v = docu.scores[stu.id] ?? docu.scores[this.rawId(stu.id)];
+        if (v !== undefined) m[stu.id][sub] = v;
       }
     }
-    this.scores.set(normalized);
+    this.matrix.set(m);
+    if (loadedMax !== undefined) this.maxMarks.set(loadedMax);
   });
 
-  setScore(studentId: string, value: string) {
-    const n = Math.max(0, Math.min(100, Number(value) || 0));
-    this.scores.update((s) => ({ ...s, [studentId]: n }));
+  cell(studentId: string, subject: string): number | undefined {
+    return this.matrix()[studentId]?.[subject];
+  }
+
+  setCell(studentId: string, subject: string, value: string) {
+    const max = this.maxMarks() || 100;
+    const raw = value === '' ? NaN : Number(value);
+    this.matrix.update((m) => {
+      const row = { ...(m[studentId] ?? {}) };
+      if (Number.isNaN(raw)) {
+        delete row[subject];
+      } else {
+        row[subject] = Math.max(0, Math.min(max, raw));
+      }
+      return { ...m, [studentId]: row };
+    });
     this.saved.set(false);
   }
 
+  studentTotal(studentId: string): number {
+    const row = this.matrix()[studentId] ?? {};
+    return Object.values(row).reduce((sum, v) => sum + v, 0);
+  }
+
+  private studentFilled(studentId: string): number {
+    return Object.keys(this.matrix()[studentId] ?? {}).length;
+  }
+
+  studentPct(studentId: string): number {
+    const filled = this.studentFilled(studentId);
+    if (!filled) return 0;
+    const max = (this.maxMarks() || 100) * filled;
+    return Math.round((this.studentTotal(studentId) / max) * 1000) / 10;
+  }
+
   save() {
-    this.data.saveMarks(this.classId(), this.examId(), this.subject(), this.scores());
+    const bySubject: Record<string, Record<string, number>> = {};
+    const m = this.matrix();
+    for (const sub of this.subjects()) {
+      const scores: Record<string, number> = {};
+      for (const stu of this.students()) {
+        const v = m[stu.id]?.[sub];
+        if (v !== undefined && !Number.isNaN(v)) scores[stu.id] = v;
+      }
+      bySubject[sub] = scores;
+    }
+    this.data.saveMarksMatrix(this.classId(), this.examId(), this.maxMarks() || 100, bySubject);
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2500);
   }
@@ -80,20 +126,15 @@ export class MarksComponent {
     this.newSubject.set('');
   }
 
-  scoreBadge(studentId: string): string {
-    const score = this.scores()[studentId];
-    if (score === undefined) return 'badge-blue';
-    return score >= 75 ? 'badge-green' : score >= 50 ? 'badge-blue' : 'badge-red';
-  }
-
-  grade(score: number | undefined): string {
+  grade(score: number | undefined, max = 100): string {
     if (score === undefined) return '—';
-    if (score >= 90) return 'A+';
-    if (score >= 80) return 'A';
-    if (score >= 70) return 'B+';
-    if (score >= 60) return 'B';
-    if (score >= 50) return 'C+';
-    if (score >= 35) return 'C';
+    const pct = (score / max) * 100;
+    if (pct >= 90) return 'A+';
+    if (pct >= 80) return 'A';
+    if (pct >= 70) return 'B+';
+    if (pct >= 60) return 'B';
+    if (pct >= 50) return 'C+';
+    if (pct >= 35) return 'C';
     return 'F';
   }
 
@@ -104,9 +145,9 @@ export class MarksComponent {
       const marks = this.data.studentMarks(student.id, this.examId());
       const bySubject = new Map(marks.map((m) => [m.subject, m.score]));
       const scores = subjects.map((sub) => bySubject.get(sub));
-      const present = scores.filter((v): v is number => v !== undefined);
-      const total = present.reduce((sum, v) => sum + v, 0);
-      const pct = present.length ? Math.round((total / (present.length * 100)) * 1000) / 10 : 0;
+      const total = marks.reduce((sum, m) => sum + m.score, 0);
+      const maxTotal = marks.reduce((sum, m) => sum + m.max, 0);
+      const pct = maxTotal ? Math.round((total / maxTotal) * 1000) / 10 : 0;
       return { student, scores, total, pct, rank: 0 };
     });
     const order = [...rows].sort((a, b) => b.total - a.total);
@@ -125,10 +166,10 @@ export class MarksComponent {
     return sid ? this.data.studentMarks(sid, this.viewExamId()) : [];
   });
   myTotal = computed(() => this.myMarks().reduce((s, m) => s + m.score, 0));
-  myMax = computed(() => this.myMarks().length * 100);
+  myMax = computed(() => this.myMarks().reduce((s, m) => s + m.max, 0));
   myPct = computed(() => (this.myMax() ? Math.round((this.myTotal() / this.myMax()) * 1000) / 10 : 0));
-  best = computed(() => [...this.myMarks()].sort((a, b) => b.score - a.score)[0]);
-  worst = computed(() => [...this.myMarks()].sort((a, b) => a.score - b.score)[0]);
+  best = computed(() => [...this.myMarks()].sort((a, b) => b.score / b.max - a.score / a.max)[0]);
+  worst = computed(() => [...this.myMarks()].sort((a, b) => a.score / a.max - b.score / b.max)[0]);
   myRank = computed(() => {
     const stu = this.myStudent();
     if (!stu) return 0;
@@ -146,7 +187,7 @@ export class MarksComponent {
     return stu ? this.data.studentsOf(stu.classId).length : 0;
   });
 
-  barColor(score: number): string {
-    return score >= 75 ? 'var(--color-success)' : score >= 50 ? 'var(--color-primary)' : 'var(--color-danger)';
+  barColor(pct: number): string {
+    return pct >= 75 ? 'var(--color-success)' : pct >= 50 ? 'var(--color-primary)' : 'var(--color-danger)';
   }
 }

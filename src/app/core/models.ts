@@ -91,7 +91,8 @@ export interface MarksDoc {
   classId: string;
   examId: string;
   subject: string;
-  scores: Record<string, number>; // studentId -> score (out of 100)
+  maxMarks?: number; // defaults to 100 when absent
+  scores: Record<string, number>; // studentId -> score
 }
 
 export interface TimetableDoc {

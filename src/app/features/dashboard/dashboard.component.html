@@ -157,7 +157,7 @@
         <div class="flex items-center gap-2.5 mb-2.5 text-xs">
           <span class="w-16 font-medium">{{ m.subject }}</span>
           <div class="flex-1 bg-line rounded-full h-2">
-            <div class="h-2 rounded-full transition-all" [style.width.%]="m.score" [style.background]="barColor(m.score)"></div>
+            <div class="h-2 rounded-full transition-all" [style.width.%]="m.score / m.max * 100" [style.background]="barColor(m.score / m.max * 100)"></div>
           </div>
           <span class="font-bold w-8 text-right">{{ m.score }}</span>
         </div>
