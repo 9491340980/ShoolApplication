@@ -32,7 +32,11 @@ export class NotifyService {
     return this.fill(this.i18n.t('feeMsg'), { name, cls: classId, amt: amount, due: dueDate, school: this.school() });
   }
 
-  /** A compact progress-report summary as a WhatsApp/SMS text message. */
+  /**
+   * Progress report as a *designed* WhatsApp message — bold (*..*), an aligned
+   * monospace marks table (```..```), emojis and separators. Auto-targets the
+   * parent's number (free), and looks like a card rather than plain text.
+   */
   reportMessage(info: {
     name: string;
     classId: string;
@@ -48,19 +52,27 @@ export class NotifyService {
     pass: boolean;
   }): string {
     const t = (k: Parameters<TranslateService['t']>[0]) => this.i18n.t(k);
-    const lines = [
-      `📋 ${this.school()}`,
-      `${t('reportCard')} — ${info.examLabel}`,
-      `${info.name} | ${t('class')} ${info.classId} | ${t('rollNo')} ${info.roll}`,
-      '',
-      ...info.marks.map((m) => `${m.subject}: ${m.score}/${m.max}`),
-      '',
-      `${t('total')}: ${info.total}/${info.maxTotal} (${info.pct}%)`,
-      `${t('rank')}: ${info.rank}/${info.classSize}`,
-      `${t('attendanceLabel')}: ${info.attPct === null ? '—' : info.attPct + '%'}`,
-      `${t('resultLabel')}: ${info.pass ? t('pass') : 'FAIL'}`,
-    ];
-    return lines.join('\n');
+    const sep = '━━━━━━━━━━━━━━';
+    const w = Math.max(7, ...info.marks.map((m) => m.subject.length));
+    const table = info.marks
+      .map((m) => `${m.subject.padEnd(w)} ${String(m.score).padStart(3)}/${m.max}`)
+      .join('\n');
+    return [
+      `🏫 *${this.school()}*`,
+      `📋 *${t('reportCard')}* — ${info.examLabel}`,
+      sep,
+      `👤 *${info.name}*`,
+      `${t('class')} ${info.classId}  •  ${t('rollNo')} ${info.roll}`,
+      sep,
+      '```',
+      table,
+      '```',
+      `*${t('total')}:* ${info.total}/${info.maxTotal}  (*${info.pct}%*)`,
+      `🏆 *${t('rank')}:* ${info.rank}/${info.classSize}`,
+      `📅 *${t('attendanceLabel')}:* ${info.attPct === null ? '—' : info.attPct + '%'}`,
+      `${info.pass ? '✅' : '❌'} *${t('resultLabel')}:* ${info.pass ? t('pass') : 'FAIL'}`,
+      sep,
+    ].join('\n');
   }
 
   /** 10-digit Indian numbers get a 91 country code for wa.me. */

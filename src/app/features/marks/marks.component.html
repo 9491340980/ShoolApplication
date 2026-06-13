@@ -249,8 +249,9 @@
         <button class="text-muted hover:text-ink cursor-pointer text-sm font-semibold" (click)="closeReport()">✕ {{ 'close' | t }}</button>
         <div class="flex gap-2 flex-wrap">
           <button class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold px-3 py-1.5" (click)="sendReportImage(r.student, reportExamId())">🖼️ {{ 'sendImage' | t }}</button>
+          <button class="btn-sm rounded-lg bg-[#128C7E] text-white font-semibold px-3 py-1.5" (click)="sendReportWa(r.student, reportExamId())">💬 {{ 'whatsapp' | t }}</button>
           <button class="btn-sm rounded-lg bg-primary text-white font-semibold px-3 py-1.5" (click)="sendReportPdf(r.student, reportExamId())">📄 {{ 'sendPdf' | t }}</button>
-          <a class="btn-sm rounded-lg border border-line text-muted font-semibold px-3 py-1.5 inline-flex items-center" [href]="smsReportLink(r.student, reportExamId())">✉️ {{ 'sms' | t }}</a>
+          <a class="btn-sm rounded-lg border border-line text-muted font-semibold px-3 py-1.5 inline-flex items-center" [href]="smsReportLink(r.student, reportExamId())">✉️</a>
           <button class="btn-outline btn-sm" (click)="printReport()">🖨️</button>
         </div>
       </div>
