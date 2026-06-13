@@ -24,7 +24,7 @@
 
 <div class="card !p-0 overflow-hidden">
   <div class="overflow-x-auto">
-    <table class="w-full border-collapse text-[13.5px]">
+    <table class="rtable w-full border-collapse text-[13.5px]">
       <thead>
         <tr>
           <th class="th">{{ 'teacherName' | t }}</th>
@@ -38,12 +38,12 @@
       <tbody>
         @for (tch of filtered(); track tch.id) {
           <tr class="hover:bg-blue-50/40">
-            <td class="td font-bold">{{ tch.name }}</td>
-            <td class="td"><span class="badge badge-blue">{{ tch.subjects.join(', ') }}</span></td>
-            <td class="td">{{ tch.classes.join(', ') }}</td>
-            <td class="td">{{ tch.experienceYears }} yrs</td>
-            <td class="td">📞 {{ tch.phone }}</td>
-            <td class="td"><span class="badge badge-green">✓ {{ 'active' | t }}</span></td>
+            <td class="td font-bold" [attr.data-label]="'teacherName' | t">{{ tch.name }}</td>
+            <td class="td" [attr.data-label]="'subjects' | t"><span class="badge badge-blue">{{ tch.subjects.join(', ') }}</span></td>
+            <td class="td" [attr.data-label]="'classes' | t">{{ tch.classes.join(', ') }}</td>
+            <td class="td" [attr.data-label]="'experience' | t">{{ tch.experienceYears }} yrs</td>
+            <td class="td" [attr.data-label]="'phone' | t">📞 {{ tch.phone }}</td>
+            <td class="td" [attr.data-label]="'status' | t"><span class="badge badge-green">✓ {{ 'active' | t }}</span></td>
           </tr>
         }
       </tbody>

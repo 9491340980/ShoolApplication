@@ -76,7 +76,7 @@
       </div>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full border-collapse text-[13.5px]">
+      <table class="rtable w-full border-collapse text-[13.5px]">
         <thead>
           <tr>
             <th class="th">{{ 'studentName' | t }}</th>
@@ -90,12 +90,12 @@
         <tbody>
           @for (row of pendingRows(); track row.fee.id) {
             <tr class="hover:bg-blue-50/40">
-              <td class="td font-bold">{{ row.student?.name }}</td>
-              <td class="td"><span class="badge badge-blue">{{ row.student?.classId }}</span></td>
-              <td class="td text-danger font-bold">₹{{ row.fee.amount }}</td>
-              <td class="td"><span class="badge badge-yellow">{{ row.fee.dueDate }}</span></td>
-              <td class="td">📞 {{ row.student?.parentPhone }}</td>
-              <td class="td">
+              <td class="td font-bold" [attr.data-label]="'studentName' | t">{{ row.student?.name }}</td>
+              <td class="td" [attr.data-label]="'class' | t"><span class="badge badge-blue">{{ row.student?.classId }}</span></td>
+              <td class="td text-danger font-bold" [attr.data-label]="'amountDue' | t">₹{{ row.fee.amount }}</td>
+              <td class="td" [attr.data-label]="'dueDate' | t"><span class="badge badge-yellow">{{ row.fee.dueDate }}</span></td>
+              <td class="td" [attr.data-label]="'parentPhone' | t">📞 {{ row.student?.parentPhone }}</td>
+              <td class="td" [attr.data-label]="'action' | t">
                 <button class="btn-green btn-sm" (click)="data.markFeePaid(row.fee.id)">✓ {{ 'markPaid' | t }}</button>
               </td>
             </tr>

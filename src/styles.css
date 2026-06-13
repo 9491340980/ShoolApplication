@@ -64,3 +64,68 @@ body {
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* Never let the page itself scroll sideways — content must fit the phone. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ===== MOBILE: native-app feel ===== */
+@media (max-width: 1023px) {
+  /* iOS zooms the whole page when focusing a field under 16px and never
+     zooms back. Force 16px on touch so tapping a field doesn't zoom. */
+  input,
+  select,
+  textarea,
+  .input {
+    font-size: 16px !important;
+  }
+
+  /* Turn wide data tables into stacked cards (label : value rows). */
+  table.rtable thead {
+    display: none;
+  }
+  table.rtable,
+  table.rtable tbody {
+    display: block;
+    width: 100%;
+  }
+  table.rtable tr {
+    display: block;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-line);
+  }
+  table.rtable tr:last-child {
+    border-bottom: none;
+  }
+  table.rtable td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 5px 0 !important;
+    border: none !important;
+    text-align: right;
+    word-break: break-word;
+  }
+  table.rtable td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--color-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    text-align: left;
+  }
+  /* First cell acts as the card's title row. */
+  table.rtable td:first-child {
+    font-size: 16px;
+    padding-bottom: 8px !important;
+  }
+  table.rtable td:first-child::before {
+    align-self: center;
+  }
+}

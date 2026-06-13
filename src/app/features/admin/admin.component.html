@@ -37,7 +37,7 @@
 <div class="card !p-0 overflow-hidden">
   <div class="px-5 py-4 text-[15px] font-bold">{{ 'schools' | t }}</div>
   <div class="overflow-x-auto">
-    <table class="w-full border-collapse text-[13.5px]">
+    <table class="rtable w-full border-collapse text-[13.5px]">
       <thead>
         <tr>
           <th class="th">{{ 'schoolNameLabel' | t }}</th>
@@ -51,16 +51,18 @@
       <tbody>
         @for (s of schoolSvc.schools(); track s.id) {
           <tr class="hover:bg-blue-50/40">
-            <td class="td font-bold">{{ s.name }}<div class="text-[11px] text-muted font-normal">{{ s.address }}</div></td>
-            <td class="td">{{ s.adminEmail }}</td>
-            <td class="td">📞 {{ s.phone }}</td>
-            <td class="td">{{ s.createdAt }}</td>
-            <td class="td">
+            <td class="td font-bold" [attr.data-label]="'schoolNameLabel' | t">
+              <span>{{ s.name }}<span class="block text-[11px] text-muted font-normal">{{ s.address }}</span></span>
+            </td>
+            <td class="td" [attr.data-label]="'adminGmail' | t">{{ s.adminEmail }}</td>
+            <td class="td" [attr.data-label]="'phone' | t">📞 {{ s.phone }}</td>
+            <td class="td" [attr.data-label]="'createdOn' | t">{{ s.createdAt }}</td>
+            <td class="td" [attr.data-label]="'status' | t">
               <span class="badge" [class]="s.active ? 'badge-green' : 'badge-red'">
                 {{ (s.active ? 'active' : 'inactive') | t }}
               </span>
             </td>
-            <td class="td">
+            <td class="td" [attr.data-label]="'action' | t">
               @if (s.active) {
                 <button class="btn-red btn-sm" (click)="schoolSvc.setSchoolActive(s.id, false)">{{ 'deactivate' | t }}</button>
               } @else {
