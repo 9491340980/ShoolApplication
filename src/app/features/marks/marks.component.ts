@@ -6,7 +6,7 @@ import { DataService } from '../../core/data.service';
 import { BulkSendService } from '../../core/bulk-send.service';
 import { CLASSES, DEMO_SCHOOL_ID, EXAMS, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
-import { buildReportPdf, sharePdf } from '../../core/report-pdf';
+import { buildReportPdf, shareElementImage, sharePdf } from '../../core/report-pdf';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
@@ -264,6 +264,13 @@ export class MarksComponent {
       pass: r.pass,
     });
     await sharePdf(doc, `ReportCard-${s.name.replace(/\s+/g, '_')}.pdf`, this.reportText(s, exam));
+  }
+
+  /** Capture the on-screen report card as an image and share it (shows inline in WhatsApp). */
+  async sendReportImage(s: Student, exam: string) {
+    const el = document.getElementById('report-card');
+    if (!el) return;
+    await shareElementImage(el, `ReportCard-${s.name.replace(/\s+/g, '_')}.png`, this.reportText(s, exam));
   }
 
   /** SMS text fallback for parents without WhatsApp. */

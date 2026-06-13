@@ -254,6 +254,7 @@ export const DICT = {
     bulkAllSent: 'All done!',
     bulkHint: 'Tap to open this parent’s WhatsApp, hit send, then continue.',
     sendPdf: 'Send PDF',
+    sendImage: 'Send Image',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -492,5 +493,6 @@ export const DICT = {
     bulkAllSent: 'అన్నీ పంపబడ్డాయి!',
     bulkHint: 'ఈ తల్లిదండ్రుల వాట్సాప్ తెరిచి పంపండి, తర్వాత కొనసాగండి.',
     sendPdf: 'PDF పంపండి',
+    sendImage: 'ఇమేజ్ పంపండి',
   },
 } satisfies Record<Lang, Record<string, string>>;

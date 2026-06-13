@@ -21,6 +21,7 @@
     "@angular/service-worker": "^21.2.0",
     "@tailwindcss/postcss": "^4.3.0",
     "firebase": "^12.14.0",
+    "html2canvas-pro": "^2.0.4",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "postcss": "^8.5.15",

@@ -1,3 +1,4 @@
+import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -102,13 +103,9 @@ export function buildReportPdf(info: ReportPdfInfo): jsPDF {
   return doc;
 }
 
-/**
- * Share the PDF via the phone's native share sheet (WhatsApp, etc.).
- * Returns 'shared', 'downloaded' (fallback when file-share unsupported), or 'cancelled'.
- */
-export async function sharePdf(doc: jsPDF, fileName: string, text: string): Promise<'shared' | 'downloaded' | 'cancelled'> {
-  const blob = doc.output('blob');
-  const file = new File([blob], fileName, { type: 'application/pdf' });
+type ShareResult = 'shared' | 'downloaded' | 'cancelled';
+
+async function shareFile(file: File, text: string, fallback: () => void): Promise<ShareResult> {
   const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean };
   if (nav.canShare && nav.canShare({ files: [file] })) {
     try {
@@ -118,6 +115,31 @@ export async function sharePdf(doc: jsPDF, fileName: string, text: string): Prom
       return 'cancelled';
     }
   }
-  doc.save(fileName);
+  fallback();
   return 'downloaded';
+}
+
+/** Share the PDF via the phone's native share sheet (WhatsApp, etc.). */
+export async function sharePdf(doc: jsPDF, fileName: string, text: string): Promise<ShareResult> {
+  const blob = doc.output('blob');
+  const file = new File([blob], fileName, { type: 'application/pdf' });
+  return shareFile(file, text, () => doc.save(fileName));
+}
+
+/**
+ * Capture a DOM element as a PNG image and share it (shows inline in WhatsApp).
+ * Renders the actual styled card, so Telugu text is preserved.
+ */
+export async function shareElementImage(el: HTMLElement, fileName: string, text: string): Promise<ShareResult> {
+  const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+  const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+  if (!blob) return 'cancelled';
+  const file = new File([blob], fileName, { type: 'image/png' });
+  return shareFile(file, text, () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 }
