@@ -3,7 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
+import { BulkSendService } from '../../core/bulk-send.service';
 import { CLASSES, DEMO_SCHOOL_ID, EXAMS, Student } from '../../core/models';
+import { NotifyService } from '../../core/notify.service';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
@@ -24,6 +26,8 @@ export class MarksComponent {
   auth = inject(AuthService);
   data = inject(DataService);
   private schoolSvc = inject(SchoolService);
+  private notify = inject(NotifyService);
+  bulk = inject(BulkSendService);
 
   exams = EXAMS;
 
@@ -185,10 +189,8 @@ export class MarksComponent {
     window.print();
   }
 
-  reportData = computed(() => {
-    const s = this.reportStudent();
-    if (!s) return null;
-    const exam = this.reportExamId();
+  /** Build the full report-card data for any student & exam. */
+  reportInfoFor(s: Student, exam: string) {
     const marks = this.data.studentMarks(s.id, exam);
     const total = marks.reduce((a, m) => a + m.score, 0);
     const maxTotal = marks.reduce((a, m) => a + m.max, 0);
@@ -210,7 +212,44 @@ export class MarksComponent {
       examLabel: EXAMS.find((e) => e.id === exam)?.label ?? exam,
       pass: pct >= 35,
     };
+  }
+
+  reportData = computed(() => {
+    const s = this.reportStudent();
+    return s ? this.reportInfoFor(s, this.reportExamId()) : null;
   });
+
+  private reportText(s: Student, exam: string): string {
+    const r = this.reportInfoFor(s, exam);
+    return this.notify.reportMessage({
+      name: s.name,
+      classId: s.classId,
+      roll: s.roll,
+      examLabel: r.examLabel,
+      marks: r.marks,
+      total: r.total,
+      maxTotal: r.maxTotal,
+      pct: r.pct,
+      rank: r.rank,
+      classSize: r.classSize,
+      attPct: r.att.pct,
+      pass: r.pass,
+    });
+  }
+
+  /** Send one student's report card to the parent over WhatsApp (opens chat). */
+  sendReportWa(s: Student, exam: string) {
+    window.open(this.notify.whatsappLink(s.parentPhone, this.reportText(s, exam)), '_blank');
+  }
+
+  /** Guided bulk send of report cards for everyone in the selected class who has marks. */
+  sendAllReports() {
+    const exam = this.examId();
+    const items = this.students()
+      .filter((s) => this.data.studentMarks(s.id, exam).length > 0)
+      .map((s) => ({ name: s.name, link: this.notify.whatsappLink(s.parentPhone, this.reportText(s, exam)) }));
+    this.bulk.start(items);
+  }
 
   // ---- parent / student view ----
   viewExamId = signal('quarterly');

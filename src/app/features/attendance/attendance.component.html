@@ -57,7 +57,12 @@
   <!-- ABSENCE ALERTS -->
   @if (absentees().length) {
     <div class="card mt-4">
-      <div class="card-title">📲 {{ 'absentAlerts' | t }} ({{ absentees().length }})</div>
+      <div class="card-title">
+        📲 {{ 'absentAlerts' | t }} ({{ absentees().length }})
+        <button class="ml-auto btn-sm rounded-lg bg-[#25D366] text-white font-semibold px-3 py-1.5" (click)="sendAllAbsence()">
+          🟢 {{ 'sendAllWa' | t }}
+        </button>
+      </div>
       <div class="divide-y divide-line">
         @for (s of absentees(); track s.id) {
           <div class="flex items-center gap-3 py-2.5 flex-wrap">

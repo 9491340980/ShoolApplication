@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
+import { BulkSendService } from '../../core/bulk-send.service';
 import { AttendanceStatus, CLASSES } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { TPipe, TranslateService } from '../../core/translate.service';
@@ -16,6 +17,7 @@ export class AttendanceComponent {
   data = inject(DataService);
   i18n = inject(TranslateService);
   notify = inject(NotifyService);
+  bulk = inject(BulkSendService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
 
@@ -52,6 +54,12 @@ export class AttendanceComponent {
   }
   smsAbsence(s: { name: string; classId: string; parentPhone: string }): string {
     return this.notify.smsLink(s.parentPhone, this.notify.absenceMessage(s.name, s.classId, this.date()));
+  }
+
+  sendAllAbsence() {
+    this.bulk.start(
+      this.absentees().map((s) => ({ name: s.name, link: this.waAbsence(s) })),
+    );
   }
 
   // Load existing attendance whenever class/date changes

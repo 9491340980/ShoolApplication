@@ -6,12 +6,13 @@ import { environment } from '../../environments/environment';
 import { AuthService } from '../core/auth.service';
 import { SchoolService } from '../core/school.service';
 import { TPipe, TranslateService } from '../core/translate.service';
+import { BulkSendBarComponent } from './bulk-send-bar.component';
 import { IconComponent } from './icon.component';
 import { NAV, PAGE_TITLES, ROLE_LABELS } from './nav-config';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, IconComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, IconComponent, BulkSendBarComponent],
   templateUrl: './shell.component.html',
 })
 export class ShellComponent {

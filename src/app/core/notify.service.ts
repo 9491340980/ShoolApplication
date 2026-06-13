@@ -32,6 +32,37 @@ export class NotifyService {
     return this.fill(this.i18n.t('feeMsg'), { name, cls: classId, amt: amount, due: dueDate, school: this.school() });
   }
 
+  /** A compact progress-report summary as a WhatsApp/SMS text message. */
+  reportMessage(info: {
+    name: string;
+    classId: string;
+    roll: string;
+    examLabel: string;
+    marks: { subject: string; score: number; max: number }[];
+    total: number;
+    maxTotal: number;
+    pct: number;
+    rank: number;
+    classSize: number;
+    attPct: number | null;
+    pass: boolean;
+  }): string {
+    const t = (k: Parameters<TranslateService['t']>[0]) => this.i18n.t(k);
+    const lines = [
+      `📋 ${this.school()}`,
+      `${t('reportCard')} — ${info.examLabel}`,
+      `${info.name} | ${t('class')} ${info.classId} | ${t('rollNo')} ${info.roll}`,
+      '',
+      ...info.marks.map((m) => `${m.subject}: ${m.score}/${m.max}`),
+      '',
+      `${t('total')}: ${info.total}/${info.maxTotal} (${info.pct}%)`,
+      `${t('rank')}: ${info.rank}/${info.classSize}`,
+      `${t('attendanceLabel')}: ${info.attPct === null ? '—' : info.attPct + '%'}`,
+      `${t('resultLabel')}: ${info.pass ? t('pass') : 'FAIL'}`,
+    ];
+    return lines.join('\n');
+  }
+
   /** 10-digit Indian numbers get a 91 country code for wa.me. */
   private intl(phone: string): string {
     const d = (phone || '').replace(/\D/g, '');
