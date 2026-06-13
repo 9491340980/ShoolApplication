@@ -155,6 +155,11 @@ export class DataService {
     return this.fs ? `${this.sid}_${parts}` : parts;
   }
 
+  /** Firestore rejects undefined values — drop empty optional fields before writing. */
+  private clean<T extends object>(obj: T): T {
+    return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
+  }
+
   // ---------- Firestore mode ----------
 
   private startListeners(schoolId: string) {
@@ -495,7 +500,7 @@ export class DataService {
   addStudent(input: Omit<Student, 'id' | 'schoolId'>) {
     const id = this.docId(`s${Date.now()}`);
     if (this.fs) {
-      void setDoc(doc(this.fs, 'students', id), { ...input, schoolId: this.sid });
+      void setDoc(doc(this.fs, 'students', id), this.clean({ ...input, schoolId: this.sid }));
       return;
     }
     this.commit({ students: [...this.db().students, { ...input, id }] });
@@ -504,7 +509,7 @@ export class DataService {
   addTeacher(input: Omit<Teacher, 'id' | 'schoolId'>) {
     const id = this.docId(`t${Date.now()}`);
     if (this.fs) {
-      void setDoc(doc(this.fs, 'teachers', id), { ...input, schoolId: this.sid });
+      void setDoc(doc(this.fs, 'teachers', id), this.clean({ ...input, schoolId: this.sid }));
       return;
     }
     this.commit({ teachers: [...this.db().teachers, { ...input, id }] });
@@ -514,7 +519,7 @@ export class DataService {
     // Random suffix: class-wide assignment creates many fees in the same millisecond.
     const id = this.docId(`f${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
     if (this.fs) {
-      void setDoc(doc(this.fs, 'fees', id), { ...input, schoolId: this.sid });
+      void setDoc(doc(this.fs, 'fees', id), this.clean({ ...input, schoolId: this.sid }));
       return;
     }
     this.commit({ fees: [...this.db().fees, { ...input, id }] });
