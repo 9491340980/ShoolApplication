@@ -26,19 +26,45 @@
   @if (showSubjects()) {
     <div class="card mb-4">
       <div class="card-title">⚙️ {{ 'manageSubjects' | t }}</div>
-      <p class="text-xs text-muted mb-3">💡 {{ 'subjectMaxHint' | t }}</p>
-      <div class="flex flex-wrap gap-2 mb-3">
-        @for (s of subjects(); track s.name) {
-          <span class="badge badge-blue !text-[12.5px] !py-1.5 gap-1.5">
-            {{ s.name }} <span class="text-primary/60">/{{ s.max }}</span>
-            <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-1" (click)="data.removeSubject(s.name)">✕</button>
-          </span>
+      <p class="text-xs text-muted mb-3">💡 {{ 'splitHint' | t }}</p>
+
+      <div class="flex flex-wrap gap-2 mb-4">
+        @for (col of entryColumns(); track col.key) {
+          @if (col.group) {
+            <!-- split subject: group of parts -->
+            <div class="border border-line rounded-xl px-3 py-2 bg-page">
+              <div class="text-[12px] font-bold mb-1.5">{{ col.group }} <span class="text-muted font-normal">/{{ col.max }}</span></div>
+              <div class="flex flex-wrap gap-1.5 items-center">
+                @for (p of col.parts; track p.name) {
+                  <span class="badge badge-blue !text-[11.5px] !py-1 gap-1">
+                    {{ p.label }} /{{ p.max }}
+                    <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-0.5" (click)="data.removeSubject(p.name)">✕</button>
+                  </span>
+                }
+                <button class="text-[12px] text-primary font-bold cursor-pointer px-1" (click)="splitFrom(col.group)">＋ {{ 'part' | t }}</button>
+              </div>
+            </div>
+          } @else {
+            <span class="badge badge-blue !text-[12.5px] !py-1.5 gap-1.5 self-start">
+              {{ col.parts[0].name }} <span class="text-primary/60">/{{ col.max }}</span>
+              <button class="cursor-pointer text-amber-600 hover:text-amber-700 font-bold ml-1" (click)="splitFrom(col.parts[0].name)" title="Split">⤴</button>
+              <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold" (click)="data.removeSubject(col.parts[0].name)">✕</button>
+            </span>
+          }
         }
       </div>
-      <div class="flex gap-2 max-w-md flex-wrap">
-        <input class="input flex-1 min-w-[140px]" [placeholder]="'newSubjectPh' | t" [ngModel]="newSubject()" (ngModelChange)="newSubject.set($event)" (keyup.enter)="addSubject()" />
-        <input class="input !w-24 text-center" type="number" min="1" [placeholder]="'maxMarks' | t" [ngModel]="newSubjectMax()" (ngModelChange)="newSubjectMax.set($event)" (keyup.enter)="addSubject()" />
-        <button class="btn-blue shrink-0" (click)="addSubject()">＋</button>
+
+      <div class="grid sm:grid-cols-[1fr_1fr_90px_auto] gap-2 items-end">
+        <label class="text-[11px] text-muted">{{ 'subjectLabel' | t }}
+          <input class="input mt-0.5" [placeholder]="'newSubjectPh' | t" [ngModel]="newSubject()" (ngModelChange)="newSubject.set($event)" (keyup.enter)="addSubject()" />
+        </label>
+        <label class="text-[11px] text-muted">{{ 'partOptional' | t }}
+          <input class="input mt-0.5" placeholder="Theory / Lab…" [ngModel]="newPart()" (ngModelChange)="newPart.set($event)" (keyup.enter)="addSubject()" />
+        </label>
+        <label class="text-[11px] text-muted">{{ 'maxMarks' | t }}
+          <input class="input mt-0.5 text-center" type="number" min="1" [ngModel]="newSubjectMax()" (ngModelChange)="newSubjectMax.set($event)" (keyup.enter)="addSubject()" />
+        </label>
+        <button class="btn-blue h-[38px]" (click)="addSubject()">＋ {{ 'add' | t }}</button>
       </div>
     </div>
   }
@@ -112,8 +138,15 @@
         <thead>
           <tr>
             <th class="th sticky left-0 bg-slate-50 z-10">{{ 'studentName' | t }}</th>
-            @for (sub of subjects(); track sub.name) {
-              <th class="th !text-center">{{ sub.name }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ sub.max }}</div></th>
+            @for (col of entryColumns(); track col.key) {
+              <th class="th !text-center">
+                {{ col.group ?? col.parts[0].name }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ col.max }}</div>
+                @if (col.parts.length > 1) {
+                  <div class="flex justify-center gap-2 text-[8px] font-normal normal-case opacity-70 mt-0.5">
+                    @for (p of col.parts; track p.name) { <span class="w-12 text-center">{{ p.label }}/{{ p.max }}</span> }
+                  </div>
+                }
+              </th>
             }
             <th class="th !text-center">{{ 'total' | t }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ grandMax() }}</div></th>
             <th class="th !text-center">%</th>
@@ -125,17 +158,21 @@
               <td class="td font-semibold whitespace-nowrap sticky left-0 bg-white z-10">
                 <span class="text-muted font-bold mr-1.5">{{ s.roll }}</span>{{ s.name }}
               </td>
-              @for (sub of subjects(); track sub.name) {
+              @for (col of entryColumns(); track col.key) {
                 <td class="td text-center">
-                  <input class="input !w-16 text-center !px-1" type="number" min="0" [max]="sub.max"
-                         [ngModel]="cell(s.id, sub.name)" (ngModelChange)="setCell(s.id, sub.name, $event)" />
+                  <div class="flex justify-center gap-1">
+                    @for (p of col.parts; track p.name) {
+                      <input class="input !w-12 text-center !px-0.5" type="number" min="0" [max]="p.max" [title]="p.label"
+                             [ngModel]="cell(s.id, p.name)" (ngModelChange)="setCell(s.id, p.name, $event)" />
+                    }
+                  </div>
                 </td>
               }
               <td class="td text-center font-bold text-primary whitespace-nowrap">{{ studentTotal(s.id) }}<span class="text-muted font-normal text-[11px]">/{{ grandMax() }}</span></td>
               <td class="td text-center font-bold">{{ studentPct(s.id) }}%</td>
             </tr>
           } @empty {
-            <tr><td class="td text-muted" [attr.colspan]="subjects().length + 3">—</td></tr>
+            <tr><td class="td text-muted" [attr.colspan]="entryColumns().length + 3">—</td></tr>
           }
         </tbody>
       </table>
@@ -150,12 +187,19 @@
             <div class="text-[12px] font-bold text-primary">{{ studentTotal(s.id) }}/{{ grandMax() }} · {{ studentPct(s.id) }}%</div>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            @for (sub of subjects(); track sub.name) {
-              <label class="flex items-center justify-between gap-2 bg-page rounded-lg px-2.5 py-1.5">
-                <span class="text-[12px] font-medium truncate">{{ sub.name }} <span class="text-muted">/{{ sub.max }}</span></span>
-                <input class="w-14 text-center bg-white border border-line rounded-md py-1 text-[15px]" type="number" min="0" [max]="sub.max"
-                       [ngModel]="cell(s.id, sub.name)" (ngModelChange)="setCell(s.id, sub.name, $event)" />
-              </label>
+            @for (col of entryColumns(); track col.key) {
+              <div class="bg-page rounded-lg px-2.5 py-1.5" [class.col-span-2]="col.parts.length > 1">
+                <div class="text-[12px] font-medium mb-1">{{ col.group ?? col.parts[0].name }} <span class="text-muted">/{{ col.max }}</span></div>
+                <div class="flex gap-2">
+                  @for (p of col.parts; track p.name) {
+                    <label class="flex-1 flex items-center justify-between gap-1.5">
+                      @if (col.parts.length > 1) { <span class="text-[11px] text-muted truncate">{{ p.label }}/{{ p.max }}</span> }
+                      <input class="w-14 text-center bg-white border border-line rounded-md py-1 text-[15px]" type="number" min="0" [max]="p.max"
+                             [ngModel]="cell(s.id, p.name)" (ngModelChange)="setCell(s.id, p.name, $event)" />
+                    </label>
+                  }
+                </div>
+              </div>
             }
           </div>
         </div>

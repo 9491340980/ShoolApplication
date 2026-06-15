@@ -56,9 +56,31 @@ export class MarksComponent {
 
   showSubjects = signal(false);
   newSubject = signal('');
+  newPart = signal('');
   newSubjectMax = signal(100);
 
   students = computed(() => this.data.studentsOf(this.classId()));
+
+  /** Group split parts under one heading; standalone subjects stay single. */
+  entryColumns = computed(() => {
+    const cols: { key: string; group?: string; max: number; parts: { name: string; label: string; max: number }[] }[] = [];
+    const idxByGroup = new Map<string, number>();
+    for (const s of this.subjects()) {
+      if (s.group) {
+        let i = idxByGroup.get(s.group);
+        if (i === undefined) {
+          i = cols.length;
+          idxByGroup.set(s.group, i);
+          cols.push({ key: s.group, group: s.group, max: 0, parts: [] });
+        }
+        cols[i].parts.push({ name: s.name, label: s.label ?? s.name, max: s.max });
+        cols[i].max += s.max;
+      } else {
+        cols.push({ key: s.name, max: s.max, parts: [{ name: s.name, label: s.name, max: s.max }] });
+      }
+    }
+    return cols;
+  });
 
   private maxOf(subject: string): number {
     return this.subjects().find((s) => s.name === subject)?.max ?? 100;
@@ -145,9 +167,26 @@ export class MarksComponent {
   }
 
   addSubject() {
-    this.data.addSubject(this.newSubject(), Number(this.newSubjectMax()) || 100);
+    const subject = this.newSubject().trim();
+    const part = this.newPart().trim();
+    const max = Number(this.newSubjectMax()) || 100;
+    if (!subject) return;
+    if (part) {
+      // A named part of a split subject: stored as "Science Theory", grouped under "Science".
+      this.data.addSubject(`${subject} ${part}`, max, subject, part);
+    } else {
+      this.data.addSubject(subject, max);
+    }
     this.newSubject.set('');
+    this.newPart.set('');
     this.newSubjectMax.set(100);
+  }
+
+  /** Prefill the add form to add another part to an existing split subject. */
+  splitFrom(group: string) {
+    this.showSubjects.set(true);
+    this.newSubject.set(group);
+    this.newPart.set('');
   }
 
   grade(score: number | undefined, max = 100): string {

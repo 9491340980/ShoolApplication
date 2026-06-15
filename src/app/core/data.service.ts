@@ -646,10 +646,13 @@ export class DataService {
     this.commit({ timetables: [...rest, { classId, periods, grid }] });
   }
 
-  addSubject(name: string, max = 100) {
+  addSubject(name: string, max = 100, group?: string, label?: string) {
     const clean = name.trim();
     if (!clean || this.subjects().some((s) => s.name === clean)) return;
-    this.saveSubjects([...this.subjects(), { name: clean, max: Math.max(1, max) }]);
+    const sub: Subject = { name: clean, max: Math.max(1, max) };
+    if (group?.trim()) sub.group = group.trim();
+    if (label?.trim()) sub.label = label.trim();
+    this.saveSubjects([...this.subjects(), sub]);
   }
 
   removeSubject(name: string) {

@@ -280,6 +280,11 @@ export const DICT = {
     addPeriod: 'Add Period',
     remove: 'remove',
     timetableHint: 'Type a subject in each slot (suggestions appear). Use BREAK, Lunch, Games or Free as needed. Tap Save.',
+    splitHint: 'Add a subject with its full marks. To split it (e.g. Science → Theory /70 + Lab /30), give a Part name. Use ＋ Part to add more parts.',
+    subjectLabel: 'Subject',
+    partOptional: 'Part (optional)',
+    part: 'Part',
+    add: 'Add',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -544,5 +549,10 @@ export const DICT = {
     addPeriod: 'పీరియడ్ చేర్చండి',
     remove: 'తీసివేయి',
     timetableHint: 'ప్రతి స్లాట్‌లో సబ్జెక్ట్ టైప్ చేయండి (సూచనలు వస్తాయి). అవసరమైతే BREAK, Lunch, Games, Free వాడండి. సేవ్ నొక్కండి.',
+    splitHint: 'సబ్జెక్ట్‌ను దాని గరిష్ట మార్కులతో చేర్చండి. విభజించడానికి (ఉదా. Science → Theory /70 + Lab /30) పార్ట్ పేరు ఇవ్వండి. మరిన్ని పార్ట్‌లకు ＋ Part వాడండి.',
+    subjectLabel: 'సబ్జెక్ట్',
+    partOptional: 'పార్ట్ (ఐచ్ఛికం)',
+    part: 'పార్ట్',
+    add: 'చేర్చు',
   },
 } satisfies Record<Lang, Record<string, string>>;

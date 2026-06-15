@@ -120,10 +120,16 @@ export interface TimetableDoc {
 
 export const CLASSES = ['6A', '7A', '8A', '8B', '9A', '9B', '10A', '10B'];
 
-/** A subject can carry its own full marks (e.g. Science-Theory /70, Science-Lab /30). */
+/**
+ * A subject can carry its own full marks, and optionally be one *part* of a
+ * split subject (e.g. group "Science" → parts Theory /70 + Lab /30). `name` is
+ * the unique storage key; `group` + `label` drive the grouped entry display.
+ */
 export interface Subject {
   name: string;
   max: number;
+  group?: string;
+  label?: string;
 }
 export const SUBJECTS: Subject[] = [
   { name: 'Telugu', max: 100 },
