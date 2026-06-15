@@ -289,6 +289,10 @@ export const DICT = {
     all: 'Everyone',
     parents: 'Parents',
     students: 'Students',
+    batch: 'Batch',
+    batchDone: 'Batch done',
+    nextBatch: 'Next 45',
+    remaining: 'remaining',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -562,5 +566,9 @@ export const DICT = {
     all: 'అందరికీ',
     parents: 'తల్లిదండ్రులు',
     students: 'విద్యార్థులు',
+    batch: 'బ్యాచ్',
+    batchDone: 'బ్యాచ్ పూర్తయింది',
+    nextBatch: 'తదుపరి 45',
+    remaining: 'మిగిలి ఉన్నవి',
   },
 } satisfies Record<Lang, Record<string, string>>;
