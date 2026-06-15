@@ -32,6 +32,12 @@ export class NotifyService {
     return this.fill(this.i18n.t('feeMsg'), { name, cls: classId, amt: amount, due: dueDate, school: this.school() });
   }
 
+  /** A notice as a formatted WhatsApp/SMS message. */
+  noticeMessage(title: string, body: string, type: 'general' | 'urgent' | 'event'): string {
+    const icon = type === 'urgent' ? '⚠️' : type === 'event' ? '🎉' : '📢';
+    return [`${icon} *${this.school()}*`, `*${title}*`, '', body].join('\n');
+  }
+
   /**
    * Progress report as a *designed* WhatsApp message — bold (*..*), an aligned
    * monospace marks table (```..```), emojis and separators. Auto-targets the

@@ -37,7 +37,14 @@
         </span>
       </div>
       <div class="text-xs text-muted leading-relaxed mt-1">{{ n.body }}</div>
-      <div class="text-[11px] text-muted mt-1.5">📅 {{ 'posted' | t }}: {{ n.date }} | {{ 'by' | t }}: {{ n.postedBy }}</div>
+      <div class="text-[11px] text-muted mt-1.5">📅 {{ 'posted' | t }}: {{ n.date }} | {{ 'by' | t }}: {{ n.postedBy }} | 👥 {{ n.audience | t }}</div>
+      @if (isStaff()) {
+        <div class="flex items-center gap-2 mt-2.5 flex-wrap">
+          <span class="text-[11px] font-semibold text-muted">📲 {{ 'sendTo' | t }} ({{ recipientCount(n) }}):</span>
+          <button class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold px-3 py-1.5" (click)="send(n, 'wa')">🟢 {{ 'whatsapp' | t }}</button>
+          <button class="btn-sm rounded-lg bg-primary text-white font-semibold px-3 py-1.5" (click)="send(n, 'sms')">✉️ {{ 'sms' | t }}</button>
+        </div>
+      }
     </div>
   }
 </div>

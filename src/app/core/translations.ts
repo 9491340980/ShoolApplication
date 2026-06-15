@@ -285,6 +285,10 @@ export const DICT = {
     partOptional: 'Part (optional)',
     part: 'Part',
     add: 'Add',
+    sendTo: 'Send to',
+    all: 'Everyone',
+    parents: 'Parents',
+    students: 'Students',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -554,5 +558,9 @@ export const DICT = {
     partOptional: 'పార్ట్ (ఐచ్ఛికం)',
     part: 'పార్ట్',
     add: 'చేర్చు',
+    sendTo: 'పంపండి',
+    all: 'అందరికీ',
+    parents: 'తల్లిదండ్రులు',
+    students: 'విద్యార్థులు',
   },
 } satisfies Record<Lang, Record<string, string>>;
