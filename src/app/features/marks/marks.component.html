@@ -61,7 +61,7 @@
               @for (s of subjects(); track s.name) {
                 <th class="th !text-center">{{ s.name }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ s.max }}</div></th>
               }
-              <th class="th !text-center">{{ 'total' | t }}</th>
+              <th class="th !text-center">{{ 'total' | t }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ grandMax() }}</div></th>
               <th class="th !text-center">%</th>
               <th class="th !text-center">{{ 'rank' | t }}</th>
               <th class="th !text-center">{{ 'reportCard' | t }}</th>
@@ -115,7 +115,7 @@
             @for (sub of subjects(); track sub.name) {
               <th class="th !text-center">{{ sub.name }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ sub.max }}</div></th>
             }
-            <th class="th !text-center">{{ 'total' | t }}</th>
+            <th class="th !text-center">{{ 'total' | t }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ grandMax() }}</div></th>
             <th class="th !text-center">%</th>
           </tr>
         </thead>
@@ -131,7 +131,7 @@
                          [ngModel]="cell(s.id, sub.name)" (ngModelChange)="setCell(s.id, sub.name, $event)" />
                 </td>
               }
-              <td class="td text-center font-bold text-primary">{{ studentTotal(s.id) }}</td>
+              <td class="td text-center font-bold text-primary whitespace-nowrap">{{ studentTotal(s.id) }}<span class="text-muted font-normal text-[11px]">/{{ grandMax() }}</span></td>
               <td class="td text-center font-bold">{{ studentPct(s.id) }}%</td>
             </tr>
           } @empty {
@@ -147,7 +147,7 @@
         <div class="px-4 py-3">
           <div class="flex items-center justify-between mb-2">
             <div class="font-bold text-[15px]"><span class="text-muted mr-1.5">{{ s.roll }}</span>{{ s.name }}</div>
-            <div class="text-[12px] font-bold text-primary">{{ studentTotal(s.id) }} · {{ studentPct(s.id) }}%</div>
+            <div class="text-[12px] font-bold text-primary">{{ studentTotal(s.id) }}/{{ grandMax() }} · {{ studentPct(s.id) }}%</div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             @for (sub of subjects(); track sub.name) {

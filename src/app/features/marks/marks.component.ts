@@ -70,6 +70,9 @@ export class MarksComponent {
     return id.startsWith(`${sid}_`) ? id.slice(sid.length + 1) : id;
   }
 
+  /** Grand total of all subject maxes (e.g. 100×5 + 70 + 30 = 600). */
+  grandMax = computed(() => this.subjects().reduce((a, s) => a + s.max, 0));
+
   /** Load every subject's saved marks for this class & exam into the grid. */
   private loader = effect(() => {
     const cls = this.classId();
@@ -83,7 +86,8 @@ export class MarksComponent {
       if (!docu) continue;
       for (const stu of studs) {
         const v = docu.scores[stu.id] ?? docu.scores[this.rawId(stu.id)];
-        if (v !== undefined) m[stu.id][sub.name] = v;
+        // Clamp to the subject's current max (handles marks saved under an older, higher max).
+        if (v !== undefined) m[stu.id][sub.name] = Math.max(0, Math.min(v, sub.max));
       }
     }
     this.matrix.set(m);
