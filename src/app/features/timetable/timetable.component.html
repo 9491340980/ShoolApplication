@@ -5,46 +5,84 @@
     }
   </select>
   <span class="badge badge-blue">{{ 'academicYear' | t }}</span>
+  @if (isStaff()) {
+    <button class="btn-green ml-auto" (click)="save()">💾 {{ 'save' | t }}</button>
+    @if (saved()) {
+      <span class="badge badge-green">✓ {{ 'attendanceSaved' | t }}</span>
+    }
+  }
 </div>
 
-@if (!doc()) {
-  <div class="card text-center py-10">
-    <div class="text-muted text-sm mb-4">📅 {{ 'noTimetable' | t }}</div>
-    @if (isStaff()) {
-      <button class="btn-blue mx-auto" (click)="data.createDefaultTimetable(classId())">＋ {{ 'createTimetable' | t }}</button>
-    }
-  </div>
-}
+@if (isStaff()) {
+  <!-- EDITABLE -->
+  <datalist id="ttOptions">
+    @for (o of cellOptions(); track o) { <option [value]="o"></option> }
+  </datalist>
 
-@if (doc(); as tt) {
   <div class="card !p-0 overflow-x-auto">
-    <table class="w-full border-collapse min-w-[700px]">
+    <table class="w-full border-collapse min-w-[760px]">
       <thead>
         <tr>
-          <th class="bg-primary text-white text-xs px-3 py-2.5 border border-white/15 text-center">{{ 'period' | t }}</th>
+          <th class="bg-primary text-white text-xs px-3 py-2.5 border border-white/15 text-center w-[120px]">{{ 'period' | t }}</th>
           @for (d of days(); track d) {
             <th class="bg-primary text-white text-xs px-3 py-2.5 border border-white/15 text-center">{{ d }}</th>
           }
         </tr>
       </thead>
       <tbody>
-        @for (p of tt.periods; track $index; let pi = $index) {
+        @for (p of periods(); track $index; let pi = $index) {
           <tr>
-            <td class="bg-slate-50 text-[11px] font-bold text-muted px-3 py-2 border border-line text-center whitespace-nowrap">{{ p }}</td>
-            @for (day of tt.grid; track $index) {
-              @if (day[pi] === 'BREAK') {
-                <td class="bg-accent-light text-amber-600 text-[11px] font-semibold border border-line px-1.5 py-2 text-center">☕ {{ 'breakLabel' | t }}</td>
-              } @else if (day[pi] === '---') {
-                <td class="bg-success-light text-emerald-600 text-[11px] font-semibold border border-line px-1.5 py-2 text-center">{{ 'free' | t }}</td>
-              } @else {
-                <td class="bg-white border border-line px-1.5 py-2 text-center">
-                  <span class="text-[11.5px] font-bold text-primary">{{ day[pi] }}</span>
-                </td>
-              }
+            <td class="bg-slate-50 border border-line px-1.5 py-1.5 align-top">
+              <input class="input !py-1 !px-1.5 !text-[11px] text-center" [ngModel]="periods()[pi]" (ngModelChange)="setPeriod(pi, $event)" placeholder="8:30-9:15" />
+              <button class="block mx-auto mt-1 text-[10px] text-red-500 hover:text-red-700 cursor-pointer" (click)="removePeriod(pi)">✕ {{ 'remove' | t }}</button>
+            </td>
+            @for (d of days(); track $index; let di = $index) {
+              <td class="border border-line px-1 py-1">
+                <input class="input !py-1.5 !px-1.5 !text-[12px] text-center" list="ttOptions"
+                       [ngModel]="grid()[di][pi]" (ngModelChange)="setCell(di, pi, $event)" placeholder="—" />
+              </td>
             }
           </tr>
         }
       </tbody>
     </table>
   </div>
+  <button class="btn-outline mt-3" (click)="addPeriod()">＋ {{ 'addPeriod' | t }}</button>
+  <p class="text-xs text-muted mt-2">💡 {{ 'timetableHint' | t }}</p>
+} @else {
+  <!-- READ-ONLY (parent / student) -->
+  @if (hasTimetable()) {
+    <div class="card !p-0 overflow-x-auto">
+      <table class="w-full border-collapse min-w-[700px]">
+        <thead>
+          <tr>
+            <th class="bg-primary text-white text-xs px-3 py-2.5 border border-white/15 text-center">{{ 'period' | t }}</th>
+            @for (d of days(); track d) {
+              <th class="bg-primary text-white text-xs px-3 py-2.5 border border-white/15 text-center">{{ d }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of periods(); track $index; let pi = $index) {
+            <tr>
+              <td class="bg-slate-50 text-[11px] font-bold text-muted px-3 py-2 border border-line text-center whitespace-nowrap">{{ p }}</td>
+              @for (d of grid(); track $index) {
+                @if (d[pi] === 'BREAK' || d[pi] === 'Lunch') {
+                  <td class="bg-accent-light text-amber-600 text-[11px] font-semibold border border-line px-1.5 py-2 text-center">☕ {{ d[pi] }}</td>
+                } @else if (!d[pi] || d[pi] === 'Free' || d[pi] === '---') {
+                  <td class="bg-success-light text-emerald-600 text-[11px] font-semibold border border-line px-1.5 py-2 text-center">{{ 'free' | t }}</td>
+                } @else {
+                  <td class="bg-white border border-line px-1.5 py-2 text-center">
+                    <span class="text-[11.5px] font-bold text-primary">{{ d[pi] }}</span>
+                  </td>
+                }
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="card text-center text-muted text-sm py-10">{{ 'noTimetable' | t }}</div>
+  }
 }

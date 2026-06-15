@@ -277,6 +277,9 @@ export const DICT = {
     disable: 'Disable',
     enable: 'Enable',
     subjectMaxHint: 'Each subject has its own full marks — e.g. add “Science” /70 and “Science Lab” /30. Totals & % adjust automatically.',
+    addPeriod: 'Add Period',
+    remove: 'remove',
+    timetableHint: 'Type a subject in each slot (suggestions appear). Use BREAK, Lunch, Games or Free as needed. Tap Save.',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -538,5 +541,8 @@ export const DICT = {
     disable: 'నిలిపివేయి',
     enable: 'ప్రారంభించు',
     subjectMaxHint: 'ప్రతి సబ్జెక్ట్‌కు దాని స్వంత గరిష్ట మార్కులు — ఉదా. “Science” /70, “Science Lab” /30 చేర్చండి. మొత్తం & % ఆటోమేటిక్‌గా సర్దుబాటు అవుతాయి.',
+    addPeriod: 'పీరియడ్ చేర్చండి',
+    remove: 'తీసివేయి',
+    timetableHint: 'ప్రతి స్లాట్‌లో సబ్జెక్ట్ టైప్ చేయండి (సూచనలు వస్తాయి). అవసరమైతే BREAK, Lunch, Games, Free వాడండి. సేవ్ నొక్కండి.',
   },
 } satisfies Record<Lang, Record<string, string>>;

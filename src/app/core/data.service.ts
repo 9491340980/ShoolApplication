@@ -628,18 +628,22 @@ export class DataService {
   /** Gives a brand-new school a sensible weekly timetable to start from. */
   createDefaultTimetable(classId: string) {
     const template = DEMO_TIMETABLES[0];
+    this.saveTimetable(classId, template.periods, template.grid);
+  }
+
+  /** Save an edited timetable for a class (grid stored as JSON — Firestore can't nest arrays). */
+  saveTimetable(classId: string, periods: string[], grid: string[][]) {
     if (this.fs) {
       void setDoc(doc(this.fs, 'timetables', this.docId(classId)), {
         schoolId: this.sid,
         classId,
-        periods: template.periods,
-        gridJson: JSON.stringify(template.grid),
+        periods,
+        gridJson: JSON.stringify(grid),
       });
       return;
     }
-    this.commit({
-      timetables: [...this.db().timetables, { classId, periods: template.periods, grid: template.grid }],
-    });
+    const rest = this.db().timetables.filter((t) => t.classId !== classId);
+    this.commit({ timetables: [...rest, { classId, periods, grid }] });
   }
 
   addSubject(name: string, max = 100) {
