@@ -20,28 +20,24 @@
         <option [value]="e.id">{{ e.label }}</option>
       }
     </select>
-    @if (viewMode() === 'entry') {
-      <label class="flex items-center gap-2 text-[13px] font-semibold whitespace-nowrap">
-        {{ 'maxMarks' | t }}:
-        <input class="input !w-20 text-center" type="number" min="1" [ngModel]="maxMarks()" (ngModelChange)="maxMarks.set(+$event || 100)" />
-      </label>
-    }
     <button class="btn-outline btn-sm" (click)="showSubjects.set(!showSubjects())">⚙️ {{ 'manageSubjects' | t }}</button>
   </div>
 
   @if (showSubjects()) {
     <div class="card mb-4">
       <div class="card-title">⚙️ {{ 'manageSubjects' | t }}</div>
+      <p class="text-xs text-muted mb-3">💡 {{ 'subjectMaxHint' | t }}</p>
       <div class="flex flex-wrap gap-2 mb-3">
-        @for (s of subjects(); track s) {
+        @for (s of subjects(); track s.name) {
           <span class="badge badge-blue !text-[12.5px] !py-1.5 gap-1.5">
-            {{ s }}
-            <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-1" (click)="data.removeSubject(s)">✕</button>
+            {{ s.name }} <span class="text-primary/60">/{{ s.max }}</span>
+            <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-1" (click)="data.removeSubject(s.name)">✕</button>
           </span>
         }
       </div>
-      <div class="flex gap-2 max-w-md">
-        <input class="input" [placeholder]="'newSubjectPh' | t" [ngModel]="newSubject()" (ngModelChange)="newSubject.set($event)" (keyup.enter)="addSubject()" />
+      <div class="flex gap-2 max-w-md flex-wrap">
+        <input class="input flex-1 min-w-[140px]" [placeholder]="'newSubjectPh' | t" [ngModel]="newSubject()" (ngModelChange)="newSubject.set($event)" (keyup.enter)="addSubject()" />
+        <input class="input !w-24 text-center" type="number" min="1" [placeholder]="'maxMarks' | t" [ngModel]="newSubjectMax()" (ngModelChange)="newSubjectMax.set($event)" (keyup.enter)="addSubject()" />
         <button class="btn-blue shrink-0" (click)="addSubject()">＋</button>
       </div>
     </div>
@@ -62,8 +58,8 @@
             <tr>
               <th class="th">{{ 'rollNo' | t }}</th>
               <th class="th">{{ 'studentName' | t }}</th>
-              @for (s of subjects(); track s) {
-                <th class="th !text-center">{{ s }}</th>
+              @for (s of subjects(); track s.name) {
+                <th class="th !text-center">{{ s.name }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ s.max }}</div></th>
               }
               <th class="th !text-center">{{ 'total' | t }}</th>
               <th class="th !text-center">%</th>
@@ -116,8 +112,8 @@
         <thead>
           <tr>
             <th class="th sticky left-0 bg-slate-50 z-10">{{ 'studentName' | t }}</th>
-            @for (sub of subjects(); track sub) {
-              <th class="th !text-center">{{ sub }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ maxMarks() }}</div></th>
+            @for (sub of subjects(); track sub.name) {
+              <th class="th !text-center">{{ sub.name }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ sub.max }}</div></th>
             }
             <th class="th !text-center">{{ 'total' | t }}</th>
             <th class="th !text-center">%</th>
@@ -129,10 +125,10 @@
               <td class="td font-semibold whitespace-nowrap sticky left-0 bg-white z-10">
                 <span class="text-muted font-bold mr-1.5">{{ s.roll }}</span>{{ s.name }}
               </td>
-              @for (sub of subjects(); track sub) {
+              @for (sub of subjects(); track sub.name) {
                 <td class="td text-center">
-                  <input class="input !w-16 text-center !px-1" type="number" min="0" [max]="maxMarks()"
-                         [ngModel]="cell(s.id, sub)" (ngModelChange)="setCell(s.id, sub, $event)" />
+                  <input class="input !w-16 text-center !px-1" type="number" min="0" [max]="sub.max"
+                         [ngModel]="cell(s.id, sub.name)" (ngModelChange)="setCell(s.id, sub.name, $event)" />
                 </td>
               }
               <td class="td text-center font-bold text-primary">{{ studentTotal(s.id) }}</td>
@@ -154,11 +150,11 @@
             <div class="text-[12px] font-bold text-primary">{{ studentTotal(s.id) }} · {{ studentPct(s.id) }}%</div>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            @for (sub of subjects(); track sub) {
+            @for (sub of subjects(); track sub.name) {
               <label class="flex items-center justify-between gap-2 bg-page rounded-lg px-2.5 py-1.5">
-                <span class="text-[12px] font-medium truncate">{{ sub }}</span>
-                <input class="w-14 text-center bg-white border border-line rounded-md py-1 text-[15px]" type="number" min="0" [max]="maxMarks()"
-                       [ngModel]="cell(s.id, sub)" (ngModelChange)="setCell(s.id, sub, $event)" />
+                <span class="text-[12px] font-medium truncate">{{ sub.name }} <span class="text-muted">/{{ sub.max }}</span></span>
+                <input class="w-14 text-center bg-white border border-line rounded-md py-1 text-[15px]" type="number" min="0" [max]="sub.max"
+                       [ngModel]="cell(s.id, sub.name)" (ngModelChange)="setCell(s.id, sub.name, $event)" />
               </label>
             }
           </div>

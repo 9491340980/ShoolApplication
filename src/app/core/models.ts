@@ -119,7 +119,20 @@ export interface TimetableDoc {
 }
 
 export const CLASSES = ['6A', '7A', '8A', '8B', '9A', '9B', '10A', '10B'];
-export const SUBJECTS = ['Telugu', 'English', 'Maths', 'Science', 'Social', 'Hindi'];
+
+/** A subject can carry its own full marks (e.g. Science-Theory /70, Science-Lab /30). */
+export interface Subject {
+  name: string;
+  max: number;
+}
+export const SUBJECTS: Subject[] = [
+  { name: 'Telugu', max: 100 },
+  { name: 'English', max: 100 },
+  { name: 'Maths', max: 100 },
+  { name: 'Science', max: 100 },
+  { name: 'Social', max: 100 },
+  { name: 'Hindi', max: 100 },
+];
 export const EXAMS = [
   { id: 'quarterly', label: 'Quarterly Exam' },
   { id: 'halfyearly', label: 'Half Yearly' },

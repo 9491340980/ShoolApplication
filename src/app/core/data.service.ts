@@ -36,6 +36,7 @@ import {
   Notice,
   SUBJECTS,
   Student,
+  Subject,
   Teacher,
   TimetableDoc,
 } from './models';
@@ -51,7 +52,7 @@ interface Db {
   marks: MarksDoc[];
   timetables: TimetableDoc[];
   /** School's own subject list (subject master); empty → default SUBJECTS. */
-  subjectsList?: string[];
+  subjectsList?: Subject[];
   /** School's own class/section list; empty → default CLASSES. */
   classesList?: string[];
 }
@@ -190,8 +191,14 @@ export class DataService {
 
     this.unsubs.push(
       onSnapshot(query(collection(fs, 'subjects'), where('schoolId', '==', schoolId)), (snap) => {
-        const names = snap.empty ? [] : ((snap.docs[0].data()['names'] as string[]) ?? []);
-        this.db.update((db) => ({ ...db, subjectsList: names }));
+        let list: Subject[] = [];
+        if (!snap.empty) {
+          const d = snap.docs[0].data();
+          // New format stores objects; old format stored plain names (max 100).
+          if (Array.isArray(d['subjects'])) list = d['subjects'] as Subject[];
+          else if (Array.isArray(d['names'])) list = (d['names'] as string[]).map((name) => ({ name, max: 100 }));
+        }
+        this.db.update((db) => ({ ...db, subjectsList: list }));
       }),
     );
 
@@ -469,35 +476,33 @@ export class DataService {
     this.commit({ marks: [...rest, { id, classId, examId, subject, maxMarks, scores }] });
   }
 
-  /** Save the whole class × all-subjects grid in one go (one doc per subject). */
+  /** Save the whole class × all-subjects grid in one go (one doc per subject, each with its own max). */
   saveMarksMatrix(
     classId: string,
     examId: string,
-    maxMarks: number,
-    bySubject: Record<string, Record<string, number>>,
+    entries: { subject: string; max: number; scores: Record<string, number> }[],
   ) {
-    const subjects = Object.keys(bySubject);
     if (this.fs) {
       const batch = writeBatch(this.fs);
-      for (const subject of subjects) {
-        const id = this.docId(`${classId}_${examId}_${subject}`);
+      for (const e of entries) {
+        const id = this.docId(`${classId}_${examId}_${e.subject}`);
         batch.set(doc(this.fs, 'marks', id), {
           schoolId: this.sid,
           classId,
           examId,
-          subject,
-          maxMarks,
-          scores: bySubject[subject],
+          subject: e.subject,
+          maxMarks: e.max,
+          scores: e.scores,
         });
       }
       void batch.commit();
       return;
     }
     let marks = this.db().marks;
-    for (const subject of subjects) {
-      const id = this.docId(`${classId}_${examId}_${subject}`);
+    for (const e of entries) {
+      const id = this.docId(`${classId}_${examId}_${e.subject}`);
       marks = marks.filter((m) => m.id !== id);
-      marks = [...marks, { id, classId, examId, subject, maxMarks, scores: bySubject[subject] }];
+      marks = [...marks, { id, classId, examId, subject: e.subject, maxMarks: e.max, scores: e.scores }];
     }
     this.commit({ marks });
   }
@@ -637,22 +642,22 @@ export class DataService {
     });
   }
 
-  addSubject(name: string) {
+  addSubject(name: string, max = 100) {
     const clean = name.trim();
-    if (!clean || this.subjects().includes(clean)) return;
-    this.saveSubjects([...this.subjects(), clean]);
+    if (!clean || this.subjects().some((s) => s.name === clean)) return;
+    this.saveSubjects([...this.subjects(), { name: clean, max: Math.max(1, max) }]);
   }
 
   removeSubject(name: string) {
-    this.saveSubjects(this.subjects().filter((s) => s !== name));
+    this.saveSubjects(this.subjects().filter((s) => s.name !== name));
   }
 
-  private saveSubjects(names: string[]) {
+  private saveSubjects(subjects: Subject[]) {
     if (this.fs) {
-      void setDoc(doc(this.fs, 'subjects', this.docId('list')), { schoolId: this.sid, names });
+      void setDoc(doc(this.fs, 'subjects', this.docId('list')), { schoolId: this.sid, subjects });
       return;
     }
-    this.commit({ subjectsList: names });
+    this.commit({ subjectsList: subjects });
   }
 
   addClass(name: string) {

@@ -276,6 +276,7 @@ export const DICT = {
     disabled: 'Disabled',
     disable: 'Disable',
     enable: 'Enable',
+    subjectMaxHint: 'Each subject has its own full marks — e.g. add “Science” /70 and “Science Lab” /30. Totals & % adjust automatically.',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -536,5 +537,6 @@ export const DICT = {
     disabled: 'నిలిపివేయబడింది',
     disable: 'నిలిపివేయి',
     enable: 'ప్రారంభించు',
+    subjectMaxHint: 'ప్రతి సబ్జెక్ట్‌కు దాని స్వంత గరిష్ట మార్కులు — ఉదా. “Science” /70, “Science Lab” /30 చేర్చండి. మొత్తం & % ఆటోమేటిక్‌గా సర్దుబాటు అవుతాయి.',
   },
 } satisfies Record<Lang, Record<string, string>>;

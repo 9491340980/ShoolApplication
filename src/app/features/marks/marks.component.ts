@@ -50,15 +50,19 @@ export class MarksComponent {
     if (allowed.length && !allowed.includes(this.classId())) this.classId.set(allowed[0]);
   });
   examId = signal('quarterly');
-  maxMarks = signal(100);
-  /** studentId -> subject -> score */
+  /** studentId -> subjectName -> score */
   matrix = signal<Record<string, Record<string, number>>>({});
   saved = signal(false);
 
   showSubjects = signal(false);
   newSubject = signal('');
+  newSubjectMax = signal(100);
 
   students = computed(() => this.data.studentsOf(this.classId()));
+
+  private maxOf(subject: string): number {
+    return this.subjects().find((s) => s.name === subject)?.max ?? 100;
+  }
 
   /** Seeded demo data keys scores by raw ids (s01); new data by full doc ids. */
   private rawId(id: string): string {
@@ -73,19 +77,16 @@ export class MarksComponent {
     const subs = this.subjects();
     const studs = this.students();
     const m: Record<string, Record<string, number>> = {};
-    let loadedMax: number | undefined;
     for (const stu of studs) m[stu.id] = {};
     for (const sub of subs) {
-      const docu = this.data.marksDoc(cls, exam, sub);
+      const docu = this.data.marksDoc(cls, exam, sub.name);
       if (!docu) continue;
-      if (loadedMax === undefined) loadedMax = docu.maxMarks ?? 100;
       for (const stu of studs) {
         const v = docu.scores[stu.id] ?? docu.scores[this.rawId(stu.id)];
-        if (v !== undefined) m[stu.id][sub] = v;
+        if (v !== undefined) m[stu.id][sub.name] = v;
       }
     }
     this.matrix.set(m);
-    if (loadedMax !== undefined) this.maxMarks.set(loadedMax);
   });
 
   cell(studentId: string, subject: string): number | undefined {
@@ -93,7 +94,7 @@ export class MarksComponent {
   }
 
   setCell(studentId: string, subject: string, value: string) {
-    const max = this.maxMarks() || 100;
+    const max = this.maxOf(subject);
     const raw = value === '' ? NaN : Number(value);
     this.matrix.update((m) => {
       const row = { ...(m[studentId] ?? {}) };
@@ -112,36 +113,37 @@ export class MarksComponent {
     return Object.values(row).reduce((sum, v) => sum + v, 0);
   }
 
-  private studentFilled(studentId: string): number {
-    return Object.keys(this.matrix()[studentId] ?? {}).length;
+  /** Sum of max marks across the subjects this student actually has scores for. */
+  private studentMaxTotal(studentId: string): number {
+    const row = this.matrix()[studentId] ?? {};
+    return Object.keys(row).reduce((sum, sub) => sum + this.maxOf(sub), 0);
   }
 
   studentPct(studentId: string): number {
-    const filled = this.studentFilled(studentId);
-    if (!filled) return 0;
-    const max = (this.maxMarks() || 100) * filled;
+    const max = this.studentMaxTotal(studentId);
+    if (!max) return 0;
     return Math.round((this.studentTotal(studentId) / max) * 1000) / 10;
   }
 
   save() {
-    const bySubject: Record<string, Record<string, number>> = {};
     const m = this.matrix();
-    for (const sub of this.subjects()) {
+    const entries = this.subjects().map((sub) => {
       const scores: Record<string, number> = {};
       for (const stu of this.students()) {
-        const v = m[stu.id]?.[sub];
+        const v = m[stu.id]?.[sub.name];
         if (v !== undefined && !Number.isNaN(v)) scores[stu.id] = v;
       }
-      bySubject[sub] = scores;
-    }
-    this.data.saveMarksMatrix(this.classId(), this.examId(), this.maxMarks() || 100, bySubject);
+      return { subject: sub.name, max: sub.max, scores };
+    });
+    this.data.saveMarksMatrix(this.classId(), this.examId(), entries);
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2500);
   }
 
   addSubject() {
-    this.data.addSubject(this.newSubject());
+    this.data.addSubject(this.newSubject(), Number(this.newSubjectMax()) || 100);
     this.newSubject.set('');
+    this.newSubjectMax.set(100);
   }
 
   grade(score: number | undefined, max = 100): string {
@@ -162,7 +164,7 @@ export class MarksComponent {
     const rows = this.students().map((student) => {
       const marks = this.data.studentMarks(student.id, this.examId());
       const bySubject = new Map(marks.map((m) => [m.subject, m.score]));
-      const scores = subjects.map((sub) => bySubject.get(sub));
+      const scores = subjects.map((sub) => bySubject.get(sub.name));
       const total = marks.reduce((sum, m) => sum + m.score, 0);
       const maxTotal = marks.reduce((sum, m) => sum + m.max, 0);
       const pct = maxTotal ? Math.round((total / maxTotal) * 1000) / 10 : 0;
