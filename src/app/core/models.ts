@@ -28,6 +28,8 @@ export interface AppUser {
   studentId?: string;
   /** For teachers: class they are in charge of. */
   classId?: string;
+  /** When true, the account cannot sign in (e.g. a teacher who left the school). */
+  disabled?: boolean;
 }
 
 export interface Student {

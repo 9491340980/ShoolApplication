@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { CLASSES, Role } from '../../core/models';
+import { Role } from '../../core/models';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 import { ROLE_LABELS } from '../../layout/nav-config';
@@ -19,9 +19,20 @@ export class UsersComponent {
   schoolSvc = inject(SchoolService);
   data = inject(DataService);
 
-  classes = CLASSES;
+  classes = computed(() => this.data.schoolClasses());
   roleLabels = ROLE_LABELS;
   creatableRoles: CreatableRole[] = ['teacher', 'parent', 'student'];
+
+  // class management
+  newClassName = signal('');
+  addClass() {
+    this.data.addClass(this.newClassName());
+    this.newClassName.set('');
+  }
+
+  toggleUserDisabled(u: { id: string; disabled?: boolean }) {
+    void this.schoolSvc.setUserDisabled(u.id, !u.disabled);
+  }
 
   name = signal('');
   email = signal('');

@@ -111,6 +111,12 @@ export class SchoolService {
     await updateDoc(doc(this.fs, 'schools', schoolId), { active });
   }
 
+  /** Disable/enable a user's access (e.g. a teacher who left the school). */
+  async setUserDisabled(uid: string, disabled: boolean) {
+    if (!this.fs) return;
+    await updateDoc(doc(this.fs, 'users', uid), { disabled });
+  }
+
   // ---- super admin: manage a specific school's class teachers ----
 
   /** Start live-loading the chosen school's teachers + class-teacher assignments. */

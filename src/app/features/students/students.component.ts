@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { CLASSES, Student } from '../../core/models';
+import { Student } from '../../core/models';
 import { TPipe } from '../../core/translate.service';
 import { TKey } from '../../core/translations';
 
@@ -25,10 +25,10 @@ export class StudentsComponent {
   /** Fees/fee status are visible to the Head Master only. */
   isHM = computed(() => this.auth.role() === 'headmaster');
 
-  /** Teacher sees only their assigned classes; Head Master sees all. */
+  /** Teacher sees only their assigned classes; Head Master sees all of the school's classes. */
   classes = computed(() => {
     if (this.auth.role() === 'teacher') return this.data.classesForTeacher(this.auth.user()!.id);
-    return [...CLASSES];
+    return this.data.schoolClasses();
   });
 
   private classDefault = effect(() => {

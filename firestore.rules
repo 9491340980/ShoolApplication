@@ -23,6 +23,7 @@ service cloud.firestore {
     match /teachers/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /timetables/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /subjects/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /classesList/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /fees/{id}       { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /attendance/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /marks/{id}      { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }

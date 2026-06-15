@@ -2,7 +2,6 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { CLASSES } from '../../core/models';
 import { TPipe, TranslateService } from '../../core/translate.service';
 
 @Component({
@@ -15,7 +14,7 @@ export class TimetableComponent {
   data = inject(DataService);
   i18n = inject(TranslateService);
 
-  classes = CLASSES;
+  classes = computed(() => this.data.schoolClasses());
   classId = signal(this.auth.user()?.classId ?? this.data.student(this.auth.user()?.studentId ?? '')?.classId ?? '8A');
 
   doc = computed(() => this.data.timetable(this.classId()));

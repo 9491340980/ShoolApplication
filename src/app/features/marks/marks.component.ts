@@ -4,7 +4,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { BulkSendService } from '../../core/bulk-send.service';
-import { CLASSES, DEMO_SCHOOL_ID, EXAMS, Student } from '../../core/models';
+import { DEMO_SCHOOL_ID, EXAMS, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { buildReportPdf, shareElementImage, sharePdf } from '../../core/report-pdf';
 import { SchoolService } from '../../core/school.service';
@@ -38,7 +38,7 @@ export class MarksComponent {
   /** Teacher sees only their assigned classes; Head Master sees all. */
   classes = computed(() => {
     if (this.auth.role() === 'teacher') return this.data.classesForTeacher(this.auth.user()!.id);
-    return CLASSES;
+    return this.data.schoolClasses();
   });
 
   // ---- staff entry (whole class × all subjects in one grid) ----

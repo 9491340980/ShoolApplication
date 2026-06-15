@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../core/data.service';
-import { CLASSES, EXAMS } from '../../core/models';
+import { EXAMS } from '../../core/models';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -17,7 +17,7 @@ export class ReportsComponent {
   examId = signal('quarterly');
 
   private classesWithStudents = computed(() =>
-    CLASSES.filter((c) => this.data.studentsOf(c).length > 0),
+    this.data.schoolClasses().filter((c) => this.data.studentsOf(c).length > 0),
   );
 
   // ---- fee report ----

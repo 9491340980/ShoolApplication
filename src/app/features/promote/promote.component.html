@@ -12,8 +12,8 @@
       <span class="font-bold text-[15px] w-12 shrink-0">{{ r.classId }}</span>
       <span class="text-[12px] text-muted shrink-0">{{ r.count }} {{ 'totalStudents' | t }}</span>
       <span class="text-muted">→</span>
-      <select class="input max-w-[130px]" [ngModel]="target()[r.classId]" (ngModelChange)="setTarget(r.classId, $event)">
-        @for (t of targets; track t) {
+      <select class="input max-w-[130px]" [ngModel]="targetOf(r.classId)" (ngModelChange)="setTarget(r.classId, $event)">
+        @for (t of targets(); track t) {
           <option [value]="t">{{ t === 'PASSED' ? ('graduate' | t) : ('class' | t) + ' ' + t }}</option>
         }
       </select>

@@ -29,7 +29,7 @@
     @if (needsClass()) {
       <select class="input" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
         <option value="">{{ 'class' | t }}...</option>
-        @for (c of classes; track c) {
+        @for (c of classes(); track c) {
           <option [value]="c">{{ c }}</option>
         }
       </select>
@@ -46,12 +46,30 @@
   </div>
 </div>
 
+<!-- MANAGE CLASSES -->
+<div class="card mb-4">
+  <div class="card-title">🏫 {{ 'manageClasses' | t }}</div>
+  <p class="text-xs text-muted mb-3">💡 {{ 'classesHint' | t }}</p>
+  <div class="flex flex-wrap gap-2 mb-3">
+    @for (c of classes(); track c) {
+      <span class="badge badge-blue !text-[12.5px] !py-1.5 gap-1.5">
+        {{ c }}
+        <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-1" (click)="data.removeClass(c)">✕</button>
+      </span>
+    }
+  </div>
+  <div class="flex gap-2 max-w-xs">
+    <input class="input" [placeholder]="'newClassPh' | t" [ngModel]="newClassName()" (ngModelChange)="newClassName.set($event)" (keyup.enter)="addClass()" />
+    <button class="btn-blue shrink-0" (click)="addClass()">＋</button>
+  </div>
+</div>
+
 <!-- CLASS TEACHERS -->
 <div class="card mb-4">
   <div class="card-title">🧑‍🏫 {{ 'classTeachers' | t }}</div>
   <p class="text-xs text-muted mb-3">💡 {{ 'reassignHint' | t }}</p>
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-    @for (c of classes; track c) {
+    @for (c of classes(); track c) {
       <div class="flex items-center gap-2 bg-page rounded-lg px-3 py-2">
         <span class="font-bold text-[13px] w-12 shrink-0">{{ c }}</span>
         <select class="input !py-1.5 !text-[13px]"
@@ -94,7 +112,7 @@
 </div>
 
 <div class="card !p-0 overflow-hidden">
-  <div class="px-5 py-4 text-[15px] font-bold">👥 {{ 'userManagement' | t }}</div>
+  <div class="px-5 py-4 text-[15px] font-bold">👥 {{ 'userManagement' | t }} ({{ schoolSvc.schoolUsers().length }})</div>
   <div class="overflow-x-auto">
     <table class="rtable w-full border-collapse text-[13.5px]">
       <thead>
@@ -103,18 +121,30 @@
           <th class="th">{{ 'email' | t }}</th>
           <th class="th">{{ 'roleLabel' | t }}</th>
           <th class="th">{{ 'class' | t }}</th>
+          <th class="th">{{ 'status' | t }}</th>
+          <th class="th">{{ 'action' | t }}</th>
         </tr>
       </thead>
       <tbody>
         @for (u of schoolSvc.schoolUsers(); track u.id) {
-          <tr class="hover:bg-blue-50/40">
+          <tr class="hover:bg-blue-50/40" [class.opacity-60]="u.disabled">
             <td class="td font-bold" [attr.data-label]="'fullName' | t">{{ u.name }}</td>
             <td class="td" [attr.data-label]="'email' | t">{{ u.email }}</td>
             <td class="td" [attr.data-label]="'roleLabel' | t"><span class="badge badge-blue">{{ roleLabels[u.role].icon }} {{ roleLabels[u.role].label | t }}</span></td>
             <td class="td" [attr.data-label]="'class' | t">{{ u.classId ?? '—' }}</td>
+            <td class="td" [attr.data-label]="'status' | t">
+              <span class="badge" [class]="u.disabled ? 'badge-red' : 'badge-green'">{{ (u.disabled ? 'disabled' : 'active') | t }}</span>
+            </td>
+            <td class="td" [attr.data-label]="'action' | t">
+              @if (u.disabled) {
+                <button class="btn-green btn-sm" (click)="toggleUserDisabled(u)">{{ 'enable' | t }}</button>
+              } @else {
+                <button class="btn-red btn-sm" (click)="toggleUserDisabled(u)">{{ 'disable' | t }}</button>
+              }
+            </td>
           </tr>
         } @empty {
-          <tr><td class="td text-muted" colspan="4">{{ 'noUsersYet' | t }}</td></tr>
+          <tr><td class="td text-muted" colspan="6">{{ 'noUsersYet' | t }}</td></tr>
         }
       </tbody>
     </table>

@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { CLASSES, FeeItem, Student } from '../../core/models';
+import { FeeItem, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { TPipe } from '../../core/translate.service';
 
@@ -17,7 +17,7 @@ export class FeesComponent {
   notify = inject(NotifyService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
-  classes = CLASSES;
+  classes = computed(() => this.data.schoolClasses());
 
   // ---- staff: section-wise fee collection ----
   classId = signal('8A');

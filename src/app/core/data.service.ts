@@ -29,6 +29,7 @@ import {
 import {
   AttendanceDoc,
   AttendanceStatus,
+  CLASSES,
   DEMO_SCHOOL_ID,
   FeeItem,
   MarksDoc,
@@ -51,6 +52,8 @@ interface Db {
   timetables: TimetableDoc[];
   /** School's own subject list (subject master); empty → default SUBJECTS. */
   subjectsList?: string[];
+  /** School's own class/section list; empty → default CLASSES. */
+  classesList?: string[];
 }
 
 const EMPTY_DB: Db = {
@@ -94,6 +97,11 @@ export class DataService {
   readonly subjects = computed(() => {
     const list = this.db().subjectsList;
     return list && list.length ? list : SUBJECTS;
+  });
+  /** Class list — the school's own classes/sections, falling back to defaults. */
+  readonly schoolClasses = computed(() => {
+    const list = this.db().classesList;
+    return list && list.length ? list : CLASSES;
   });
 
   readonly monthlyAttendance = DEMO_MONTHLY_ATTENDANCE;
@@ -184,6 +192,13 @@ export class DataService {
       onSnapshot(query(collection(fs, 'subjects'), where('schoolId', '==', schoolId)), (snap) => {
         const names = snap.empty ? [] : ((snap.docs[0].data()['names'] as string[]) ?? []);
         this.db.update((db) => ({ ...db, subjectsList: names }));
+      }),
+    );
+
+    this.unsubs.push(
+      onSnapshot(query(collection(fs, 'classesList'), where('schoolId', '==', schoolId)), (snap) => {
+        const names = snap.empty ? [] : ((snap.docs[0].data()['names'] as string[]) ?? []);
+        this.db.update((db) => ({ ...db, classesList: names }));
       }),
     );
 
@@ -638,6 +653,24 @@ export class DataService {
       return;
     }
     this.commit({ subjectsList: names });
+  }
+
+  addClass(name: string) {
+    const clean = name.trim().toUpperCase();
+    if (!clean || this.schoolClasses().includes(clean)) return;
+    this.saveClasses([...this.schoolClasses(), clean]);
+  }
+
+  removeClass(name: string) {
+    this.saveClasses(this.schoolClasses().filter((c) => c !== name));
+  }
+
+  private saveClasses(names: string[]) {
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'classesList', this.docId('list')), { schoolId: this.sid, names });
+      return;
+    }
+    this.commit({ classesList: names });
   }
 
   addNotice(notice: Omit<Notice, 'id'>) {

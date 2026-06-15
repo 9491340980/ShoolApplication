@@ -80,6 +80,10 @@ export class AuthService {
 
     const existing = await this.loadUserDoc(uid);
     if (existing) {
+      if (existing.disabled) {
+        void signOut(this.fbAuth);
+        return 'Your access has been disabled. Please contact your Head Master.';
+      }
       this.setSession(existing);
       this.router.navigateByUrl('/dashboard');
       return null;
@@ -141,6 +145,10 @@ export class AuthService {
         void signOut(this.fbAuth);
         return 'This account has no school profile yet. Ask your Head Master to add you.';
       }
+      if (profile.disabled) {
+        void signOut(this.fbAuth);
+        return 'Your access has been disabled. Please contact your Head Master.';
+      }
       await this.ensureUserDoc(uid, profile);
       this.setSession(profile);
       this.router.navigateByUrl('/dashboard');
@@ -192,6 +200,7 @@ export class AuthService {
         schoolId: d['schoolId'] ?? undefined,
         studentId: d['studentId'] ?? undefined,
         classId: d['classId'] ?? undefined,
+        disabled: d['disabled'] ?? false,
       };
     } catch {
       return null;

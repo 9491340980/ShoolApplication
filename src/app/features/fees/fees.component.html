@@ -2,7 +2,7 @@
   <!-- SECTION-WISE FEE COLLECTION -->
   <div class="flex gap-2.5 mb-4 flex-wrap items-center">
     <select class="input max-w-[120px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
-      @for (c of classes; track c) {
+      @for (c of classes(); track c) {
         <option [value]="c">{{ 'class' | t }} {{ c }}</option>
       }
     </select>

@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { BulkSendService } from '../../core/bulk-send.service';
-import { AttendanceStatus, CLASSES } from '../../core/models';
+import { AttendanceStatus } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { TPipe, TranslateService } from '../../core/translate.service';
 
@@ -24,7 +24,7 @@ export class AttendanceComponent {
   /** Head Master: all classes. Teacher: only the classes they are class teacher of. */
   classes = computed(() => {
     if (this.auth.role() === 'teacher') return this.data.classesForTeacher(this.auth.user()!.id);
-    return CLASSES;
+    return this.data.schoolClasses();
   });
   /** A teacher with no class-teacher assignment cannot mark any attendance. */
   blocked = computed(() => this.auth.role() === 'teacher' && this.classes().length === 0);
