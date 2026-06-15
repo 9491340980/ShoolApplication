@@ -112,15 +112,26 @@
     </div>
     <div class="card">
       <div class="card-title">📅 {{ 'monthwiseAttendance' | t }}</div>
-      @for (m of data.monthlyAttendance; track m.month) {
+      @for (m of myAtt().byMonth; track m.month) {
         <div class="flex items-center gap-2.5 mb-2 text-xs">
-          <span class="w-9 font-semibold">{{ m.month }}</span>
+          <span class="w-20 font-semibold">{{ monthLabel(m.month) }}</span>
+          <span class="text-success font-semibold">✓{{ m.present }}</span>
+          <span class="text-danger font-semibold">✗{{ m.absent }}</span>
           <div class="flex-1 bg-line rounded-full h-2">
-            <div class="h-2 rounded-full"
-                 [style.width.%]="m.pct"
-                 [style.background]="m.pct >= 90 ? 'var(--color-success)' : 'var(--color-primary)'"></div>
+            <div class="h-2 rounded-full bg-success"
+                 [style.width.%]="(m.present + m.absent) ? (m.present / (m.present + m.absent) * 100) : 0"></div>
           </div>
-          <span class="font-bold w-10 text-right">{{ m.pct }}%</span>
+        </div>
+      } @empty {
+        <div class="text-sm text-muted text-center py-4">{{ 'notMarkedToday' | t }}</div>
+      }
+
+      @if (myAtt().absentDates.length) {
+        <div class="text-[11px] text-muted font-semibold mt-3 mb-1.5">🔴 {{ 'absentOn' | t }}:</div>
+        <div class="flex flex-wrap gap-1.5">
+          @for (d of myAtt().absentDates; track d) {
+            <span class="badge badge-red !text-[10.5px]">{{ d }}</span>
+          }
         </div>
       }
     </div>

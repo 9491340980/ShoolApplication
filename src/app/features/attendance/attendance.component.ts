@@ -94,6 +94,14 @@ export class AttendanceComponent {
   });
   myAtt = computed(() => {
     const sid = this.auth.user()?.studentId;
-    return sid ? this.data.studentAttendance(sid) : { present: 0, total: 0, pct: null };
+    return sid
+      ? this.data.studentAttendanceDetail(sid)
+      : { present: 0, absent: 0, total: 0, pct: null, absentDates: [] as string[], byMonth: [] as { month: string; present: number; absent: number }[] };
   });
+
+  monthLabel(ym: string): string {
+    const [y, m] = ym.split('-');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[Number(m) - 1] ?? m} ${y}`;
+  }
 }

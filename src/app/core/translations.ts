@@ -293,6 +293,9 @@ export const DICT = {
     batchDone: 'Batch done',
     nextBatch: 'Next 45',
     remaining: 'remaining',
+    absentOn: 'Absent on',
+    noAbsences: 'No absences 🎉',
+    examResults: 'Exam Results',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -570,5 +573,8 @@ export const DICT = {
     batchDone: 'బ్యాచ్ పూర్తయింది',
     nextBatch: 'తదుపరి 45',
     remaining: 'మిగిలి ఉన్నవి',
+    absentOn: 'గైర్హాజరు తేదీలు',
+    noAbsences: 'గైర్హాజరు లేదు 🎉',
+    examResults: 'పరీక్ష ఫలితాలు',
   },
 } satisfies Record<Lang, Record<string, string>>;

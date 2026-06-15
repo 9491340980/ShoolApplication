@@ -140,12 +140,93 @@
             <div class="text-xs text-muted">{{ 'class' | t }} {{ s.classId }} | {{ 'rollNo' | t }} {{ s.roll }}</div>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-2.5">
+        <div class="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">{{ 'personalInfo' | t }}</div>
+        <div class="grid grid-cols-2 gap-2.5 mb-5">
           @for (f of detailFields; track f.key) {
             <div class="bg-page rounded-lg px-3 py-2">
               <div class="text-[10px] text-muted font-semibold uppercase tracking-wide">{{ f.label | t }}</div>
               <div class="text-[13px] font-semibold break-words">{{ s[f.key] || '—' }}</div>
             </div>
+          }
+        </div>
+
+        <!-- ATTENDANCE -->
+        @if (viewAtt(); as att) {
+          <div class="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">✅ {{ 'attendance' | t }}</div>
+          <div class="bg-page rounded-xl p-3 mb-5">
+            <div class="flex justify-around text-center mb-3">
+              <div><div class="text-xl font-extrabold text-primary">{{ att.pct === null ? '—' : att.pct + '%' }}</div><div class="text-[10px] text-muted">{{ 'overallAttendance' | t }}</div></div>
+              <div><div class="text-xl font-extrabold text-success">{{ att.present }}</div><div class="text-[10px] text-muted">{{ 'presentDays' | t }}</div></div>
+              <div><div class="text-xl font-extrabold text-danger">{{ att.absent }}</div><div class="text-[10px] text-muted">{{ 'absentDays' | t }}</div></div>
+            </div>
+            @if (att.byMonth.length) {
+              <div class="space-y-1.5 mb-2">
+                @for (m of att.byMonth; track m.month) {
+                  <div class="flex items-center justify-between text-[12px]">
+                    <span class="font-semibold w-20">{{ monthLabel(m.month) }}</span>
+                    <span class="text-success">✓ {{ m.present }}</span>
+                    <span class="text-danger">✗ {{ m.absent }}</span>
+                    <div class="flex-1 mx-2 bg-line rounded-full h-1.5">
+                      <div class="h-1.5 rounded-full bg-success" [style.width.%]="(m.present + m.absent) ? (m.present / (m.present + m.absent) * 100) : 0"></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+            @if (att.absentDates.length) {
+              <div class="text-[11px] text-muted font-semibold mt-2 mb-1">{{ 'absentOn' | t }}:</div>
+              <div class="flex flex-wrap gap-1.5">
+                @for (d of att.absentDates; track d) {
+                  <span class="badge badge-red !text-[10.5px]">{{ d }}</span>
+                }
+              </div>
+            } @else {
+              <div class="text-[11px] text-muted">{{ 'noAbsences' | t }}</div>
+            }
+          </div>
+        }
+
+        <!-- FEES -->
+        @if (isHM()) {
+          <div class="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">💰 {{ 'feeDetails' | t }}</div>
+          <div class="bg-page rounded-xl p-3 mb-5">
+            @for (f of viewFees(); track f.id) {
+              <div class="flex justify-between items-center py-1.5 border-b border-line last:border-0 text-[13px]">
+                <span class="font-medium">{{ f.label }}</span>
+                <span class="flex items-center gap-2">
+                  <span class="font-bold">₹{{ f.amount }}</span>
+                  <span class="badge !text-[10px]" [class]="f.status === 'paid' ? 'badge-green' : 'badge-yellow'">{{ f.status | t }}</span>
+                </span>
+              </div>
+            } @empty {
+              <div class="text-[12px] text-muted">—</div>
+            }
+            @if (viewFees().length) {
+              <div class="flex justify-between mt-2 pt-2 text-[13px] font-bold">
+                <span>{{ 'total' | t }}: ₹{{ viewFeeTotal() }}</span>
+                <span [class]="viewFeePending() > 0 ? 'text-danger' : 'text-success'">{{ 'pending' | t }}: ₹{{ viewFeePending() }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- EXAM RESULTS -->
+        <div class="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">📝 {{ 'examResults' | t }}</div>
+        <div class="bg-page rounded-xl p-3">
+          @for (r of viewResults(); track r.label) {
+            <div class="mb-3 last:mb-0">
+              <div class="flex justify-between text-[12.5px] font-bold mb-1">
+                <span>{{ r.label }}</span>
+                <span class="text-primary">{{ r.total }}/{{ r.max }} ({{ r.pct }}%)</span>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                @for (m of r.marks; track m.subject) {
+                  <span class="badge !text-[10.5px]" [class]="(m.score / m.max) >= 0.35 ? 'badge-blue' : 'badge-red'">{{ m.subject }}: {{ m.score }}/{{ m.max }}</span>
+                }
+              </div>
+            </div>
+          } @empty {
+            <div class="text-[12px] text-muted">—</div>
           }
         </div>
       </div>

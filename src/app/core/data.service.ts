@@ -383,6 +383,46 @@ export class DataService {
     return { present: 0, total: 0, pct: stu.attendancePct ?? null };
   }
 
+  /** Detailed attendance history for a student: totals, monthly split, and absent dates. */
+  studentAttendanceDetail(studentId: string): {
+    present: number;
+    absent: number;
+    total: number;
+    pct: number | null;
+    absentDates: string[];
+    byMonth: { month: string; present: number; absent: number }[];
+  } {
+    const stu = this.student(studentId);
+    if (!stu) return { present: 0, absent: 0, total: 0, pct: null, absentDates: [], byMonth: [] };
+    const keys = [studentId, stu.id, stu.id.replace(`${this.sid}_`, '')];
+    const recs: { date: string; present: boolean }[] = [];
+    for (const a of this.db().attendance) {
+      if (a.classId !== stu.classId) continue;
+      const k = keys.find((key) => a.statuses[key] !== undefined);
+      if (k === undefined) continue;
+      recs.push({ date: a.date, present: a.statuses[k] === 'present' });
+    }
+    recs.sort((a, b) => a.date.localeCompare(b.date));
+    const present = recs.filter((r) => r.present).length;
+    const total = recs.length;
+    const monthMap = new Map<string, { present: number; absent: number }>();
+    for (const r of recs) {
+      const m = r.date.slice(0, 7);
+      const e = monthMap.get(m) ?? { present: 0, absent: 0 };
+      if (r.present) e.present++;
+      else e.absent++;
+      monthMap.set(m, e);
+    }
+    return {
+      present,
+      absent: total - present,
+      total,
+      pct: total ? Math.round((present / total) * 100) : null,
+      absentDates: recs.filter((r) => !r.present).map((r) => r.date),
+      byMonth: [...monthMap.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([month, v]) => ({ month, ...v })),
+    };
+  }
+
   /** Real fee status from fee records; falls back to stored demo value. */
   studentFeeStatus(studentId: string): 'paid' | 'pending' | null {
     const fees = this.feesOf(studentId);

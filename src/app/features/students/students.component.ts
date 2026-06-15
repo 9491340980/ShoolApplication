@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { Student } from '../../core/models';
+import { EXAMS, Student } from '../../core/models';
 import { TPipe } from '../../core/translate.service';
 import { TKey } from '../../core/translations';
 
@@ -67,6 +67,36 @@ export class StudentsComponent {
 
   // detail viewer
   viewing = signal<Student | null>(null);
+
+  viewAtt = computed(() => {
+    const s = this.viewing();
+    return s ? this.data.studentAttendanceDetail(s.id) : null;
+  });
+  viewFees = computed(() => {
+    const s = this.viewing();
+    return s ? this.data.feesOf(s.id) : [];
+  });
+  viewFeeTotal = computed(() => this.viewFees().reduce((a, f) => a + f.amount, 0));
+  viewFeePending = computed(() =>
+    this.viewFees().filter((f) => f.status === 'pending').reduce((a, f) => a + f.amount, 0),
+  );
+  viewResults = computed(() => {
+    const s = this.viewing();
+    if (!s) return [];
+    return EXAMS.map((e) => {
+      const marks = this.data.studentMarks(s.id, e.id);
+      if (!marks.length) return null;
+      const total = marks.reduce((a, m) => a + m.score, 0);
+      const max = marks.reduce((a, m) => a + m.max, 0);
+      return { label: e.label, marks, total, max, pct: max ? Math.round((total / max) * 1000) / 10 : 0 };
+    }).filter((x): x is NonNullable<typeof x> => x !== null);
+  });
+
+  monthLabel(ym: string): string {
+    const [y, m] = ym.split('-');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[Number(m) - 1] ?? m} ${y}`;
+  }
 
   detailFields: { label: TKey; key: keyof Student }[] = [
     { label: 'admissionNo', key: 'admissionNo' },
