@@ -7,7 +7,7 @@
     }
   </select>
   @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
-    <button class="btn-blue" (click)="showAdd.set(!showAdd())">＋ {{ 'newStudent' | t }}</button>
+    <button class="btn-blue" (click)="startAdd()">＋ {{ 'newStudent' | t }}</button>
   }
   @if (auth.role() === 'headmaster') {
     <label class="btn-outline cursor-pointer" [class.opacity-60]="importBusy()">
@@ -35,7 +35,7 @@
 
 @if (showAdd()) {
   <div class="card mb-4">
-    <div class="card-title">＋ {{ 'newStudent' | t }}</div>
+    <div class="card-title">{{ editingId() ? ('edit' | t) : '＋ ' + ('newStudent' | t) }}</div>
 
     <div class="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">{{ 'basicDetails' | t }}</div>
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4">
@@ -73,7 +73,7 @@
       </div>
     }
 
-    <button class="btn-green" (click)="addStudent()">💾 {{ 'save' | t }}</button>
+    <button class="btn-green" (click)="saveStudent()">💾 {{ editingId() ? ('update' | t) : ('save' | t) }}</button>
   </div>
 }
 
@@ -117,7 +117,12 @@
               </td>
             }
             <td class="td" [attr.data-label]="'action' | t">
-              <button class="btn-outline btn-sm" (click)="viewing.set(s)">{{ 'viewDetails' | t }}</button>
+              <div class="flex gap-1.5 justify-end">
+                <button class="btn-outline btn-sm" (click)="viewing.set(s)">{{ 'viewDetails' | t }}</button>
+                @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
+                  <button class="btn-outline btn-sm" (click)="startEdit(s)">✏️ {{ 'edit' | t }}</button>
+                }
+              </div>
             </td>
           </tr>
         } @empty {
@@ -134,7 +139,12 @@
     <div class="bg-white w-full sm:max-w-3xl rounded-t-2xl sm:rounded-2xl max-h-[94vh] sm:max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
       <div class="flex items-center justify-between px-5 py-4 border-b border-line sticky top-0 bg-white z-10">
         <div class="font-bold text-[15px]">👤 {{ 'studentDetails' | t }}</div>
-        <button class="text-muted hover:text-ink cursor-pointer text-xl" (click)="viewing.set(null)">✕</button>
+        <div class="flex items-center gap-2">
+          @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
+            <button class="btn-outline btn-sm" (click)="startEdit(s)">✏️ {{ 'edit' | t }}</button>
+          }
+          <button class="text-muted hover:text-ink cursor-pointer text-xl" (click)="viewing.set(null)">✕</button>
+        </div>
       </div>
       <div class="p-4 sm:p-6">
         <div class="flex items-center gap-3 mb-4">

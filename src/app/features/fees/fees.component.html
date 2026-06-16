@@ -36,23 +36,35 @@
         <span class="flex-1 min-w-[100px] font-semibold text-[14px] truncate">{{ s.name }}
           @if (s.admissionNo) { <span class="text-muted font-normal text-[11px]">· {{ s.admissionNo }}</span> }
         </span>
-        <div class="flex items-center gap-1 shrink-0">
+        <!-- total fee -->
+        <label class="flex items-center gap-1 shrink-0">
+          <span class="text-[10px] text-muted uppercase">{{ 'totalFee' | t }}</span>
           <span class="text-muted text-[14px]">₹</span>
-          <input class="w-24 text-center bg-white border border-line rounded-lg py-1.5 text-[15px]" type="number" min="0"
+          <input class="w-20 text-center bg-white border border-line rounded-lg py-1.5 text-[15px]" type="number" min="0"
                  [ngModel]="amountOf(s)" (ngModelChange)="setAmount(s, $event)" placeholder="0" />
-        </div>
+        </label>
         @if (amountOf(s)) {
-          <button class="shrink-0 w-24 py-1.5 rounded-lg text-[12px] font-bold border"
-                  [class]="isPaid(s) ? 'bg-success text-white border-success' : 'bg-white text-amber-600 border-accent'"
-                  (click)="togglePaid(s)">
-            {{ (isPaid(s) ? 'paid' : 'markPaid') | t }}
-          </button>
+          <!-- paid / balance -->
+          <div class="shrink-0 text-[11px] leading-tight text-right min-w-[78px]">
+            <div class="text-success font-bold">✓ ₹{{ paidOf(s) }}</div>
+            <div [class]="balanceOf(s) > 0 ? 'text-danger font-bold' : 'text-muted'">{{ 'feePending' | t }}: ₹{{ balanceOf(s) }}</div>
+          </div>
+          <!-- collect installment -->
+          @if (balanceOf(s) > 0) {
+            <div class="flex items-center gap-1 shrink-0">
+              <input class="w-20 text-center bg-white border border-line rounded-lg py-1.5 text-[14px]" type="number" min="1" [max]="balanceOf(s)"
+                     [ngModel]="collectInput()[s.id]" (ngModelChange)="setCollect(s, $event)" [placeholder]="'collectPh' | t" />
+              <button class="rounded-lg bg-success text-white font-bold px-2.5 py-1.5 text-[12px]" (click)="collect(s)">＋ {{ 'collect' | t }}</button>
+            </div>
+          } @else {
+            <span class="shrink-0 badge badge-green">✓ {{ 'paid' | t }}</span>
+          }
           <button class="shrink-0 rounded-lg border border-line text-primary px-2.5 py-1.5 text-[13px]" [title]="'feeReceipt' | t" (click)="openReceipt(s)">🧾</button>
-          @if (!isPaid(s)) {
+          @if (balanceOf(s) > 0) {
             <a [href]="waFee(s)" target="_blank" rel="noopener" class="shrink-0 rounded-lg bg-[#25D366] text-white px-2.5 py-1.5 text-[13px]" [title]="'whatsapp' | t">🟢</a>
           }
         } @else {
-          <span class="shrink-0 w-24 text-center text-[11px] text-muted">—</span>
+          <span class="shrink-0 text-[11px] text-muted">—</span>
         }
       </div>
     } @empty {

@@ -446,10 +446,18 @@ export class DataService {
     };
   }
 
+  /** Amount collected so far on a fee (back-compat: a 'paid' record with no paidAmount = fully paid). */
+  feePaid(f: FeeItem): number {
+    return f.paidAmount ?? (f.status === 'paid' ? f.amount : 0);
+  }
+  feeBalance(f: FeeItem): number {
+    return Math.max(0, f.amount - this.feePaid(f));
+  }
+
   /** Real fee status from fee records; falls back to stored demo value. */
   studentFeeStatus(studentId: string): 'paid' | 'pending' | null {
     const fees = this.feesOf(studentId);
-    if (fees.length) return fees.some((f) => f.status === 'pending') ? 'pending' : 'paid';
+    if (fees.length) return fees.some((f) => this.feeBalance(f) > 0) ? 'pending' : 'paid';
     return this.student(studentId)?.feeStatus ?? null;
   }
 
@@ -571,17 +579,47 @@ export class DataService {
   }
 
   markFeePaid(feeId: string) {
-    this.setFeeStatus(feeId, 'paid');
+    const f = this.db().fees.find((x) => x.id === feeId);
+    if (f) this.writeFee(f.id, { paidAmount: f.amount, status: 'paid' });
+  }
+
+  /** Collect an installment against a fee — adds to paidAmount and updates status. */
+  collectFee(feeId: string, installment: number) {
+    const f = this.db().fees.find((x) => x.id === feeId);
+    if (!f || installment <= 0) return;
+    const paid = Math.min(f.amount, this.feePaid(f) + installment);
+    this.writeFee(f.id, { paidAmount: paid, status: paid >= f.amount ? 'paid' : 'pending' });
   }
 
   setFeeStatus(feeId: string, status: 'paid' | 'pending') {
+    const f = this.db().fees.find((x) => x.id === feeId);
+    if (!f) return;
+    // Toggling status also syncs paidAmount (full / nothing).
+    this.writeFee(f.id, { status, paidAmount: status === 'paid' ? f.amount : 0 });
+  }
+
+  private writeFee(feeId: string, patch: Partial<FeeItem>) {
     if (this.fs) {
-      void updateDoc(doc(this.fs, 'fees', feeId), { status });
+      void updateDoc(doc(this.fs, 'fees', feeId), patch);
       return;
     }
-    this.commit({
-      fees: this.db().fees.map((f) => (f.id === feeId ? { ...f, status } : f)),
-    });
+    this.commit({ fees: this.db().fees.map((f) => (f.id === feeId ? { ...f, ...patch } : f)) });
+  }
+
+  updateStudent(id: string, patch: Partial<Student>) {
+    if (this.fs) {
+      void updateDoc(doc(this.fs, 'students', id), this.clean(patch));
+      return;
+    }
+    this.commit({ students: this.db().students.map((s) => (s.id === id ? { ...s, ...patch } : s)) });
+  }
+
+  updateTeacher(id: string, patch: Partial<Teacher>) {
+    if (this.fs) {
+      void updateDoc(doc(this.fs, 'teachers', id), this.clean(patch));
+      return;
+    }
+    this.commit({ teachers: this.db().teachers.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
   }
 
   private feeSlug(label: string): string {

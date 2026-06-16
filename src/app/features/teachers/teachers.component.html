@@ -1,7 +1,7 @@
 <div class="flex gap-2.5 mb-3.5 flex-wrap">
   <input class="input max-w-[250px]" [placeholder]="'🔍 ' + ('search' | t) + '...'" [ngModel]="search()" (ngModelChange)="search.set($event)" />
   @if (auth.role() === 'headmaster') {
-    <button class="btn-blue" (click)="showAdd.set(!showAdd())">＋ {{ 'addTeacher' | t }}</button>
+    <button class="btn-blue" (click)="startAdd()">＋ {{ 'addTeacher' | t }}</button>
   }
   @if (added()) {
     <span class="badge badge-green">✓ {{ 'teacherAdded' | t }}</span>
@@ -10,15 +10,15 @@
 
 @if (showAdd()) {
   <div class="card mb-4">
-    <div class="card-title">＋ {{ 'addTeacher' | t }}</div>
+    <div class="card-title">{{ editingId() ? ('edit' | t) : '＋ ' + ('addTeacher' | t) }}</div>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-2.5">
       <input class="input" [placeholder]="'teacherName' | t" [ngModel]="newName()" (ngModelChange)="newName.set($event)" />
       <input class="input" [placeholder]="'subjectsCsv' | t" [ngModel]="newSubjects()" (ngModelChange)="newSubjects.set($event)" />
       <input class="input" [placeholder]="'classesCsv' | t" [ngModel]="newClasses()" (ngModelChange)="newClasses.set($event)" />
-      <input class="input" type="number" min="0" [placeholder]="'experience' | t" [ngModel]="newExp()" (ngModelChange)="newExp.set($event)" />
+      <input class="input" type="number" min="0" [placeholder]="('experience' | t) + ' (' + ('partOptional' | t) + ')'" [ngModel]="newExp()" (ngModelChange)="newExp.set($event)" />
       <input class="input" [placeholder]="'phone' | t" [ngModel]="newPhone()" (ngModelChange)="newPhone.set($event)" />
     </div>
-    <button class="btn-green" (click)="addTeacher()">💾 {{ 'save' | t }}</button>
+    <button class="btn-green" (click)="saveTeacher()">💾 {{ editingId() ? ('update' | t) : ('save' | t) }}</button>
   </div>
 }
 
@@ -33,6 +33,7 @@
           <th class="th">{{ 'experience' | t }}</th>
           <th class="th">{{ 'phone' | t }}</th>
           <th class="th">{{ 'status' | t }}</th>
+          @if (auth.role() === 'headmaster') { <th class="th">{{ 'action' | t }}</th> }
         </tr>
       </thead>
       <tbody>
@@ -41,9 +42,14 @@
             <td class="td font-bold" [attr.data-label]="'teacherName' | t">{{ tch.name }}</td>
             <td class="td" [attr.data-label]="'subjects' | t"><span class="badge badge-blue">{{ tch.subjects.join(', ') }}</span></td>
             <td class="td" [attr.data-label]="'classes' | t">{{ tch.classes.join(', ') }}</td>
-            <td class="td" [attr.data-label]="'experience' | t">{{ tch.experienceYears }} yrs</td>
+            <td class="td" [attr.data-label]="'experience' | t">{{ tch.experienceYears ? tch.experienceYears + ' yrs' : '—' }}</td>
             <td class="td" [attr.data-label]="'phone' | t">📞 {{ tch.phone }}</td>
             <td class="td" [attr.data-label]="'status' | t"><span class="badge badge-green">✓ {{ 'active' | t }}</span></td>
+            @if (auth.role() === 'headmaster') {
+              <td class="td" [attr.data-label]="'action' | t">
+                <button class="btn-outline btn-sm" (click)="startEdit(tch)">✏️ {{ 'edit' | t }}</button>
+              </td>
+            }
           </tr>
         }
       </tbody>

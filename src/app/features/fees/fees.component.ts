@@ -40,8 +40,8 @@ export class FeesComponent {
     const s = this.receiptStudent();
     return s ? this.data.feesOf(s.id) : [];
   });
-  receiptPaid = computed(() => this.receiptFees().filter((f) => f.status === 'paid').reduce((a, f) => a + f.amount, 0));
-  receiptBalance = computed(() => this.receiptFees().filter((f) => f.status === 'pending').reduce((a, f) => a + f.amount, 0));
+  receiptPaid = computed(() => this.receiptFees().reduce((a, f) => a + this.data.feePaid(f), 0));
+  receiptBalance = computed(() => this.receiptFees().reduce((a, f) => a + this.data.feeBalance(f), 0));
   receiptNo(s: Student): string {
     return `R-${s.roll}-${this.receiptDate.replace(/-/g, '')}`;
   }
@@ -71,23 +71,42 @@ export class FeesComponent {
       .filter((s) => !q || s.name.toLowerCase().includes(q) || s.roll.toLowerCase().includes(q) || (s.admissionNo ?? '').toLowerCase().includes(q));
   });
 
+  /** Per-student installment amount being entered. */
+  collectInput = signal<Record<string, number | null>>({});
+
   fee(s: Student): FeeItem | undefined {
     return this.data.feeFor(s, this.label());
   }
   amountOf(s: Student): number | null {
     return this.fee(s)?.amount ?? null;
   }
+  paidOf(s: Student): number {
+    const f = this.fee(s);
+    return f ? this.data.feePaid(f) : 0;
+  }
+  balanceOf(s: Student): number {
+    const f = this.fee(s);
+    return f ? this.data.feeBalance(f) : 0;
+  }
   isPaid(s: Student): boolean {
-    return this.fee(s)?.status === 'paid';
+    const f = this.fee(s);
+    return !!f && this.data.feeBalance(f) === 0 && f.amount > 0;
   }
 
   setAmount(s: Student, value: string) {
     this.data.setStudentFee(s, this.label(), Number(value) || 0);
   }
-  togglePaid(s: Student) {
+
+  /** Collect the entered installment against this student's fee. */
+  collect(s: Student) {
     const f = this.fee(s);
-    if (!f) return;
-    this.data.setFeeStatus(f.id, f.status === 'paid' ? 'pending' : 'paid');
+    const amt = Number(this.collectInput()[s.id]) || 0;
+    if (!f || amt <= 0) return;
+    this.data.collectFee(f.id, amt);
+    this.collectInput.update((m) => ({ ...m, [s.id]: null }));
+  }
+  setCollect(s: Student, value: string) {
+    this.collectInput.update((m) => ({ ...m, [s.id]: Number(value) || null }));
   }
 
   /** Live totals for the selected class & term. */
@@ -99,8 +118,8 @@ export class FeesComponent {
       .filter((f): f is FeeItem => !!f);
   });
   totalFee = computed(() => this.classFees().reduce((sum, f) => sum + f.amount, 0));
-  collected = computed(() => this.classFees().filter((f) => f.status === 'paid').reduce((sum, f) => sum + f.amount, 0));
-  pending = computed(() => this.totalFee() - this.collected());
+  collected = computed(() => this.classFees().reduce((sum, f) => sum + this.data.feePaid(f), 0));
+  pending = computed(() => this.classFees().reduce((sum, f) => sum + this.data.feeBalance(f), 0));
 
   // reminders (per student)
   private feeMsg(s: Student, amount: number, due: string): string {

@@ -310,6 +310,10 @@ export const DICT = {
     homeworkPh: 'Homework details…',
     noHomework: 'No homework posted yet.',
     theme: 'Theme',
+    collect: 'Collect',
+    collectPh: 'Pay ₹',
+    edit: 'Edit',
+    update: 'Update',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -604,5 +608,9 @@ export const DICT = {
     homeworkPh: 'హోంవర్క్ వివరాలు…',
     noHomework: 'ఇంకా హోంవర్క్ పెట్టలేదు.',
     theme: 'థీమ్',
+    collect: 'వసూలు',
+    collectPh: 'చెల్లింపు ₹',
+    edit: 'మార్చు',
+    update: 'అప్‌డేట్',
   },
 } satisfies Record<Lang, Record<string, string>>;

@@ -97,7 +97,8 @@ export interface FeeItem {
   schoolId?: string;
   studentId: string;
   label: string;
-  amount: number;
+  amount: number; // total fee
+  paidAmount?: number; // collected so far (installments); absent → 0 (or = amount when status is paid)
   dueDate: string;
   status: 'paid' | 'pending';
 }

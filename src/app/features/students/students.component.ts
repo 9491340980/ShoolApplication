@@ -47,6 +47,7 @@ export class StudentsComponent {
   showAdd = signal(false);
   showMore = signal(false);
   added = signal(false);
+  editingId = signal<string | null>(null);
 
   // basic
   newRoll = signal('');
@@ -129,9 +130,43 @@ export class StudentsComponent {
       );
   });
 
-  addStudent() {
+  startAdd() {
+    this.editingId.set(null);
+    for (const s of [
+      this.newRoll, this.newName, this.newPhone, this.newAdmissionNo, this.newFather, this.newMother,
+      this.newDob, this.newDoa, this.newCaste, this.newMotherTongue, this.newAadhaar, this.newPen,
+      this.newApaar, this.newAddress,
+    ]) {
+      s.set('');
+    }
+    this.showAdd.set(!this.showAdd());
+  }
+
+  startEdit(s: Student) {
+    this.editingId.set(s.id);
+    this.newRoll.set(s.roll);
+    this.newName.set(s.name);
+    this.newClass.set(s.classId);
+    this.newPhone.set(s.parentPhone);
+    this.newAdmissionNo.set(s.admissionNo ?? '');
+    this.newFather.set(s.fatherName ?? '');
+    this.newMother.set(s.motherName ?? '');
+    this.newDob.set(s.dob ?? '');
+    this.newDoa.set(s.doa ?? '');
+    this.newCaste.set(s.caste ?? '');
+    this.newMotherTongue.set(s.motherTongue ?? '');
+    this.newAadhaar.set(s.aadhaar ?? '');
+    this.newPen.set(s.pen ?? '');
+    this.newApaar.set(s.apaarId ?? '');
+    this.newAddress.set(s.address ?? '');
+    this.showMore.set(true);
+    this.showAdd.set(true);
+    this.viewing.set(null);
+  }
+
+  saveStudent() {
     if (!this.newName().trim() || !this.newRoll().trim()) return;
-    this.data.addStudent({
+    const data = {
       roll: this.newRoll().trim(),
       name: this.newName().trim(),
       classId: this.newClass(),
@@ -147,7 +182,10 @@ export class StudentsComponent {
       pen: this.newPen().trim() || undefined,
       apaarId: this.newApaar().trim() || undefined,
       address: this.newAddress().trim() || undefined,
-    });
+    };
+    const id = this.editingId();
+    if (id) this.data.updateStudent(id, data);
+    else this.data.addStudent(data);
     for (const s of [
       this.newRoll, this.newName, this.newPhone, this.newAdmissionNo, this.newFather, this.newMother,
       this.newDob, this.newDoa, this.newCaste, this.newMotherTongue, this.newAadhaar, this.newPen,
@@ -156,6 +194,7 @@ export class StudentsComponent {
       s.set('');
     }
     this.showAdd.set(false);
+    this.editingId.set(null);
     this.added.set(true);
     setTimeout(() => this.added.set(false), 2500);
   }
