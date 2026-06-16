@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { exportRows } from '../../core/export';
+import { ExportFormat, exportData } from '../../core/export';
 import { Student } from '../../core/models';
 import { TPipe } from '../../core/translate.service';
 import { TKey } from '../../core/translations';
@@ -221,8 +221,8 @@ export class StudentsComponent {
     }
   }
 
-  /** Export the currently filtered students to Excel (full register + live attendance/fee). */
-  exportStudents() {
+  /** Export the currently filtered students (full register + live attendance/fee). */
+  exportStudents(format: ExportFormat) {
     const rows = this.filtered().map((s) => ({
       Roll: s.roll,
       Name: s.name,
@@ -243,7 +243,7 @@ export class StudentsComponent {
       FeeStatus: this.feeStatus(s.id) ?? '',
     }));
     const tag = this.classFilter() || 'All';
-    exportRows(`Students-${tag}-${new Date().toISOString().slice(0, 10)}`, 'Students', rows);
+    exportData(format, `Students-${tag}-${new Date().toISOString().slice(0, 10)}`, `Students — ${tag}`, rows);
   }
 
   downloadTemplate() {

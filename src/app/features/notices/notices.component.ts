@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { BulkSendService } from '../../core/bulk-send.service';
 import { DataService } from '../../core/data.service';
-import { exportRows } from '../../core/export';
+import { ExportFormat, exportData } from '../../core/export';
 import { Notice, NoticeType } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { TPipe } from '../../core/translate.service';
@@ -43,8 +43,9 @@ export class NoticesComponent {
     setTimeout(() => this.posted.set(false), 2500);
   }
 
-  exportNotices() {
-    exportRows(
+  exportNotices(format: ExportFormat) {
+    exportData(
+      format,
       'Notices',
       'Notices',
       this.data.notices().map((n) => ({ Date: n.date, Title: n.title, Type: n.type, Audience: n.audience, By: n.postedBy, Body: n.body })),

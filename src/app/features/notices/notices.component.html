@@ -28,7 +28,10 @@
 <div class="card">
   <div class="card-title">📋 {{ 'allNotices' | t }}
     @if (isStaff()) {
-      <button class="ml-auto btn-outline btn-sm" (click)="exportNotices()">📊 {{ 'exportExcel' | t }}</button>
+      <span class="ml-auto flex gap-2">
+        <button class="btn-outline btn-sm" (click)="exportNotices('excel')">📊 Excel</button>
+        <button class="btn-outline btn-sm" (click)="exportNotices('pdf')">📄 PDF</button>
+      </span>
     }
   </div>
   @for (n of data.notices(); track n.id) {

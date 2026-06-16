@@ -4,7 +4,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { BulkSendService } from '../../core/bulk-send.service';
-import { exportRows } from '../../core/export';
+import { ExportFormat, exportData } from '../../core/export';
 import { DEMO_SCHOOL_ID, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { buildReportPdf, shareElementImage, sharePdf } from '../../core/report-pdf';
@@ -217,8 +217,8 @@ export class MarksComponent {
     return 'F';
   }
 
-  /** Export the result sheet (students × subjects + total/%/rank) to Excel. */
-  exportSheet() {
+  /** Export the result sheet (students × subjects + total/%/rank). */
+  exportSheet(format: ExportFormat) {
     const subs = this.subjects();
     const rows = this.sheet().map((r) => {
       const row: Record<string, unknown> = { Roll: r.student.roll, Name: r.student.name };
@@ -229,7 +229,7 @@ export class MarksComponent {
       return row;
     });
     const exam = this.exams().find((e) => e.id === this.examId())?.label ?? this.examId();
-    exportRows(`Marks-${this.classId()}-${exam}`, 'Marks', rows);
+    exportData(format, `Marks-${this.classId()}-${exam}`, `Marks — ${this.classId()} · ${exam}`, rows);
   }
 
   /** Result sheet: every student × every subject for the selected class & exam. */

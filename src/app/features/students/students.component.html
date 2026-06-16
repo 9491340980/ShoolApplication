@@ -17,7 +17,8 @@
     <button class="btn-outline" (click)="downloadTemplate()">⬇️ {{ 'template' | t }}</button>
   }
   @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
-    <button class="btn-outline" (click)="exportStudents()">📊 {{ 'exportExcel' | t }}</button>
+    <button class="btn-outline" (click)="exportStudents('excel')">📊 Excel</button>
+    <button class="btn-outline" (click)="exportStudents('pdf')">📄 PDF</button>
   }
   <!-- grid / card view toggle -->
   <div class="flex gap-0.5 bg-page rounded-lg p-0.5 ml-auto">
