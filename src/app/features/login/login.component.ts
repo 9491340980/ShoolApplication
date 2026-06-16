@@ -39,4 +39,17 @@ export class LoginComponent {
     this.error.set(err);
     this.busy.set(false);
   }
+
+  showReset = signal(false);
+  resetMsg = signal<string | null>(null);
+  resetOk = signal(false);
+
+  async sendReset() {
+    this.busy.set(true);
+    this.resetMsg.set(null);
+    const err = await this.auth.resetPassword(this.identifier());
+    this.busy.set(false);
+    this.resetOk.set(!err);
+    this.resetMsg.set(err ?? 'Reset link sent! Check your email inbox.');
+  }
 }

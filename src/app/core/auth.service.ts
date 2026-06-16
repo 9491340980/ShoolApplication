@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import {
   Auth,
   GoogleAuthProvider,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -204,6 +205,22 @@ export class AuthService {
       };
     } catch {
       return null;
+    }
+  }
+
+  /** Send a Firebase password-reset email (works for accounts with a real inbox). */
+  async resetPassword(email: string): Promise<string | null> {
+    if (!this.fbAuth) return 'Password reset needs Firebase connected.';
+    const addr = email.trim().toLowerCase();
+    if (!addr) return 'Enter your email first.';
+    try {
+      await sendPasswordResetEmail(this.fbAuth, addr);
+      return null;
+    } catch (e) {
+      const code = (e as { code?: string }).code ?? '';
+      if (code === 'auth/invalid-email') return 'Enter a valid email address.';
+      if (code === 'auth/user-not-found') return 'No account found with that email.';
+      return 'Could not send the reset email. Please try again.';
     }
   }
 

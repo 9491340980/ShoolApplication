@@ -296,6 +296,9 @@ export const DICT = {
     absentOn: 'Absent on',
     noAbsences: 'No absences 🎉',
     examResults: 'Exam Results',
+    forgotPassword: 'Forgot password?',
+    forgotHint: 'Enter your email above and we’ll send a reset link to your inbox.',
+    sendLink: 'Send Link',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -576,5 +579,8 @@ export const DICT = {
     absentOn: 'గైర్హాజరు తేదీలు',
     noAbsences: 'గైర్హాజరు లేదు 🎉',
     examResults: 'పరీక్ష ఫలితాలు',
+    forgotPassword: 'పాస్‌వర్డ్ మర్చిపోయారా?',
+    forgotHint: 'మీ ఇమెయిల్ పైన నమోదు చేయండి, రీసెట్ లింక్ మీ ఇన్‌బాక్స్‌కు పంపుతాం.',
+    sendLink: 'లింక్ పంపండి',
   },
 } satisfies Record<Lang, Record<string, string>>;
