@@ -116,6 +116,9 @@
 
       <div id="receipt-card" class="p-6 bg-white text-ink">
         <div class="text-center border-b-2 border-primary pb-3 mb-3">
+          @if (logo()) {
+            <img [src]="logo()" class="w-16 h-16 object-contain mx-auto mb-1.5" alt="logo" />
+          }
           <div class="font-display text-lg font-extrabold text-primary">{{ schoolName() }}</div>
           <div class="text-[12px] text-muted">🧾 {{ 'feeReceipt' | t }}</div>
         </div>

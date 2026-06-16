@@ -229,7 +229,11 @@ export class MarksComponent {
       return row;
     });
     const exam = this.exams().find((e) => e.id === this.examId())?.label ?? this.examId();
-    exportData(format, `Marks-${this.classId()}-${exam}`, `Marks — ${this.classId()} · ${exam}`, rows);
+    exportData(format, `Marks-${this.classId()}-${exam}`, `Marks — ${this.classId()} · ${exam}`, rows, this.brand());
+  }
+
+  brand() {
+    return { schoolName: this.schoolName(), logo: this.logo() || undefined };
   }
 
   /** Result sheet: every student × every subject for the selected class & exam. */
@@ -254,6 +258,7 @@ export class MarksComponent {
   reportExamId = signal('quarterly');
 
   schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
+  logo = computed(() => this.schoolSvc.currentSchool()?.logo || '');
 
   openReport(student: Student, examId: string) {
     this.reportExamId.set(examId);
@@ -324,6 +329,7 @@ export class MarksComponent {
     const r = this.reportInfoFor(s, exam);
     const doc = buildReportPdf({
       schoolName: this.schoolName(),
+      logo: this.logo() || undefined,
       name: s.name,
       classId: s.classId,
       roll: s.roll,

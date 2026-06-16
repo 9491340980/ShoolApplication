@@ -23,6 +23,7 @@ export class FeesComponent {
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
   classes = computed(() => this.data.schoolClasses());
   schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
+  logo = computed(() => this.schoolSvc.currentSchool()?.logo || '');
 
   // ---- fee receipt ----
   receiptStudent = signal<Student | null>(null);

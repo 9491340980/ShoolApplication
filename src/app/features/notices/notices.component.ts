@@ -1,11 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { BulkSendService } from '../../core/bulk-send.service';
 import { DataService } from '../../core/data.service';
 import { ExportFormat, exportData } from '../../core/export';
 import { Notice, NoticeType } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
+import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -18,8 +20,26 @@ export class NoticesComponent {
   data = inject(DataService);
   notify = inject(NotifyService);
   bulk = inject(BulkSendService);
+  private schoolSvc = inject(SchoolService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
+  schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
+  logo = computed(() => this.schoolSvc.currentSchool()?.logo || '');
+
+  /** Notice currently shown in the printable board view. */
+  printing = signal<Notice | null>(null);
+  openPrint(n: Notice) {
+    this.printing.set(n);
+  }
+  closePrint() {
+    this.printing.set(null);
+  }
+  printNow() {
+    window.print();
+  }
+  typeIcon(t: NoticeType): string {
+    return t === 'urgent' ? '⚠️' : t === 'event' ? '🎉' : '📌';
+  }
 
   title = signal('');
   body = signal('');
@@ -49,6 +69,7 @@ export class NoticesComponent {
       'Notices',
       'Notices',
       this.data.notices().map((n) => ({ Date: n.date, Title: n.title, Type: n.type, Audience: n.audience, By: n.postedBy, Body: n.body })),
+      { schoolName: this.schoolName(), logo: this.logo() || undefined },
     );
   }
 

@@ -123,6 +123,12 @@ export class SchoolService {
     await updateDoc(doc(this.fs, 'schools', schoolId), { theme });
   }
 
+  /** Super admin: set or clear a school's logo (square PNG data URL). */
+  async setSchoolLogo(schoolId: string, logo: string | null) {
+    if (!this.fs) return;
+    await updateDoc(doc(this.fs, 'schools', schoolId), { logo: logo ?? '' });
+  }
+
   // ---- super admin: manage a specific school's class teachers ----
 
   /** Start live-loading the chosen school's teachers + class-teacher assignments. */

@@ -4,9 +4,15 @@ import * as XLSX from 'xlsx';
 
 export type ExportFormat = 'excel' | 'pdf';
 
+/** School branding stamped on PDF exports. */
+export interface ExportBrand {
+  schoolName: string;
+  logo?: string; // square PNG data URL
+}
+
 /** Export rows in the chosen format (Excel or PDF). */
-export function exportData(format: ExportFormat, fileName: string, title: string, rows: Record<string, unknown>[]): void {
-  if (format === 'pdf') exportPdf(fileName, title, rows);
+export function exportData(format: ExportFormat, fileName: string, title: string, rows: Record<string, unknown>[], brand?: ExportBrand): void {
+  if (format === 'pdf') exportPdf(fileName, title, rows, brand);
   else exportRows(fileName, title, rows);
 }
 
@@ -18,18 +24,41 @@ export function exportRows(fileName: string, sheetName: string, rows: Record<str
   XLSX.writeFile(wb, fileName.endsWith('.xlsx') ? fileName : `${fileName}.xlsx`);
 }
 
-/** Export rows as a tabular PDF (landscape, auto-fitted). */
-export function exportPdf(fileName: string, title: string, rows: Record<string, unknown>[]): void {
+/** Export rows as a tabular PDF (landscape, auto-fitted) with optional school branding. */
+export function exportPdf(fileName: string, title: string, rows: Record<string, unknown>[], brand?: ExportBrand): void {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  doc.setFontSize(13);
-  doc.setTextColor(26, 86, 219);
-  doc.text(title, 14, 14);
+  let top = 14;
+  let textX = 14;
+  if (brand?.logo) {
+    try {
+      doc.addImage(brand.logo, 'PNG', 10, 8, 12, 12);
+      textX = 25;
+    } catch {
+      /* ignore a bad logo data URL */
+    }
+  }
+  if (brand?.schoolName) {
+    doc.setFontSize(13);
+    doc.setTextColor(26, 86, 219);
+    doc.setFont('helvetica', 'bold');
+    doc.text(brand.schoolName, textX, 14);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(90);
+    doc.text(title, textX, 20);
+    top = 24;
+  } else {
+    doc.setFontSize(13);
+    doc.setTextColor(26, 86, 219);
+    doc.text(title, textX, 14);
+    top = 18;
+  }
   const headers = rows.length ? Object.keys(rows[0]) : ['—'];
   const body = rows.map((r) => headers.map((h) => String(r[h] ?? '')));
   autoTable(doc, {
     head: [headers],
     body,
-    startY: 18,
+    startY: top,
     styles: { fontSize: 7.5, cellPadding: 1.5 },
     headStyles: { fillColor: [26, 86, 219], fontSize: 8 },
     alternateRowStyles: { fillColor: [244, 247, 255] },

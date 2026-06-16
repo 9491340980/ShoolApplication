@@ -323,6 +323,11 @@ export const DICT = {
     paymentHistory: 'Payment History',
     installments: 'Installments',
     noPaymentsYet: 'No payments yet',
+    logo: 'Logo',
+    uploadLogo: 'Upload logo',
+    uploading: 'Uploading…',
+    removeLogo: 'Remove',
+    printNotice: 'Print',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -630,5 +635,10 @@ export const DICT = {
     paymentHistory: 'చెల్లింపు చరిత్ర',
     installments: 'వాయిదాలు',
     noPaymentsYet: 'ఇంకా చెల్లింపులు లేవు',
+    logo: 'లోగో',
+    uploadLogo: 'లోగో అప్‌లోడ్',
+    uploading: 'అప్‌లోడ్ అవుతోంది…',
+    removeLogo: 'తొలగించు',
+    printNotice: 'ప్రింట్',
   },
 } satisfies Record<Lang, Record<string, string>>;

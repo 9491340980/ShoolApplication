@@ -16,6 +16,8 @@ export interface School {
   createdAt: string; // ISO yyyy-mm-dd
   /** Theme preset id (set by super admin); absent → default blue. */
   theme?: string;
+  /** School logo as a small square PNG data URL; shown in the app & on every printed/PDF artifact. */
+  logo?: string;
 }
 
 export interface AppUser {

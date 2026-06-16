@@ -1,10 +1,12 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { ExportFormat, exportData } from '../../core/export';
 import { Student } from '../../core/models';
+import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 import { TKey } from '../../core/translations';
 
@@ -16,6 +18,12 @@ import { TKey } from '../../core/translations';
 export class StudentsComponent {
   auth = inject(AuthService);
   data = inject(DataService);
+  private schoolSvc = inject(SchoolService);
+
+  private brand() {
+    const s = this.schoolSvc.currentSchool();
+    return { schoolName: s?.name ?? environment.schoolName, logo: s?.logo || undefined };
+  }
 
   search = signal('');
   classFilter = signal('');
@@ -282,7 +290,7 @@ export class StudentsComponent {
       FeeStatus: this.feeStatus(s.id) ?? '',
     }));
     const tag = this.classFilter() || 'All';
-    exportData(format, `Students-${tag}-${new Date().toISOString().slice(0, 10)}`, `Students — ${tag}`, rows);
+    exportData(format, `Students-${tag}-${new Date().toISOString().slice(0, 10)}`, `Students — ${tag}`, rows, this.brand());
   }
 
   downloadTemplate() {

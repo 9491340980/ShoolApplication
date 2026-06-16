@@ -1,7 +1,9 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
 import { DataService } from '../../core/data.service';
 import { ExportFormat, exportData } from '../../core/export';
+import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -11,6 +13,12 @@ import { TPipe } from '../../core/translate.service';
 })
 export class ReportsComponent {
   data = inject(DataService);
+  private schoolSvc = inject(SchoolService);
+
+  private brand() {
+    const s = this.schoolSvc.currentSchool();
+    return { schoolName: s?.name ?? environment.schoolName, logo: s?.logo || undefined };
+  }
 
   tab = signal<'fee' | 'attendance' | 'exam'>('fee');
   exams = computed(() => this.data.schoolExams());
@@ -86,13 +94,14 @@ export class ReportsComponent {
 
   export(format: ExportFormat) {
     const t = this.tab();
+    const brand = this.brand();
     if (t === 'fee') {
-      exportData(format, 'Fee-Report', 'Fee Report', this.feeRows().map((r) => ({ Class: r.classId, Students: r.students, TotalFee: r.total, Collected: r.collected, Pending: r.pending })));
+      exportData(format, 'Fee-Report', 'Fee Report', this.feeRows().map((r) => ({ Class: r.classId, Students: r.students, TotalFee: r.total, Collected: r.collected, Pending: r.pending })), brand);
     } else if (t === 'attendance') {
-      exportData(format, 'Attendance-Report', 'Attendance Report', this.attRows().map((r) => ({ Class: r.classId, Students: r.students, Marked: r.marked, 'Avg%': r.avg ?? '', Below75: r.below })));
+      exportData(format, 'Attendance-Report', 'Attendance Report', this.attRows().map((r) => ({ Class: r.classId, Students: r.students, Marked: r.marked, 'Avg%': r.avg ?? '', Below75: r.below })), brand);
     } else {
       const exam = this.exams().find((e) => e.id === this.examId())?.label ?? this.examId();
-      exportData(format, `Exam-Report-${exam}`, `Exam Report — ${exam}`, this.examRows().map((r) => ({ Class: r.classId, Appeared: r.appeared, 'Avg%': r.avg ?? '', 'Pass%': r.passPct, Topper: r.topper ? `${r.topper.name} (${r.topper.pct}%)` : '' })));
+      exportData(format, `Exam-Report-${exam}`, `Exam Report — ${exam}`, this.examRows().map((r) => ({ Class: r.classId, Appeared: r.appeared, 'Avg%': r.avg ?? '', 'Pass%': r.passPct, Topper: r.topper ? `${r.topper.name} (${r.topper.pct}%)` : '' })), brand);
     }
   }
 }

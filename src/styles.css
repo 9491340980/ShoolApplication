@@ -80,11 +80,14 @@ body {
   #report-card,
   #report-card *,
   #receipt-card,
-  #receipt-card * {
+  #receipt-card *,
+  #notice-card,
+  #notice-card * {
     visibility: visible !important;
   }
   #report-card,
-  #receipt-card {
+  #receipt-card,
+  #notice-card {
     position: absolute;
     left: 0;
     top: 0;

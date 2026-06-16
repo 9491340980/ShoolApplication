@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { fileToSquareLogo } from '../../core/image';
 import { CLASSES, School } from '../../core/models';
 import { SchoolService } from '../../core/school.service';
 import { THEMES } from '../../core/themes';
@@ -23,6 +24,31 @@ export class AdminComponent {
   });
   setTheme(schoolId: string, theme: string) {
     void this.schoolSvc.setSchoolTheme(schoolId, theme);
+  }
+
+  /** Live logo of the school being managed. */
+  managedLogo = computed(() => {
+    const id = this.managing()?.id;
+    return this.schoolSvc.schools().find((s) => s.id === id)?.logo || '';
+  });
+  logoBusy = signal(false);
+
+  async onLogoPick(schoolId: string, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.logoBusy.set(true);
+    try {
+      const dataUrl = await fileToSquareLogo(file);
+      await this.schoolSvc.setSchoolLogo(schoolId, dataUrl);
+    } finally {
+      this.logoBusy.set(false);
+      input.value = '';
+    }
+  }
+
+  async removeLogo(schoolId: string) {
+    await this.schoolSvc.setSchoolLogo(schoolId, null);
   }
 
   name = signal('');

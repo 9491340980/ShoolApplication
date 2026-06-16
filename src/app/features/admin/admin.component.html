@@ -93,6 +93,27 @@
         <button class="text-muted hover:text-ink cursor-pointer text-xl" (click)="closeManage()">✕</button>
       </div>
       <div class="p-5">
+        <!-- LOGO -->
+        <div class="flex items-center gap-3 mb-4">
+          <span class="text-[13px] font-bold shrink-0">🖼️ {{ 'logo' | t }}:</span>
+          <div class="w-14 h-14 rounded-lg border border-line bg-page flex items-center justify-center overflow-hidden shrink-0">
+            @if (managedLogo()) {
+              <img [src]="managedLogo()" class="w-full h-full object-contain" alt="logo" />
+            } @else {
+              <span class="text-2xl text-muted">🏫</span>
+            }
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="btn-outline btn-sm cursor-pointer">
+              {{ logoBusy() ? ('uploading' | t) : ('uploadLogo' | t) }}
+              <input type="file" accept="image/*" class="hidden" (change)="onLogoPick(school.id, $event)" [disabled]="logoBusy()" />
+            </label>
+            @if (managedLogo()) {
+              <button class="text-[11px] text-danger font-semibold text-left" (click)="removeLogo(school.id)">🗑️ {{ 'removeLogo' | t }}</button>
+            }
+          </div>
+        </div>
+
         <!-- THEME -->
         <div class="flex items-center gap-2 mb-4">
           <span class="text-[13px] font-bold">🎨 {{ 'theme' | t }}:</span>

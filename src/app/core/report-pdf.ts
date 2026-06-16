@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 
 export interface ReportPdfInfo {
   schoolName: string;
+  logo?: string; // square PNG data URL
   name: string;
   classId: string;
   roll: string;
@@ -42,6 +43,13 @@ export function buildReportPdf(info: ReportPdfInfo): jsPDF {
   const mid = W / 2;
 
   // Header
+  if (info.logo) {
+    try {
+      doc.addImage(info.logo, 'PNG', 14, 10, 16, 16);
+    } catch {
+      /* ignore a bad logo data URL */
+    }
+  }
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(26, 86, 219);

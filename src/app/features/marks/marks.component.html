@@ -325,6 +325,9 @@
       <!-- printable area -->
       <div id="report-card" class="p-6 bg-white text-ink">
         <div class="text-center border-b-2 border-primary pb-3 mb-4">
+          @if (logo()) {
+            <img [src]="logo()" class="w-16 h-16 object-contain mx-auto mb-1.5" alt="logo" />
+          }
           <div class="font-display text-xl font-extrabold text-primary">{{ schoolName() }}</div>
           <div class="text-[12px] text-muted">{{ 'reportCard' | t }} — {{ r.examLabel }}</div>
         </div>
