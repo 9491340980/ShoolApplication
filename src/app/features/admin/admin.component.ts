@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CLASSES, School } from '../../core/models';
 import { SchoolService } from '../../core/school.service';
+import { THEMES } from '../../core/themes';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -13,6 +14,16 @@ export class AdminComponent {
   schoolSvc = inject(SchoolService);
 
   classes = CLASSES;
+  themes = THEMES;
+
+  /** Live theme of the school being managed (reads from the live schools list). */
+  managedTheme = computed(() => {
+    const id = this.managing()?.id;
+    return this.schoolSvc.schools().find((s) => s.id === id)?.theme ?? 'blue';
+  });
+  setTheme(schoolId: string, theme: string) {
+    void this.schoolSvc.setSchoolTheme(schoolId, theme);
+  }
 
   name = signal('');
   adminEmail = signal('');

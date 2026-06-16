@@ -117,6 +117,12 @@ export class SchoolService {
     await updateDoc(doc(this.fs, 'users', uid), { disabled });
   }
 
+  /** Super admin: set a school's theme preset. */
+  async setSchoolTheme(schoolId: string, theme: string) {
+    if (!this.fs) return;
+    await updateDoc(doc(this.fs, 'schools', schoolId), { theme });
+  }
+
   // ---- super admin: manage a specific school's class teachers ----
 
   /** Start live-loading the chosen school's teachers + class-teacher assignments. */

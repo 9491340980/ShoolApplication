@@ -1,10 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/auth.service';
 import { SchoolService } from '../core/school.service';
+import { applyTheme } from '../core/themes';
 import { TPipe, TranslateService } from '../core/translate.service';
 import { BulkSendBarComponent } from './bulk-send-bar.component';
 import { IconComponent } from './icon.component';
@@ -50,6 +51,9 @@ export class ShellComponent {
   );
 
   pageTitle = computed(() => PAGE_TITLES[this.url()] ?? 'dashboard');
+
+  /** Apply the signed-in school's theme (super admin / no school → default). */
+  private themeEffect = effect(() => applyTheme(this.schoolSvc.currentSchool()?.theme));
 
   today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 

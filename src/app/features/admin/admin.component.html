@@ -93,6 +93,17 @@
         <button class="text-muted hover:text-ink cursor-pointer text-xl" (click)="closeManage()">✕</button>
       </div>
       <div class="p-5">
+        <!-- THEME -->
+        <div class="flex items-center gap-2 mb-4">
+          <span class="text-[13px] font-bold">🎨 {{ 'theme' | t }}:</span>
+          <select class="input max-w-[200px]" [ngModel]="managedTheme()" (ngModelChange)="setTheme(school.id, $event)">
+            @for (t of themes; track t.id) {
+              <option [value]="t.id">{{ t.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">🧑‍🏫 {{ 'classTeachers' | t }}</div>
         <p class="text-xs text-muted mb-3">💡 {{ 'reassignHint' | t }}</p>
         @if (schoolSvc.mgmtTeachers().length === 0) {
           <div class="bg-accent-light text-amber-800 rounded-lg px-3 py-2.5 text-xs font-medium">

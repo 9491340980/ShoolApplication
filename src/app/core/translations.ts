@@ -309,6 +309,7 @@ export const DICT = {
     postHomework: 'Post Homework',
     homeworkPh: 'Homework details…',
     noHomework: 'No homework posted yet.',
+    theme: 'Theme',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -602,5 +603,6 @@ export const DICT = {
     postHomework: 'హోంవర్క్ పెట్టండి',
     homeworkPh: 'హోంవర్క్ వివరాలు…',
     noHomework: 'ఇంకా హోంవర్క్ పెట్టలేదు.',
+    theme: 'థీమ్',
   },
 } satisfies Record<Lang, Record<string, string>>;

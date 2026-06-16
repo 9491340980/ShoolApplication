@@ -14,6 +14,8 @@ export interface School {
   address: string;
   active: boolean;
   createdAt: string; // ISO yyyy-mm-dd
+  /** Theme preset id (set by super admin); absent → default blue. */
+  theme?: string;
 }
 
 export interface AppUser {
