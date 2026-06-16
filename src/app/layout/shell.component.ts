@@ -6,20 +6,23 @@ import { environment } from '../../environments/environment';
 import { AuthService } from '../core/auth.service';
 import { SchoolService } from '../core/school.service';
 import { applyTheme } from '../core/themes';
+import { TourService } from '../core/tour.service';
 import { TPipe, TranslateService } from '../core/translate.service';
 import { BulkSendBarComponent } from './bulk-send-bar.component';
 import { IconComponent } from './icon.component';
 import { NAV, PAGE_TITLES, ROLE_LABELS } from './nav-config';
+import { TourOverlayComponent } from './tour-overlay.component';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, IconComponent, BulkSendBarComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, IconComponent, BulkSendBarComponent, TourOverlayComponent],
   templateUrl: './shell.component.html',
 })
 export class ShellComponent {
   auth = inject(AuthService);
   i18n = inject(TranslateService);
   schoolSvc = inject(SchoolService);
+  tour = inject(TourService);
   private router = inject(Router);
 
   /** White-label: the school's own name is the app name for its users. */

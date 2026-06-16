@@ -63,6 +63,11 @@
         <h1 class="text-lg font-bold">{{ pageTitle() | t }}</h1>
       </div>
       <div class="flex items-center gap-2.5">
+        @if (tour.canTour()) {
+          <button class="bg-accent text-white rounded-xl px-3 py-1.5 text-xs font-bold cursor-pointer hover:opacity-90" (click)="tour.start()">
+            🧭 {{ 'takeTour' | t }}
+          </button>
+        }
         <button
           class="bg-page border border-line rounded-xl px-3 py-1.5 text-xs font-bold cursor-pointer hover:border-primary"
           (click)="i18n.toggle()"
@@ -82,6 +87,7 @@
   </div>
 
   <app-bulk-send-bar />
+  <app-tour-overlay />
 
   <!-- MOBILE BOTTOM NAV (app-style) -->
   <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-line flex lg:hidden z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
