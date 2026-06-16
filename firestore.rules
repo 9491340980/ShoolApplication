@@ -11,7 +11,12 @@ service cloud.firestore {
 
     match /schools/{id} {
       allow read: if signedIn();
-      allow write: if isSuper();
+      allow create, delete: if isSuper();
+      // Super admin can change anything; a Head Master may update only their own
+      // school's logo (branding) — not adminEmail, active status, etc.
+      allow update: if isSuper()
+        || (isHM() && id == me().schoolId
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['logo']));
     }
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isSuper() || (isHM() && resource.data.schoolId == me().schoolId));

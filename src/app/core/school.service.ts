@@ -129,6 +129,18 @@ export class SchoolService {
     await updateDoc(doc(this.fs, 'schools', schoolId), { logo: logo ?? '' });
   }
 
+  /** Head Master: set or clear their own school's logo. */
+  async setOwnSchoolLogo(logo: string | null): Promise<string | null> {
+    const id = this.auth.user()?.schoolId;
+    if (!this.fs || !id) return 'Not connected to a school.';
+    try {
+      await updateDoc(doc(this.fs, 'schools', id), { logo: logo ?? '' });
+      return null;
+    } catch {
+      return 'Could not update the logo. Please try again.';
+    }
+  }
+
   // ---- super admin: manage a specific school's class teachers ----
 
   /** Start live-loading the chosen school's teachers + class-teacher assignments. */

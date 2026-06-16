@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
+import { fileToSquareLogo } from '../../core/image';
 import { Role } from '../../core/models';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
@@ -22,6 +23,33 @@ export class UsersComponent {
   classes = computed(() => this.data.schoolClasses());
   roleLabels = ROLE_LABELS;
   creatableRoles: CreatableRole[] = ['teacher', 'parent', 'student'];
+
+  // ---- school logo (branding) ----
+  logo = computed(() => this.schoolSvc.currentSchool()?.logo || '');
+  logoBusy = signal(false);
+  logoError = signal<string | null>(null);
+
+  async onLogoPick(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.logoBusy.set(true);
+    this.logoError.set(null);
+    try {
+      const dataUrl = await fileToSquareLogo(file);
+      const err = await this.schoolSvc.setOwnSchoolLogo(dataUrl);
+      if (err) this.logoError.set(err);
+    } finally {
+      this.logoBusy.set(false);
+      input.value = '';
+    }
+  }
+
+  async removeLogo() {
+    this.logoError.set(null);
+    const err = await this.schoolSvc.setOwnSchoolLogo(null);
+    if (err) this.logoError.set(err);
+  }
 
   // class management
   newClassName = signal('');

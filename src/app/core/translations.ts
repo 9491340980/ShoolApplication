@@ -328,6 +328,8 @@ export const DICT = {
     uploading: 'Uploading…',
     removeLogo: 'Remove',
     printNotice: 'Print',
+    schoolLogo: 'School Logo',
+    logoHint: 'Shows in the app sidebar and on every receipt, report card, notice and PDF export.',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -640,5 +642,7 @@ export const DICT = {
     uploading: 'అప్‌లోడ్ అవుతోంది…',
     removeLogo: 'తొలగించు',
     printNotice: 'ప్రింట్',
+    schoolLogo: 'స్కూల్ లోగో',
+    logoHint: 'యాప్ సైడ్‌బార్‌లో, ప్రతి రసీదు, ప్రోగ్రెస్ కార్డు, నోటీసు మరియు PDF ఎగుమతిలో కనిపిస్తుంది.',
   },
 } satisfies Record<Lang, Record<string, string>>;
