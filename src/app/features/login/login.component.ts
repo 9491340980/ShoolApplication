@@ -50,6 +50,8 @@ export class LoginComponent {
     const err = await this.auth.resetPassword(this.identifier());
     this.busy.set(false);
     this.resetOk.set(!err);
-    this.resetMsg.set(err ?? 'Reset link sent! Check your email inbox.');
+    this.resetMsg.set(
+      err ?? 'If an account exists for this email, a reset link has been sent. Check your inbox and Spam/Promotions.',
+    );
   }
 }
