@@ -645,12 +645,15 @@ export class DataService {
       return;
     }
     const existing = this.db().fees.find((f) => f.id === id);
+    // Keep whatever's already been collected; never lose it when the total is edited.
+    const paid = existing ? Math.min(this.feePaid(existing), amount) : 0;
     const rec = {
       studentId: student.id,
       label,
       amount,
+      paidAmount: paid,
       dueDate: existing?.dueDate ?? this.todayStr,
-      status: existing?.status ?? ('pending' as const),
+      status: paid >= amount ? ('paid' as const) : ('pending' as const),
     };
     if (this.fs) {
       void setDoc(doc(this.fs, 'fees', id), this.clean({ ...rec, schoolId: this.sid }));
