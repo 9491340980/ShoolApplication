@@ -6,7 +6,7 @@ import { DataService } from '../../core/data.service';
 import { FeeItem, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { SchoolService } from '../../core/school.service';
-import { TPipe } from '../../core/translate.service';
+import { TPipe, TranslateService } from '../../core/translate.service';
 
 @Component({
   selector: 'app-fees',
@@ -17,6 +17,7 @@ export class FeesComponent {
   auth = inject(AuthService);
   data = inject(DataService);
   notify = inject(NotifyService);
+  i18n = inject(TranslateService);
   private schoolSvc = inject(SchoolService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
@@ -58,6 +59,29 @@ export class FeesComponent {
     window.open(this.notify.whatsappLink(s.parentPhone, msg), '_blank');
   }
 
+  // ---- payment history (per student) ----
+  historyStudent = signal<Student | null>(null);
+  openHistory(s: Student) {
+    this.historyStudent.set(s);
+  }
+  closeHistory() {
+    this.historyStudent.set(null);
+  }
+  /** Fees of the student in the history popup, each with its dated installments. */
+  historyFees = computed(() => {
+    const s = this.historyStudent();
+    if (!s) return [];
+    return this.data.feesOf(s.id).map((f) => ({
+      fee: f,
+      payments: this.data.feePayments(f),
+      paid: this.data.feePaid(f),
+      balance: this.data.feeBalance(f),
+    }));
+  });
+  historyTotal = computed(() => this.historyFees().reduce((a, x) => a + x.fee.amount, 0));
+  historyPaid = computed(() => this.historyFees().reduce((a, x) => a + x.paid, 0));
+  historyBalance = computed(() => this.historyFees().reduce((a, x) => a + x.balance, 0));
+
   // ---- staff: section-wise fee collection ----
   classId = signal('8A');
   label = signal('Annual Fee');
@@ -80,6 +104,12 @@ export class FeesComponent {
   amountOf(s: Student): number | null {
     return this.fee(s)?.amount ?? null;
   }
+  /** Draft total being typed per student (kept separate so a cancelled reduce can revert cleanly). */
+  private amountDraft = signal<Record<string, number | null>>({});
+  amountVal(s: Student): number | null {
+    const d = this.amountDraft();
+    return s.id in d ? d[s.id] : this.amountOf(s);
+  }
   paidOf(s: Student): number {
     const f = this.fee(s);
     return f ? this.data.feePaid(f) : 0;
@@ -93,8 +123,42 @@ export class FeesComponent {
     return !!f && this.data.feeBalance(f) === 0 && f.amount > 0;
   }
 
-  setAmount(s: Student, value: string) {
-    this.data.setStudentFee(s, this.label(), Number(value) || 0);
+  /** Track typing without saving yet. */
+  onAmountInput(s: Student, value: string) {
+    this.amountDraft.update((m) => ({ ...m, [s.id]: Number(value) || 0 }));
+  }
+  private clearDraft(s: Student) {
+    this.amountDraft.update((m) => {
+      const n = { ...m };
+      delete n[s.id];
+      return n;
+    });
+  }
+  /** Commit on blur — confirm first if the new total is lower than the current one. */
+  commitAmount(s: Student) {
+    const d = this.amountDraft();
+    if (!(s.id in d)) return;
+    const amt = d[s.id] ?? 0;
+    const f = this.fee(s);
+    const oldAmt = f?.amount ?? 0;
+    const paid = f ? this.data.feePaid(f) : 0;
+    if (amt === oldAmt) {
+      this.clearDraft(s);
+      return;
+    }
+    if (f && amt < oldAmt) {
+      const bal = Math.max(0, amt - paid);
+      const te = this.i18n.lang() === 'te';
+      const msg = te
+        ? `${s.name} మొత్తం ఫీజును ₹${oldAmt} నుండి ₹${amt} కు తగ్గించాలా?\n\nఇప్పటికే వసూలు చేసిన ₹${paid} అలాగే ఉంటుంది. కొత్త బ్యాలెన్స్ ₹${bal} గా తిరిగి లెక్కించబడుతుంది.\n\nకొనసాగించాలా?`
+        : `Reduce ${s.name}'s total fee from ₹${oldAmt} to ₹${amt}?\n\nThe ₹${paid} already collected will be kept. The new balance will be recalculated as ₹${bal}.\n\nContinue?`;
+      if (!confirm(msg)) {
+        this.clearDraft(s); // revert the input to the saved total
+        return;
+      }
+    }
+    this.data.setStudentFee(s, this.label(), amt);
+    this.clearDraft(s);
   }
 
   /** Collect the entered installment against this student's fee. */

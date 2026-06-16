@@ -41,7 +41,7 @@
           <span class="text-[10px] text-muted uppercase">{{ 'totalFee' | t }}</span>
           <span class="text-muted text-[14px]">₹</span>
           <input class="w-20 text-center bg-white border border-line rounded-lg py-1.5 text-[15px]" type="number" min="0"
-                 [ngModel]="amountOf(s)" (ngModelChange)="setAmount(s, $event)" placeholder="0" />
+                 [ngModel]="amountVal(s)" (ngModelChange)="onAmountInput(s, $event)" (change)="commitAmount(s)" (keyup.enter)="commitAmount(s)" placeholder="0" />
         </label>
         @if (amountOf(s)) {
           <!-- paid / balance -->
@@ -59,6 +59,7 @@
           } @else {
             <span class="shrink-0 badge badge-green">✓ {{ 'paid' | t }}</span>
           }
+          <button class="shrink-0 rounded-lg border border-line text-primary px-2.5 py-1.5 text-[13px]" [title]="'paymentHistory' | t" (click)="openHistory(s)">📜</button>
           <button class="shrink-0 rounded-lg border border-line text-primary px-2.5 py-1.5 text-[13px]" [title]="'feeReceipt' | t" (click)="openReceipt(s)">🧾</button>
           @if (balanceOf(s) > 0) {
             <a [href]="waFee(s)" target="_blank" rel="noopener" class="shrink-0 rounded-lg bg-[#25D366] text-white px-2.5 py-1.5 text-[13px]" [title]="'whatsapp' | t">🟢</a>
@@ -143,6 +144,23 @@
           </tbody>
         </table>
 
+        <!-- installment breakdown -->
+        @for (f of receiptFees(); track f.id) {
+          @if (data.feePayments(f).length) {
+            <div class="text-[11px] text-muted mb-1 mt-2 font-semibold">{{ f.label }} — {{ 'installments' | t }}</div>
+            <table class="w-full border-collapse text-[12px] mb-2">
+              <tbody>
+                @for (p of data.feePayments(f); track $index) {
+                  <tr>
+                    <td class="border border-line px-2 py-1 text-muted">{{ p.date }}</td>
+                    <td class="border border-line px-2 py-1 text-right font-semibold">₹{{ p.amount }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+
         <div class="flex justify-between items-center bg-success-light rounded-lg px-3 py-2 mb-1.5">
           <span class="font-bold text-[13px]">✅ {{ 'paid' | t }}</span>
           <span class="font-extrabold text-success">₹{{ receiptPaid() }}</span>
@@ -154,6 +172,62 @@
           </div>
         }
         <div class="text-center text-[10px] text-muted mt-4">{{ 'computerReceipt' | t }}</div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============ PAYMENT HISTORY ============ -->
+@if (historyStudent(); as s) {
+  <div class="fixed inset-0 bg-black/50 z-[70] flex items-start sm:items-center justify-center p-0 sm:p-4 overflow-y-auto" (click)="closeHistory()">
+    <div class="bg-white w-full sm:max-w-md my-0 sm:my-4 rounded-none sm:rounded-2xl" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between gap-2 px-4 py-3 bg-page border-b border-line sticky top-0">
+        <div class="font-bold text-[15px]">📜 {{ 'paymentHistory' | t }} — {{ s.name }}</div>
+        <button class="text-muted hover:text-ink cursor-pointer text-sm font-semibold" (click)="closeHistory()">✕</button>
+      </div>
+
+      <div class="p-4">
+        <!-- summary -->
+        <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+          <div class="bg-page rounded-lg py-2">
+            <div class="font-extrabold text-primary text-[15px]">₹{{ historyTotal() }}</div>
+            <div class="text-[10px] text-muted">{{ 'totalFee' | t }}</div>
+          </div>
+          <div class="bg-success-light rounded-lg py-2">
+            <div class="font-extrabold text-success text-[15px]">₹{{ historyPaid() }}</div>
+            <div class="text-[10px] text-muted">{{ 'collected' | t }}</div>
+          </div>
+          <div class="bg-danger-light rounded-lg py-2">
+            <div class="font-extrabold text-danger text-[15px]">₹{{ historyBalance() }}</div>
+            <div class="text-[10px] text-muted">{{ 'pending' | t }}</div>
+          </div>
+        </div>
+
+        @for (x of historyFees(); track x.fee.id) {
+          <div class="mb-4">
+            <div class="flex justify-between items-baseline mb-1.5">
+              <span class="font-bold text-[13.5px]">{{ x.fee.label }}</span>
+              <span class="text-[12px] text-muted">₹{{ x.paid }} / ₹{{ x.fee.amount }}</span>
+            </div>
+            @if (x.payments.length) {
+              <div class="divide-y divide-line border border-line rounded-lg overflow-hidden">
+                @for (p of x.payments; track $index) {
+                  <div class="flex justify-between items-center px-3 py-1.5 text-[12.5px]">
+                    <span class="text-muted">🗓️ {{ p.date }}</span>
+                    <span class="font-semibold text-success">+ ₹{{ p.amount }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-[12px] text-muted px-1 py-1">— {{ 'noPaymentsYet' | t }}</div>
+            }
+            @if (x.balance > 0) {
+              <div class="text-[11px] text-danger font-semibold mt-1 text-right">{{ 'feePending' | t }}: ₹{{ x.balance }}</div>
+            }
+          </div>
+        } @empty {
+          <div class="text-center text-muted text-sm py-6">— {{ 'noPaymentsYet' | t }}</div>
+        }
       </div>
     </div>
   </div>

@@ -446,12 +446,18 @@ export class DataService {
     };
   }
 
-  /** Amount collected so far on a fee (back-compat: a 'paid' record with no paidAmount = fully paid). */
+  /** Amount collected so far — from the payment history, falling back to older records. */
   feePaid(f: FeeItem): number {
+    if (f.payments?.length) return f.payments.reduce((a, p) => a + p.amount, 0);
     return f.paidAmount ?? (f.status === 'paid' ? f.amount : 0);
   }
   feeBalance(f: FeeItem): number {
     return Math.max(0, f.amount - this.feePaid(f));
+  }
+  feePayments(f: FeeItem): { date: string; amount: number }[] {
+    if (f.payments?.length) return f.payments;
+    const paid = this.feePaid(f);
+    return paid > 0 ? [{ date: f.dueDate, amount: paid }] : [];
   }
 
   /** Real fee status from fee records; falls back to stored demo value. */
@@ -580,22 +586,31 @@ export class DataService {
 
   markFeePaid(feeId: string) {
     const f = this.db().fees.find((x) => x.id === feeId);
-    if (f) this.writeFee(f.id, { paidAmount: f.amount, status: 'paid' });
+    if (!f) return;
+    const bal = this.feeBalance(f);
+    const payments = bal > 0 ? [...this.feePayments(f), { date: this.todayStr, amount: bal }] : this.feePayments(f);
+    this.writeFee(f.id, { payments, paidAmount: f.amount, status: 'paid' });
   }
 
-  /** Collect an installment against a fee — adds to paidAmount and updates status. */
+  /** Collect an installment against a fee — records a dated payment and updates the balance. */
   collectFee(feeId: string, installment: number) {
     const f = this.db().fees.find((x) => x.id === feeId);
     if (!f || installment <= 0) return;
-    const paid = Math.min(f.amount, this.feePaid(f) + installment);
-    this.writeFee(f.id, { paidAmount: paid, status: paid >= f.amount ? 'paid' : 'pending' });
+    const add = Math.min(installment, this.feeBalance(f));
+    if (add <= 0) return;
+    const payments = [...this.feePayments(f), { date: this.todayStr, amount: add }];
+    const paid = this.feePaid(f) + add;
+    this.writeFee(f.id, { payments, paidAmount: paid, status: paid >= f.amount ? 'paid' : 'pending' });
   }
 
   setFeeStatus(feeId: string, status: 'paid' | 'pending') {
     const f = this.db().fees.find((x) => x.id === feeId);
     if (!f) return;
-    // Toggling status also syncs paidAmount (full / nothing).
-    this.writeFee(f.id, { status, paidAmount: status === 'paid' ? f.amount : 0 });
+    if (status === 'paid') {
+      this.markFeePaid(feeId);
+    } else {
+      this.writeFee(f.id, { payments: [], paidAmount: 0, status: 'pending' });
+    }
   }
 
   private writeFee(feeId: string, patch: Partial<FeeItem>) {
@@ -645,12 +660,14 @@ export class DataService {
       return;
     }
     const existing = this.db().fees.find((f) => f.id === id);
-    // Keep whatever's already been collected; never lose it when the total is edited.
-    const paid = existing ? Math.min(this.feePaid(existing), amount) : 0;
+    // Keep the full installment history; never lose collected amounts when the total is edited.
+    const payments = existing ? this.feePayments(existing) : [];
+    const paid = payments.reduce((a, p) => a + p.amount, 0);
     const rec = {
       studentId: student.id,
       label,
       amount,
+      payments,
       paidAmount: paid,
       dueDate: existing?.dueDate ?? this.todayStr,
       status: paid >= amount ? ('paid' as const) : ('pending' as const),

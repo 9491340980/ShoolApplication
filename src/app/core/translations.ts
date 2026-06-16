@@ -320,6 +320,9 @@ export const DICT = {
     tourPrev: 'Back',
     tourSkip: 'Skip',
     tourFinish: 'Finish',
+    paymentHistory: 'Payment History',
+    installments: 'Installments',
+    noPaymentsYet: 'No payments yet',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -624,5 +627,8 @@ export const DICT = {
     tourPrev: 'వెనుకకు',
     tourSkip: 'దాటవేయి',
     tourFinish: 'ముగించు',
+    paymentHistory: 'చెల్లింపు చరిత్ర',
+    installments: 'వాయిదాలు',
+    noPaymentsYet: 'ఇంకా చెల్లింపులు లేవు',
   },
 } satisfies Record<Lang, Record<string, string>>;

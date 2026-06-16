@@ -92,13 +92,19 @@ export interface Notice {
   date: string; // ISO yyyy-mm-dd
 }
 
+export interface FeePayment {
+  date: string; // ISO yyyy-mm-dd
+  amount: number;
+}
+
 export interface FeeItem {
   id: string;
   schoolId?: string;
   studentId: string;
   label: string;
   amount: number; // total fee
-  paidAmount?: number; // collected so far (installments); absent → 0 (or = amount when status is paid)
+  paidAmount?: number; // collected so far (kept in sync with payments); back-compat for old records
+  payments?: FeePayment[]; // installment history
   dueDate: string;
   status: 'paid' | 'pending';
 }
