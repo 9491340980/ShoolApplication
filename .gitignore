@@ -49,3 +49,6 @@ service-account.json
 # Firebase CLI artifacts
 .firebase/
 firebase-debug.log
+
+# Demo recording output
+demo-videos/
