@@ -302,6 +302,9 @@ export const DICT = {
     manageExams: 'Manage Exams',
     examsHint: 'Add your own exams — FA1, FA2, SA1, Slip Test, Unit Test, etc.',
     exportExcel: 'Export',
+    feeReceipt: 'Fee Receipt',
+    receiptNo: 'Receipt No',
+    computerReceipt: 'This is a computer-generated receipt.',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -588,5 +591,8 @@ export const DICT = {
     manageExams: 'పరీక్షల నిర్వహణ',
     examsHint: 'మీ సొంత పరీక్షలు చేర్చండి — FA1, FA2, SA1, స్లిప్ టెస్ట్, యూనిట్ టెస్ట్ మొదలైనవి.',
     exportExcel: 'ఎక్స్‌పోర్ట్',
+    feeReceipt: 'ఫీజు రసీదు',
+    receiptNo: 'రసీదు నం',
+    computerReceipt: 'ఇది కంప్యూటర్ ద్వారా రూపొందించిన రసీదు.',
   },
 } satisfies Record<Lang, Record<string, string>>;

@@ -32,6 +32,30 @@ export class NotifyService {
     return this.fill(this.i18n.t('feeMsg'), { name, cls: classId, amt: amount, due: dueDate, school: this.school() });
   }
 
+  /** A fee receipt as a formatted WhatsApp/SMS message. */
+  receiptMessage(info: {
+    name: string;
+    classId: string;
+    receiptNo: string;
+    date: string;
+    items: { label: string; amount: number; status: 'paid' | 'pending' }[];
+    paid: number;
+    balance: number;
+  }): string {
+    const sep = '━━━━━━━━━━━━';
+    return [
+      `🧾 *${this.school()}*`,
+      `*${this.i18n.t('feeReceipt')}* — ${info.date}`,
+      `${this.i18n.t('receiptNo')}: ${info.receiptNo}`,
+      `${info.name} | ${this.i18n.t('class')} ${info.classId}`,
+      sep,
+      ...info.items.map((i) => `${i.label}: ₹${i.amount} ${i.status === 'paid' ? '✅' : '⏳'}`),
+      sep,
+      `✅ *${this.i18n.t('paid')}:* ₹${info.paid}`,
+      `⏳ *${this.i18n.t('feePending')}:* ₹${info.balance}`,
+    ].join('\n');
+  }
+
   /** A notice as a formatted WhatsApp/SMS message. */
   noticeMessage(title: string, body: string, type: 'general' | 'urgent' | 'event'): string {
     const icon = type === 'urgent' ? '⚠️' : type === 'event' ? '🎉' : '📢';

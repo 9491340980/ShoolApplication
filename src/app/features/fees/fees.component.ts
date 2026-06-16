@@ -1,9 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { FeeItem, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
+import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -15,9 +17,46 @@ export class FeesComponent {
   auth = inject(AuthService);
   data = inject(DataService);
   notify = inject(NotifyService);
+  private schoolSvc = inject(SchoolService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
   classes = computed(() => this.data.schoolClasses());
+  schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
+
+  // ---- fee receipt ----
+  receiptStudent = signal<Student | null>(null);
+  receiptDate = new Date().toISOString().slice(0, 10);
+
+  openReceipt(s: Student) {
+    this.receiptStudent.set(s);
+  }
+  closeReceipt() {
+    this.receiptStudent.set(null);
+  }
+  printReceipt() {
+    window.print();
+  }
+  receiptFees = computed(() => {
+    const s = this.receiptStudent();
+    return s ? this.data.feesOf(s.id) : [];
+  });
+  receiptPaid = computed(() => this.receiptFees().filter((f) => f.status === 'paid').reduce((a, f) => a + f.amount, 0));
+  receiptBalance = computed(() => this.receiptFees().filter((f) => f.status === 'pending').reduce((a, f) => a + f.amount, 0));
+  receiptNo(s: Student): string {
+    return `R-${s.roll}-${this.receiptDate.replace(/-/g, '')}`;
+  }
+  sendReceiptWa(s: Student) {
+    const msg = this.notify.receiptMessage({
+      name: s.name,
+      classId: s.classId,
+      receiptNo: this.receiptNo(s),
+      date: this.receiptDate,
+      items: this.receiptFees().map((f) => ({ label: f.label, amount: f.amount, status: f.status })),
+      paid: this.receiptPaid(),
+      balance: this.receiptBalance(),
+    });
+    window.open(this.notify.whatsappLink(s.parentPhone, msg), '_blank');
+  }
 
   // ---- staff: section-wise fee collection ----
   classId = signal('8A');

@@ -47,6 +47,7 @@
                   (click)="togglePaid(s)">
             {{ (isPaid(s) ? 'paid' : 'markPaid') | t }}
           </button>
+          <button class="shrink-0 rounded-lg border border-line text-primary px-2.5 py-1.5 text-[13px]" [title]="'feeReceipt' | t" (click)="openReceipt(s)">🧾</button>
           @if (!isPaid(s)) {
             <a [href]="waFee(s)" target="_blank" rel="noopener" class="shrink-0 rounded-lg bg-[#25D366] text-white px-2.5 py-1.5 text-[13px]" [title]="'whatsapp' | t">🟢</a>
           }
@@ -85,5 +86,63 @@
         <div class="text-xl font-extrabold text-danger">₹{{ myPending() }}</div>
       </div>
     }
+  </div>
+}
+
+<!-- ============ FEE RECEIPT ============ -->
+@if (receiptStudent(); as s) {
+  <div class="fixed inset-0 bg-black/50 z-[70] flex items-start sm:items-center justify-center p-0 sm:p-4 overflow-y-auto print:p-0 print:bg-white" (click)="closeReceipt()">
+    <div class="bg-white w-full sm:max-w-md my-0 sm:my-4" (click)="$event.stopPropagation()">
+      <div class="no-print flex items-center justify-between gap-2 px-4 py-3 bg-page border-b border-line sticky top-0 flex-wrap">
+        <button class="text-muted hover:text-ink cursor-pointer text-sm font-semibold" (click)="closeReceipt()">✕ {{ 'close' | t }}</button>
+        <div class="flex gap-2">
+          <button class="btn-sm rounded-lg bg-[#128C7E] text-white font-semibold px-3 py-1.5" (click)="sendReceiptWa(s)">💬 {{ 'whatsapp' | t }}</button>
+          <button class="btn-blue btn-sm" (click)="printReceipt()">🖨️ {{ 'downloadPrint' | t }}</button>
+        </div>
+      </div>
+
+      <div id="receipt-card" class="p-6 bg-white text-ink">
+        <div class="text-center border-b-2 border-primary pb-3 mb-3">
+          <div class="font-display text-lg font-extrabold text-primary">{{ schoolName() }}</div>
+          <div class="text-[12px] text-muted">🧾 {{ 'feeReceipt' | t }}</div>
+        </div>
+        <div class="flex justify-between text-[12px] mb-1"><span class="text-muted">{{ 'receiptNo' | t }}:</span><b>{{ receiptNo(s) }}</b></div>
+        <div class="flex justify-between text-[12px] mb-1"><span class="text-muted">{{ 'date' | t }}:</span><b>{{ receiptDate }}</b></div>
+        <div class="flex justify-between text-[12px] mb-3"><span class="text-muted">{{ 'studentName' | t }}:</span><b>{{ s.name }} ({{ s.classId }})</b></div>
+
+        <table class="w-full border-collapse text-[12.5px] mb-3">
+          <thead>
+            <tr class="bg-page">
+              <th class="border border-line px-2 py-1.5 text-left">{{ 'feeName' | t }}</th>
+              <th class="border border-line px-2 py-1.5 text-right">{{ 'amount' | t }}</th>
+              <th class="border border-line px-2 py-1.5 text-center">{{ 'status' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of receiptFees(); track f.id) {
+              <tr>
+                <td class="border border-line px-2 py-1.5">{{ f.label }}</td>
+                <td class="border border-line px-2 py-1.5 text-right">₹{{ f.amount }}</td>
+                <td class="border border-line px-2 py-1.5 text-center">{{ (f.status === 'paid' ? 'paid' : 'pending') | t }}</td>
+              </tr>
+            } @empty {
+              <tr><td class="border border-line px-2 py-2 text-center text-muted" colspan="3">—</td></tr>
+            }
+          </tbody>
+        </table>
+
+        <div class="flex justify-between items-center bg-success-light rounded-lg px-3 py-2 mb-1.5">
+          <span class="font-bold text-[13px]">✅ {{ 'paid' | t }}</span>
+          <span class="font-extrabold text-success">₹{{ receiptPaid() }}</span>
+        </div>
+        @if (receiptBalance() > 0) {
+          <div class="flex justify-between items-center bg-danger-light rounded-lg px-3 py-2">
+            <span class="font-bold text-[13px]">⏳ {{ 'feePending' | t }}</span>
+            <span class="font-extrabold text-danger">₹{{ receiptBalance() }}</span>
+          </div>
+        }
+        <div class="text-center text-[10px] text-muted mt-4">{{ 'computerReceipt' | t }}</div>
+      </div>
+    </div>
   </div>
 }

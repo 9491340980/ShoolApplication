@@ -72,16 +72,19 @@ body {
   overflow-x: hidden;
 }
 
-/* Print only the report card (everything else hidden). */
+/* Print only the report card / receipt (everything else hidden). */
 @media print {
   body * {
     visibility: hidden !important;
   }
   #report-card,
-  #report-card * {
+  #report-card *,
+  #receipt-card,
+  #receipt-card * {
     visibility: visible !important;
   }
-  #report-card {
+  #report-card,
+  #receipt-card {
     position: absolute;
     left: 0;
     top: 0;
