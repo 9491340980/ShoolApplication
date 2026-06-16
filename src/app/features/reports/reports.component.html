@@ -87,7 +87,7 @@
 @if (tab() === 'exam') {
   <!-- EXAM REPORT -->
   <select class="input max-w-[200px] mb-4" [ngModel]="examId()" (ngModelChange)="examId.set($event)">
-    @for (e of exams; track e.id) { <option [value]="e.id">{{ e.label }}</option> }
+    @for (e of exams(); track e.id) { <option [value]="e.id">{{ e.label }}</option> }
   </select>
   <div class="card !p-0 overflow-hidden">
     <div class="overflow-x-auto">

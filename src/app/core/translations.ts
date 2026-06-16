@@ -299,6 +299,8 @@ export const DICT = {
     forgotPassword: 'Forgot password?',
     forgotHint: 'Enter your email above and we’ll send a reset link to your inbox.',
     sendLink: 'Send Link',
+    manageExams: 'Manage Exams',
+    examsHint: 'Add your own exams — FA1, FA2, SA1, Slip Test, Unit Test, etc.',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -582,5 +584,7 @@ export const DICT = {
     forgotPassword: 'పాస్‌వర్డ్ మర్చిపోయారా?',
     forgotHint: 'మీ ఇమెయిల్ పైన నమోదు చేయండి, రీసెట్ లింక్ మీ ఇన్‌బాక్స్‌కు పంపుతాం.',
     sendLink: 'లింక్ పంపండి',
+    manageExams: 'పరీక్షల నిర్వహణ',
+    examsHint: 'మీ సొంత పరీక్షలు చేర్చండి — FA1, FA2, SA1, స్లిప్ టెస్ట్, యూనిట్ టెస్ట్ మొదలైనవి.',
   },
 } satisfies Record<Lang, Record<string, string>>;

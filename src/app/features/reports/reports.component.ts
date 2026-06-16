@@ -1,7 +1,6 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../core/data.service';
-import { EXAMS } from '../../core/models';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -13,8 +12,13 @@ export class ReportsComponent {
   data = inject(DataService);
 
   tab = signal<'fee' | 'attendance' | 'exam'>('fee');
-  exams = EXAMS;
+  exams = computed(() => this.data.schoolExams());
   examId = signal('quarterly');
+
+  private examGuard = effect(() => {
+    const ids = this.exams().map((e) => e.id);
+    if (ids.length && !ids.includes(this.examId())) this.examId.set(ids[0]);
+  });
 
   private classesWithStudents = computed(() =>
     this.data.schoolClasses().filter((c) => this.data.studentsOf(c).length > 0),

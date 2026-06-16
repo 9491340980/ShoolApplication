@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { EXAMS, Student } from '../../core/models';
+import { Student } from '../../core/models';
 import { TPipe } from '../../core/translate.service';
 import { TKey } from '../../core/translations';
 
@@ -83,7 +83,7 @@ export class StudentsComponent {
   viewResults = computed(() => {
     const s = this.viewing();
     if (!s) return [];
-    return EXAMS.map((e) => {
+    return this.data.schoolExams().map((e) => {
       const marks = this.data.studentMarks(s.id, e.id);
       if (!marks.length) return null;
       const total = marks.reduce((a, m) => a + m.score, 0);

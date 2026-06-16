@@ -139,7 +139,11 @@ export const SUBJECTS: Subject[] = [
   { name: 'Social', max: 100 },
   { name: 'Hindi', max: 100 },
 ];
-export const EXAMS = [
+export interface Exam {
+  id: string;
+  label: string;
+}
+export const EXAMS: Exam[] = [
   { id: 'quarterly', label: 'Quarterly Exam' },
   { id: 'halfyearly', label: 'Half Yearly' },
   { id: 'annual', label: 'Annual Exam' },

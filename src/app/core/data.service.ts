@@ -31,6 +31,8 @@ import {
   AttendanceStatus,
   CLASSES,
   DEMO_SCHOOL_ID,
+  EXAMS,
+  Exam,
   FeeItem,
   MarksDoc,
   Notice,
@@ -55,6 +57,8 @@ interface Db {
   subjectsList?: Subject[];
   /** School's own class/section list; empty → default CLASSES. */
   classesList?: string[];
+  /** School's own exam list; empty → default EXAMS. */
+  examsList?: Exam[];
 }
 
 const EMPTY_DB: Db = {
@@ -103,6 +107,11 @@ export class DataService {
   readonly schoolClasses = computed(() => {
     const list = this.db().classesList;
     return list && list.length ? list : CLASSES;
+  });
+  /** Exam list — the school's own exams (FA/SA/slip test), falling back to defaults. */
+  readonly schoolExams = computed(() => {
+    const list = this.db().examsList;
+    return list && list.length ? list : EXAMS;
   });
 
   readonly monthlyAttendance = DEMO_MONTHLY_ATTENDANCE;
@@ -206,6 +215,13 @@ export class DataService {
       onSnapshot(query(collection(fs, 'classesList'), where('schoolId', '==', schoolId)), (snap) => {
         const names = snap.empty ? [] : ((snap.docs[0].data()['names'] as string[]) ?? []);
         this.db.update((db) => ({ ...db, classesList: names }));
+      }),
+    );
+
+    this.unsubs.push(
+      onSnapshot(query(collection(fs, 'examsList'), where('schoolId', '==', schoolId)), (snap) => {
+        const exams = snap.empty ? [] : ((snap.docs[0].data()['exams'] as Exam[]) ?? []);
+        this.db.update((db) => ({ ...db, examsList: exams }));
       }),
     );
 
@@ -723,6 +739,26 @@ export class DataService {
       return;
     }
     this.commit({ classesList: names });
+  }
+
+  addExam(label: string) {
+    const clean = label.trim();
+    if (!clean) return;
+    const id = clean.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) || `e${Date.now()}`;
+    if (this.schoolExams().some((e) => e.id === id)) return;
+    this.saveExams([...this.schoolExams(), { id, label: clean }]);
+  }
+
+  removeExam(id: string) {
+    this.saveExams(this.schoolExams().filter((e) => e.id !== id));
+  }
+
+  private saveExams(exams: Exam[]) {
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'examsList', this.docId('list')), { schoolId: this.sid, exams });
+      return;
+    }
+    this.commit({ examsList: exams });
   }
 
   addNotice(notice: Omit<Notice, 'id'>) {

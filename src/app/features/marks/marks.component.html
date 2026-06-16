@@ -16,12 +16,32 @@
       }
     </select>
     <select class="input max-w-[170px]" [ngModel]="examId()" (ngModelChange)="examId.set($event)">
-      @for (e of exams; track e.id) {
+      @for (e of exams(); track e.id) {
         <option [value]="e.id">{{ e.label }}</option>
       }
     </select>
     <button class="btn-outline btn-sm" (click)="showSubjects.set(!showSubjects())">⚙️ {{ 'manageSubjects' | t }}</button>
+    <button class="btn-outline btn-sm" (click)="showExams.set(!showExams())">📅 {{ 'manageExams' | t }}</button>
   </div>
+
+  @if (showExams()) {
+    <div class="card mb-4">
+      <div class="card-title">📅 {{ 'manageExams' | t }}</div>
+      <p class="text-xs text-muted mb-3">💡 {{ 'examsHint' | t }}</p>
+      <div class="flex flex-wrap gap-2 mb-3">
+        @for (e of exams(); track e.id) {
+          <span class="badge badge-blue !text-[12.5px] !py-1.5 gap-1.5">
+            {{ e.label }}
+            <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-1" (click)="data.removeExam(e.id)">✕</button>
+          </span>
+        }
+      </div>
+      <div class="flex gap-2 max-w-md">
+        <input class="input" placeholder="FA1 / SA1 / Slip Test…" [ngModel]="newExam()" (ngModelChange)="newExam.set($event)" (keyup.enter)="addExam()" />
+        <button class="btn-blue shrink-0" (click)="addExam()">＋</button>
+      </div>
+    </div>
+  }
 
   @if (showSubjects()) {
     <div class="card mb-4">
@@ -211,8 +231,8 @@
   }
 } @else {
   <!-- RESULT VIEW -->
-  <div class="flex gap-1 mb-4 bg-white border border-line p-1 rounded-xl max-w-md">
-    @for (e of exams; track e.id) {
+  <div class="flex gap-1 mb-4 bg-white border border-line p-1 rounded-xl max-w-md flex-wrap">
+    @for (e of exams(); track e.id) {
       <button
         class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
         [class]="viewExamId() === e.id ? 'bg-primary text-white' : 'text-muted hover:bg-page'"

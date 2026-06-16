@@ -4,7 +4,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { BulkSendService } from '../../core/bulk-send.service';
-import { DEMO_SCHOOL_ID, EXAMS, Student } from '../../core/models';
+import { DEMO_SCHOOL_ID, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { buildReportPdf, shareElementImage, sharePdf } from '../../core/report-pdf';
 import { SchoolService } from '../../core/school.service';
@@ -30,10 +30,18 @@ export class MarksComponent {
   private notify = inject(NotifyService);
   bulk = inject(BulkSendService);
 
-  exams = EXAMS;
+  exams = computed(() => this.data.schoolExams());
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
   subjects = computed(() => this.data.subjects());
+
+  // exam management
+  showExams = signal(false);
+  newExam = signal('');
+  addExam() {
+    this.data.addExam(this.newExam());
+    this.newExam.set('');
+  }
 
   /** Teacher sees only their assigned classes; Head Master sees all. */
   classes = computed(() => {
@@ -50,6 +58,13 @@ export class MarksComponent {
     if (allowed.length && !allowed.includes(this.classId())) this.classId.set(allowed[0]);
   });
   examId = signal('quarterly');
+
+  // Keep the selected exams valid against the school's exam list.
+  private examGuard = effect(() => {
+    const ids = this.exams().map((e) => e.id);
+    if (ids.length && !ids.includes(this.examId())) this.examId.set(ids[0]);
+    if (ids.length && !ids.includes(this.viewExamId())) this.viewExamId.set(ids[0]);
+  });
   /** studentId -> subjectName -> score */
   matrix = signal<Record<string, Record<string, number>>>({});
   saved = signal(false);
@@ -255,7 +270,7 @@ export class MarksComponent {
       att,
       rank: ranked.findIndex((t) => t.id === s.id) + 1,
       classSize: ranked.length,
-      examLabel: EXAMS.find((e) => e.id === exam)?.label ?? exam,
+      examLabel: this.data.schoolExams().find((e) => e.id === exam)?.label ?? exam,
       pass: pct >= 35,
     };
   }
