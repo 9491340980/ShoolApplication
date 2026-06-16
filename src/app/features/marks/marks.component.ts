@@ -4,6 +4,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { BulkSendService } from '../../core/bulk-send.service';
+import { exportRows } from '../../core/export';
 import { DEMO_SCHOOL_ID, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { buildReportPdf, shareElementImage, sharePdf } from '../../core/report-pdf';
@@ -214,6 +215,21 @@ export class MarksComponent {
     if (pct >= 50) return 'C+';
     if (pct >= 35) return 'C';
     return 'F';
+  }
+
+  /** Export the result sheet (students × subjects + total/%/rank) to Excel. */
+  exportSheet() {
+    const subs = this.subjects();
+    const rows = this.sheet().map((r) => {
+      const row: Record<string, unknown> = { Roll: r.student.roll, Name: r.student.name };
+      subs.forEach((s, i) => (row[`${s.name} /${s.max}`] = r.scores[i] ?? ''));
+      row['Total'] = r.total;
+      row['%'] = r.pct;
+      row['Rank'] = r.rank;
+      return row;
+    });
+    const exam = this.exams().find((e) => e.id === this.examId())?.label ?? this.examId();
+    exportRows(`Marks-${this.classId()}-${exam}`, 'Marks', rows);
   }
 
   /** Result sheet: every student × every subject for the selected class & exam. */

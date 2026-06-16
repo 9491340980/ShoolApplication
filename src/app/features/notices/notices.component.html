@@ -26,7 +26,11 @@
 }
 
 <div class="card">
-  <div class="card-title">📋 {{ 'allNotices' | t }}</div>
+  <div class="card-title">📋 {{ 'allNotices' | t }}
+    @if (isStaff()) {
+      <button class="ml-auto btn-outline btn-sm" (click)="exportNotices()">📊 {{ 'exportExcel' | t }}</button>
+    }
+  </div>
   @for (n of data.notices(); track n.id) {
     <div class="border-l-4 rounded-r-xl px-3.5 py-3 mb-2.5"
          [class]="n.type === 'urgent' ? 'border-danger bg-danger-light' : n.type === 'event' ? 'border-accent bg-accent-light' : 'border-primary bg-primary-light'">

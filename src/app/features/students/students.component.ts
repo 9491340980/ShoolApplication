@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
+import { exportRows } from '../../core/export';
 import { Student } from '../../core/models';
 import { TPipe } from '../../core/translate.service';
 import { TKey } from '../../core/translations';
@@ -218,6 +219,31 @@ export class StudentsComponent {
       this.importBusy.set(false);
       input.value = '';
     }
+  }
+
+  /** Export the currently filtered students to Excel (full register + live attendance/fee). */
+  exportStudents() {
+    const rows = this.filtered().map((s) => ({
+      Roll: s.roll,
+      Name: s.name,
+      Class: s.classId,
+      ParentPhone: s.parentPhone,
+      AdmissionNo: s.admissionNo ?? '',
+      FatherName: s.fatherName ?? '',
+      MotherName: s.motherName ?? '',
+      DOB: s.dob ?? '',
+      DOA: s.doa ?? '',
+      Caste: s.caste ?? '',
+      MotherTongue: s.motherTongue ?? '',
+      Aadhaar: s.aadhaar ?? '',
+      PEN: s.pen ?? '',
+      APAAR: s.apaarId ?? '',
+      Address: s.address ?? '',
+      'Attendance%': this.attPct(s.id) ?? '',
+      FeeStatus: this.feeStatus(s.id) ?? '',
+    }));
+    const tag = this.classFilter() || 'All';
+    exportRows(`Students-${tag}-${new Date().toISOString().slice(0, 10)}`, 'Students', rows);
   }
 
   downloadTemplate() {

@@ -7,6 +7,9 @@
   <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
           [class]="tab() === 'exam' ? 'bg-primary text-white' : 'text-muted hover:bg-page'" (click)="tab.set('exam')">📝 {{ 'marksResults' | t }}</button>
 </div>
+<div class="mb-3">
+  <button class="btn-outline btn-sm" (click)="export()">📊 {{ 'exportExcel' | t }}</button>
+</div>
 
 @if (tab() === 'fee') {
   <!-- FEE REPORT -->

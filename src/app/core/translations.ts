@@ -301,6 +301,7 @@ export const DICT = {
     sendLink: 'Send Link',
     manageExams: 'Manage Exams',
     examsHint: 'Add your own exams — FA1, FA2, SA1, Slip Test, Unit Test, etc.',
+    exportExcel: 'Export',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -586,5 +587,6 @@ export const DICT = {
     sendLink: 'లింక్ పంపండి',
     manageExams: 'పరీక్షల నిర్వహణ',
     examsHint: 'మీ సొంత పరీక్షలు చేర్చండి — FA1, FA2, SA1, స్లిప్ టెస్ట్, యూనిట్ టెస్ట్ మొదలైనవి.',
+    exportExcel: 'ఎక్స్‌పోర్ట్',
   },
 } satisfies Record<Lang, Record<string, string>>;

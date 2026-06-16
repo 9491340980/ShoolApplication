@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../core/data.service';
+import { exportRows } from '../../core/export';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -82,4 +83,16 @@ export class ReportsComponent {
       return { classId, appeared: results.length, avg, passed, passPct: results.length ? Math.round((passed / results.length) * 100) : 0, topper };
     }),
   );
+
+  export() {
+    const t = this.tab();
+    if (t === 'fee') {
+      exportRows('Fee-Report', 'Fees', this.feeRows().map((r) => ({ Class: r.classId, Students: r.students, TotalFee: r.total, Collected: r.collected, Pending: r.pending })));
+    } else if (t === 'attendance') {
+      exportRows('Attendance-Report', 'Attendance', this.attRows().map((r) => ({ Class: r.classId, Students: r.students, Marked: r.marked, 'Avg%': r.avg ?? '', Below75: r.below })));
+    } else {
+      const exam = this.exams().find((e) => e.id === this.examId())?.label ?? this.examId();
+      exportRows(`Exam-Report-${exam}`, 'Exam', this.examRows().map((r) => ({ Class: r.classId, Appeared: r.appeared, 'Avg%': r.avg ?? '', 'Pass%': r.passPct, Topper: r.topper ? `${r.topper.name} (${r.topper.pct}%)` : '' })));
+    }
+  }
 }

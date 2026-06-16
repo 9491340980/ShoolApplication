@@ -94,9 +94,12 @@
     <div class="card !p-0 overflow-hidden">
       <div class="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-line">
         <div class="text-[14px] font-bold">📊 {{ 'resultSheet' | t }} — {{ classId() }}</div>
-        <button class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold px-3 py-1.5" (click)="sendAllReports()">
-          🟢 {{ 'sendAllReports' | t }}
-        </button>
+        <div class="flex gap-2">
+          <button class="btn-outline btn-sm" (click)="exportSheet()">📊 {{ 'exportExcel' | t }}</button>
+          <button class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold px-3 py-1.5" (click)="sendAllReports()">
+            🟢 {{ 'sendAllReports' | t }}
+          </button>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full border-collapse text-[13px]">
