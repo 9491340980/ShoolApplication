@@ -10,7 +10,12 @@
     [class.-translate-x-full]="!drawerOpen()"
   >
     <div class="px-4 py-5 border-b border-white/10">
-      <div class="font-display text-white text-sm font-bold leading-tight">{{ schoolName() }}</div>
+      <div class="flex items-center gap-2.5">
+        @if (schoolLogo()) {
+          <img [src]="schoolLogo()" class="w-9 h-9 rounded-lg bg-white object-contain p-0.5 shrink-0" alt="logo" />
+        }
+        <div class="font-display text-white text-sm font-bold leading-tight">{{ schoolName() }}</div>
+      </div>
       @if (auth.role(); as role) {
         <span class="inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-accent/25 text-amber-300">
           {{ roleLabels[role].icon }} {{ roleLabels[role].label | t }}

@@ -30,6 +30,8 @@ export class ShellComponent {
     if (this.auth.role() === 'superadmin') return 'VidyaSetu — Admin';
     return this.schoolSvc.currentSchool()?.name ?? environment.schoolName;
   });
+  /** The signed-in school's logo (shown in the sidebar header). */
+  schoolLogo = computed(() => this.schoolSvc.currentSchool()?.logo || '');
   roleLabels = ROLE_LABELS;
   drawerOpen = signal(false);
 
