@@ -305,6 +305,10 @@ export const DICT = {
     feeReceipt: 'Fee Receipt',
     receiptNo: 'Receipt No',
     computerReceipt: 'This is a computer-generated receipt.',
+    homework: 'Homework',
+    postHomework: 'Post Homework',
+    homeworkPh: 'Homework details…',
+    noHomework: 'No homework posted yet.',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -594,5 +598,9 @@ export const DICT = {
     feeReceipt: 'ఫీజు రసీదు',
     receiptNo: 'రసీదు నం',
     computerReceipt: 'ఇది కంప్యూటర్ ద్వారా రూపొందించిన రసీదు.',
+    homework: 'హోంవర్క్',
+    postHomework: 'హోంవర్క్ పెట్టండి',
+    homeworkPh: 'హోంవర్క్ వివరాలు…',
+    noHomework: 'ఇంకా హోంవర్క్ పెట్టలేదు.',
   },
 } satisfies Record<Lang, Record<string, string>>;

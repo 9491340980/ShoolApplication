@@ -34,6 +34,7 @@ import {
   EXAMS,
   Exam,
   FeeItem,
+  Homework,
   MarksDoc,
   Notice,
   SUBJECTS,
@@ -49,6 +50,7 @@ interface Db {
   students: Student[];
   teachers: Teacher[];
   notices: Notice[];
+  homework: Homework[];
   fees: FeeItem[];
   attendance: AttendanceDoc[];
   marks: MarksDoc[];
@@ -65,6 +67,7 @@ const EMPTY_DB: Db = {
   students: [],
   teachers: [],
   notices: [],
+  homework: [],
   fees: [],
   attendance: [],
   marks: [],
@@ -96,6 +99,9 @@ export class DataService {
   readonly teachers = computed(() => this.db().teachers);
   readonly notices = computed(() =>
     [...this.db().notices].sort((a, b) => b.date.localeCompare(a.date)),
+  );
+  readonly homework = computed(() =>
+    [...this.db().homework].sort((a, b) => b.date.localeCompare(a.date)),
   );
   readonly fees = computed(() => this.db().fees);
   /** Subject master — the school's own list, falling back to sensible defaults. */
@@ -187,7 +193,7 @@ export class DataService {
     this.listeningFor = schoolId;
     this.db.set(EMPTY_DB);
 
-    const plain = ['students', 'teachers', 'notices', 'fees', 'attendance', 'marks'] as const;
+    const plain = ['students', 'teachers', 'notices', 'homework', 'fees', 'attendance', 'marks'] as const;
     for (const name of plain) {
       this.unsubs.push(
         onSnapshot(query(collection(fs, name), where('schoolId', '==', schoolId)), (snap) => {
@@ -318,6 +324,7 @@ export class DataService {
       students: DEMO_STUDENTS,
       teachers: DEMO_TEACHERS,
       notices: DEMO_NOTICES,
+      homework: [],
       fees: DEMO_FEES,
       attendance: DEMO_ATTENDANCE,
       marks: DEMO_MARKS,
@@ -759,6 +766,15 @@ export class DataService {
       return;
     }
     this.commit({ examsList: exams });
+  }
+
+  addHomework(hw: Omit<Homework, 'id'>) {
+    const id = this.docId(`hw${Date.now()}`);
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'homework', id), { ...hw, schoolId: this.sid });
+      return;
+    }
+    this.commit({ homework: [{ ...hw, id }, ...this.db().homework] });
   }
 
   addNotice(notice: Omit<Notice, 'id'>) {

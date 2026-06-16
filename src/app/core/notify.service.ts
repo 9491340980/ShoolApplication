@@ -56,6 +56,16 @@ export class NotifyService {
     ].join('\n');
   }
 
+  /** Homework as a formatted WhatsApp/SMS message. */
+  homeworkMessage(classId: string, date: string, items: { subject: string; text: string }[]): string {
+    return [
+      `📔 *${this.school()}*`,
+      `*${this.i18n.t('homework')}* — ${this.i18n.t('class')} ${classId} · ${date}`,
+      '',
+      ...items.map((i) => `▪️ *${i.subject}:* ${i.text}`),
+    ].join('\n');
+  }
+
   /** A notice as a formatted WhatsApp/SMS message. */
   noticeMessage(title: string, body: string, type: 'general' | 'urgent' | 'event'): string {
     const icon = type === 'urgent' ? '⚠️' : type === 'event' ? '🎉' : '📢';

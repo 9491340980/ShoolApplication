@@ -67,6 +67,16 @@ export interface Teacher {
   active: boolean;
 }
 
+export interface Homework {
+  id: string;
+  schoolId?: string;
+  classId: string;
+  date: string; // ISO yyyy-mm-dd
+  subject: string;
+  text: string;
+  postedBy: string;
+}
+
 export type NoticeType = 'general' | 'urgent' | 'event';
 
 export interface Notice {

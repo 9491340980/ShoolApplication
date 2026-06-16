@@ -14,7 +14,8 @@ export type IconName =
   | 'menu'
   | 'building'
   | 'chart'
-  | 'promote';
+  | 'promote'
+  | 'book';
 
 /** Crisp stroke icons (Lucide outlines) — emoji glyphs render unreliably on Windows. */
 @Component({
@@ -115,6 +116,10 @@ export type IconName =
           <path d="m17 11-5-5-5 5" />
           <path d="M12 6v12" />
           <path d="M5 21h14" />
+        }
+        @case ('book') {
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
         }
       }
     </svg>

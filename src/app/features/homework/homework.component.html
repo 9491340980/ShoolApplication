@@ -1,0 +1,45 @@
+<div class="flex items-center gap-2.5 mb-4 flex-wrap">
+  <select class="input max-w-[160px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)" [disabled]="!isStaff()">
+    @for (c of classes(); track c) {
+      <option [value]="c">{{ 'class' | t }} {{ c }}</option>
+    }
+    @if (!isStaff()) { <option [value]="classId()">{{ 'class' | t }} {{ classId() }}</option> }
+  </select>
+</div>
+
+@if (isStaff()) {
+  <div class="card mb-4">
+    <div class="card-title">📔 {{ 'postHomework' | t }}</div>
+    <div class="flex gap-2.5 mb-2.5 flex-wrap">
+      <input class="input max-w-[180px]" list="hwSubjects" [placeholder]="'subjectLabel' | t" [ngModel]="subject()" (ngModelChange)="subject.set($event)" />
+      <datalist id="hwSubjects">@for (s of subjectOptions(); track s) { <option [value]="s"></option> }</datalist>
+      <input class="input max-w-[180px]" type="date" [ngModel]="date()" (ngModelChange)="date.set($event)" />
+    </div>
+    <textarea class="input mb-2.5 resize-none" rows="2" [placeholder]="'homeworkPh' | t" [ngModel]="text()" (ngModelChange)="text.set($event)"></textarea>
+    <div class="flex items-center gap-2">
+      <button class="btn-blue" (click)="post()">📔 {{ 'postHomework' | t }}</button>
+      @if (posted()) {
+        <span class="badge badge-green">✓ {{ 'noticePosted' | t }}</span>
+      }
+    </div>
+  </div>
+}
+
+<div class="card">
+  <div class="card-title">📋 {{ 'homework' | t }} — {{ 'class' | t }} {{ classId() }}</div>
+  @for (h of list(); track h.id) {
+    <div class="border-l-4 border-primary bg-primary-light rounded-r-xl px-3.5 py-3 mb-2.5">
+      <div class="flex justify-between items-start gap-2 flex-wrap">
+        <div class="text-[13px] font-bold">{{ h.subject }}</div>
+        <span class="text-[11px] text-muted">📅 {{ h.date }}</span>
+      </div>
+      <div class="text-xs text-ink leading-relaxed mt-1">{{ h.text }}</div>
+      <div class="text-[11px] text-muted mt-1.5">{{ 'by' | t }}: {{ h.postedBy }}</div>
+      @if (isStaff()) {
+        <button class="mt-2 btn-sm rounded-lg bg-[#25D366] text-white font-semibold px-3 py-1.5" (click)="send(h)">🟢 {{ 'sendTo' | t }} {{ 'parents' | t }}</button>
+      }
+    </div>
+  } @empty {
+    <div class="text-center text-muted text-sm py-8">{{ 'noHomework' | t }}</div>
+  }
+</div>

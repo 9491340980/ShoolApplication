@@ -29,6 +29,7 @@ service cloud.firestore {
     match /attendance/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /marks/{id}      { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /notices/{id}    { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /homework/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isStaff() && sameSchool(); }
     // Class-teacher assignments & teacher attendance — Head Master or Super Admin managed.
     match /assignments/{id}      { allow read: if sameSchool() || isSuper(); allow create, update: if isSuper() || (isHM() && writingOwnSchool()); allow delete: if isSuper() || (isHM() && sameSchool()); }
     match /teacherAttendance/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isSuper() || (isHM() && writingOwnSchool()); }

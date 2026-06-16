@@ -49,6 +49,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/notices/notices.component').then((m) => m.NoticesComponent),
       },
       {
+        path: 'homework',
+        loadComponent: () => import('./features/homework/homework.component').then((m) => m.HomeworkComponent),
+      },
+      {
         path: 'students',
         canActivate: [roleGuard],
         data: { roles: ['headmaster', 'teacher'] },

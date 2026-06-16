@@ -29,6 +29,7 @@ export const NAV: Record<Role, NavSection[]> = {
       items: [
         { path: '/dashboard', icon: 'dashboard', label: 'dashboard' },
         { path: '/notices', icon: 'megaphone', label: 'noticeBoard' },
+        { path: '/homework', icon: 'book', label: 'homework' },
       ],
     },
     {
@@ -58,6 +59,7 @@ export const NAV: Record<Role, NavSection[]> = {
       items: [
         { path: '/dashboard', icon: 'dashboard', label: 'dashboard' },
         { path: '/notices', icon: 'megaphone', label: 'noticeBoard' },
+        { path: '/homework', icon: 'book', label: 'homework' },
       ],
     },
     {
@@ -80,6 +82,7 @@ export const NAV: Record<Role, NavSection[]> = {
       items: [
         { path: '/dashboard', icon: 'dashboard', label: 'dashboard' },
         { path: '/notices', icon: 'megaphone', label: 'noticeBoard' },
+        { path: '/homework', icon: 'book', label: 'homework' },
       ],
     },
     {
@@ -102,6 +105,7 @@ export const NAV: Record<Role, NavSection[]> = {
       items: [
         { path: '/dashboard', icon: 'dashboard', label: 'dashboard' },
         { path: '/notices', icon: 'megaphone', label: 'noticeBoard' },
+        { path: '/homework', icon: 'book', label: 'homework' },
       ],
     },
     {
@@ -126,6 +130,7 @@ export const PAGE_TITLES: Record<string, TKey> = {
   '/promote': 'promotion',
   '/dashboard': 'dashboard',
   '/notices': 'noticeBoard',
+  '/homework': 'homework',
   '/students': 'studentsList',
   '/attendance': 'attendance',
   '/marks': 'marksResults',
