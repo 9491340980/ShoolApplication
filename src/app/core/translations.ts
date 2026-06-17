@@ -347,6 +347,11 @@ export const DICT = {
     parentLinkMsg: 'View {name}\'s attendance, marks & fees here (no app/login needed):',
     attendanceHistory: 'Attendance History',
     noAttendanceMonth: 'No attendance marked this month',
+    listView: 'List',
+    tabUsers: 'Users',
+    tabClasses: 'Classes',
+    tabTeacherList: 'List',
+    teacherAttendanceTab: 'Teacher Attendance',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -678,5 +683,10 @@ export const DICT = {
     parentLinkMsg: '{name} యొక్క హాజరు, మార్కులు & ఫీజులను ఇక్కడ చూడండి (యాప్/లాగిన్ అవసరం లేదు):',
     attendanceHistory: 'హాజరు చరిత్ర',
     noAttendanceMonth: 'ఈ నెలలో హాజరు నమోదు కాలేదు',
+    listView: 'జాబితా',
+    tabUsers: 'వాడుకరులు',
+    tabClasses: 'తరగతులు',
+    tabTeacherList: 'జాబితా',
+    teacherAttendanceTab: 'టీచర్ హాజరు',
   },
 } satisfies Record<Lang, Record<string, string>>;

@@ -1,58 +1,121 @@
-<div class="flex gap-2.5 mb-3.5 flex-wrap">
-  <input class="input max-w-[250px]" [placeholder]="'🔍 ' + ('search' | t) + '...'" [ngModel]="search()" (ngModelChange)="search.set($event)" />
-  @if (auth.role() === 'headmaster') {
-    <button class="btn-blue" (click)="startAdd()">＋ {{ 'addTeacher' | t }}</button>
-  }
-  @if (added()) {
-    <span class="badge badge-green">✓ {{ 'teacherAdded' | t }}</span>
-  }
+<!-- TABS -->
+<div class="flex gap-1 bg-page rounded-xl p-1 mb-4 max-w-md">
+  <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'list' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('list')">🎓 {{ 'tabTeacherList' | t }}</button>
+  <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'attendance' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('attendance')">✅ {{ 'teacherAttendanceTab' | t }}</button>
 </div>
 
-@if (showAdd()) {
-  <div class="card mb-4">
-    <div class="card-title">{{ editingId() ? ('edit' | t) : '＋ ' + ('addTeacher' | t) }}</div>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-2.5">
-      <input class="input" [placeholder]="'teacherName' | t" [ngModel]="newName()" (ngModelChange)="newName.set($event)" />
-      <input class="input" [placeholder]="'subjectsCsv' | t" [ngModel]="newSubjects()" (ngModelChange)="newSubjects.set($event)" />
-      <input class="input" [placeholder]="'classesCsv' | t" [ngModel]="newClasses()" (ngModelChange)="newClasses.set($event)" />
-      <input class="input" type="number" min="0" [placeholder]="('experience' | t) + ' (' + ('partOptional' | t) + ')'" [ngModel]="newExp()" (ngModelChange)="newExp.set($event)" />
-      <input class="input" [placeholder]="'phone' | t" [ngModel]="newPhone()" (ngModelChange)="newPhone.set($event)" />
+@if (tab() === 'list') {
+  <div class="flex gap-2.5 mb-3.5 flex-wrap items-center">
+    <input class="input max-w-[250px]" [placeholder]="'🔍 ' + ('search' | t) + '...'" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    @if (auth.role() === 'headmaster') {
+      <button class="btn-blue" (click)="startAdd()">＋ {{ 'addTeacher' | t }}</button>
+    }
+    <!-- list / card toggle -->
+    <div class="ml-auto inline-flex bg-page rounded-lg p-1">
+      <button class="px-2.5 py-1.5 rounded-md text-xs font-semibold" [class]="viewMode() === 'list' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="viewMode.set('list')">▤ {{ 'listView' | t }}</button>
+      <button class="px-2.5 py-1.5 rounded-md text-xs font-semibold" [class]="viewMode() === 'card' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="viewMode.set('card')">▦ {{ 'cardView' | t }}</button>
     </div>
-    <button class="btn-green" (click)="saveTeacher()">💾 {{ editingId() ? ('update' | t) : ('save' | t) }}</button>
+    @if (added()) {
+      <span class="badge badge-green">✓ {{ 'teacherAdded' | t }}</span>
+    }
   </div>
+
+  @if (showAdd()) {
+    <div class="card mb-4">
+      <div class="card-title">{{ editingId() ? ('edit' | t) : '＋ ' + ('addTeacher' | t) }}</div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-2.5">
+        <input class="input" [placeholder]="'teacherName' | t" [ngModel]="newName()" (ngModelChange)="newName.set($event)" />
+        <input class="input" [placeholder]="'subjectsCsv' | t" [ngModel]="newSubjects()" (ngModelChange)="newSubjects.set($event)" />
+        <input class="input" [placeholder]="'classesCsv' | t" [ngModel]="newClasses()" (ngModelChange)="newClasses.set($event)" />
+        <input class="input" type="number" min="0" [placeholder]="('experience' | t) + ' (' + ('partOptional' | t) + ')'" [ngModel]="newExp()" (ngModelChange)="newExp.set($event)" />
+        <input class="input" [placeholder]="'phone' | t" [ngModel]="newPhone()" (ngModelChange)="newPhone.set($event)" />
+      </div>
+      <button class="btn-green" (click)="saveTeacher()">💾 {{ editingId() ? ('update' | t) : ('save' | t) }}</button>
+    </div>
+  }
+
+  @if (viewMode() === 'list') {
+    <div class="card !p-0 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="rtable w-full border-collapse text-[13.5px]">
+          <thead>
+            <tr>
+              <th class="th">{{ 'teacherName' | t }}</th>
+              <th class="th">{{ 'subjects' | t }}</th>
+              <th class="th">{{ 'classes' | t }}</th>
+              <th class="th">{{ 'experience' | t }}</th>
+              <th class="th">{{ 'phone' | t }}</th>
+              <th class="th">{{ 'status' | t }}</th>
+              @if (auth.role() === 'headmaster') { <th class="th">{{ 'action' | t }}</th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (tch of filtered(); track tch.id) {
+              <tr class="hover:bg-blue-50/40">
+                <td class="td font-bold" [attr.data-label]="'teacherName' | t">{{ tch.name }}</td>
+                <td class="td" [attr.data-label]="'subjects' | t"><span class="badge badge-blue">{{ tch.subjects.join(', ') }}</span></td>
+                <td class="td" [attr.data-label]="'classes' | t">{{ tch.classes.join(', ') }}</td>
+                <td class="td" [attr.data-label]="'experience' | t">{{ tch.experienceYears ? tch.experienceYears + ' yrs' : '—' }}</td>
+                <td class="td" [attr.data-label]="'phone' | t">📞 {{ tch.phone }}</td>
+                <td class="td" [attr.data-label]="'status' | t"><span class="badge badge-green">✓ {{ 'active' | t }}</span></td>
+                @if (auth.role() === 'headmaster') {
+                  <td class="td" [attr.data-label]="'action' | t">
+                    <button class="btn-outline btn-sm" (click)="startEdit(tch)">✏️ {{ 'edit' | t }}</button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else {
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      @for (tch of filtered(); track tch.id) {
+        <div class="card">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="font-bold text-[15px] truncate">🎓 {{ tch.name }}</div>
+            <span class="badge badge-green shrink-0">✓ {{ 'active' | t }}</span>
+          </div>
+          <div class="text-[12px] text-muted space-y-1">
+            <div><b class="text-ink">{{ 'subjects' | t }}:</b> {{ tch.subjects.join(', ') || '—' }}</div>
+            <div><b class="text-ink">{{ 'classes' | t }}:</b> {{ tch.classes.join(', ') || '—' }}</div>
+            <div><b class="text-ink">{{ 'experience' | t }}:</b> {{ tch.experienceYears ? tch.experienceYears + ' yrs' : '—' }}</div>
+            <div>📞 {{ tch.phone }}</div>
+          </div>
+          @if (auth.role() === 'headmaster') {
+            <button class="btn-outline btn-sm mt-3" (click)="startEdit(tch)">✏️ {{ 'edit' | t }}</button>
+          }
+        </div>
+      }
+    </div>
+  }
 }
 
-<div class="card !p-0 overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="rtable w-full border-collapse text-[13.5px]">
-      <thead>
-        <tr>
-          <th class="th">{{ 'teacherName' | t }}</th>
-          <th class="th">{{ 'subjects' | t }}</th>
-          <th class="th">{{ 'classes' | t }}</th>
-          <th class="th">{{ 'experience' | t }}</th>
-          <th class="th">{{ 'phone' | t }}</th>
-          <th class="th">{{ 'status' | t }}</th>
-          @if (auth.role() === 'headmaster') { <th class="th">{{ 'action' | t }}</th> }
-        </tr>
-      </thead>
-      <tbody>
-        @for (tch of filtered(); track tch.id) {
-          <tr class="hover:bg-blue-50/40">
-            <td class="td font-bold" [attr.data-label]="'teacherName' | t">{{ tch.name }}</td>
-            <td class="td" [attr.data-label]="'subjects' | t"><span class="badge badge-blue">{{ tch.subjects.join(', ') }}</span></td>
-            <td class="td" [attr.data-label]="'classes' | t">{{ tch.classes.join(', ') }}</td>
-            <td class="td" [attr.data-label]="'experience' | t">{{ tch.experienceYears ? tch.experienceYears + ' yrs' : '—' }}</td>
-            <td class="td" [attr.data-label]="'phone' | t">📞 {{ tch.phone }}</td>
-            <td class="td" [attr.data-label]="'status' | t"><span class="badge badge-green">✓ {{ 'active' | t }}</span></td>
-            @if (auth.role() === 'headmaster') {
-              <td class="td" [attr.data-label]="'action' | t">
-                <button class="btn-outline btn-sm" (click)="startEdit(tch)">✏️ {{ 'edit' | t }}</button>
-              </td>
-            }
-          </tr>
-        }
-      </tbody>
-    </table>
+@if (tab() === 'attendance') {
+  <div class="card !p-0 overflow-hidden">
+    <div class="card-title px-5 pt-4">
+      ✅ {{ 'teacherAttendanceToday' | t }}
+      <span class="badge badge-green ml-auto">{{ 'teachersPresent' | t }}: {{ teachersPresent() }}/{{ teacherUsers().length }}</span>
+    </div>
+    <div class="divide-y divide-line">
+      @for (t of teacherUsers(); track t.id) {
+        <div class="flex items-center gap-3 px-5 py-2.5"
+             [class]="data.teacherAttToday()[t.id] === 'absent' ? 'bg-danger-light/30' : data.teacherAttToday()[t.id] === 'present' ? 'bg-success-light/30' : ''">
+          <span class="flex-1 min-w-0 font-semibold text-[14px] truncate">{{ t.name }}</span>
+          <div class="flex gap-1.5 shrink-0">
+            <button class="w-11 h-9 rounded-lg border text-[13px] font-bold cursor-pointer"
+                    [class]="data.teacherAttToday()[t.id] === 'present' ? 'bg-success text-white border-success' : 'bg-white text-muted border-line hover:border-success'"
+                    (click)="data.markTeacher(t.id, 'present')">P</button>
+            <button class="w-11 h-9 rounded-lg border text-[13px] font-bold cursor-pointer"
+                    [class]="data.teacherAttToday()[t.id] === 'absent' ? 'bg-danger text-white border-danger' : 'bg-white text-muted border-line hover:border-danger'"
+                    (click)="data.markTeacher(t.id, 'absent')">A</button>
+            <button class="w-9 h-9 rounded-lg border border-line text-[15px] cursor-pointer hover:border-primary" [title]="'attendanceHistory' | t" (click)="openTeacherHistory(t)">📅</button>
+          </div>
+        </div>
+      } @empty {
+        <div class="py-6 text-center text-muted text-sm">{{ 'noUsersYet' | t }}</div>
+      }
+    </div>
   </div>
-</div>
+}

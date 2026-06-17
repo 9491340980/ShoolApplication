@@ -1,8 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AttendanceHistoryService } from '../../core/attendance-history.service';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { Teacher } from '../../core/models';
+import { AppUser, Teacher } from '../../core/models';
+import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -13,12 +15,28 @@ import { TPipe } from '../../core/translate.service';
 export class TeachersComponent {
   auth = inject(AuthService);
   data = inject(DataService);
+  private schoolSvc = inject(SchoolService);
+  private hist = inject(AttendanceHistoryService);
+
+  /** Tabs: directory list vs. daily teacher attendance. */
+  tab = signal<'list' | 'attendance'>('list');
+  /** List display: compact list (default) or cards. */
+  viewMode = signal<'list' | 'card'>('list');
 
   search = signal('');
   filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
     return this.data.teachers().filter((t) => !q || t.name.toLowerCase().includes(q));
   });
+
+  // ---- teacher attendance (today) ----
+  teacherUsers = computed(() => this.schoolSvc.schoolUsers().filter((u) => u.role === 'teacher'));
+  teachersPresent = computed(
+    () => Object.values(this.data.teacherAttToday()).filter((v) => v === 'present').length,
+  );
+  async openTeacherHistory(t: AppUser) {
+    this.hist.open(t.name, await this.data.teacherAttendanceMap(t.id));
+  }
 
   showAdd = signal(false);
   editingId = signal<string | null>(null);

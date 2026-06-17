@@ -118,11 +118,11 @@
             }
             <td class="td" [attr.data-label]="'action' | t">
               <div class="flex gap-1.5 justify-end">
-                <button class="btn-outline btn-sm" [title]="'attendanceHistory' | t" (click)="openHistory(s)">📅</button>
                 <button class="btn-outline btn-sm" (click)="viewing.set(s)">{{ 'viewDetails' | t }}</button>
                 @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
                   <button class="btn-outline btn-sm" (click)="startEdit(s)">✏️ {{ 'edit' | t }}</button>
                 }
+                <button class="btn-outline btn-sm" [title]="'attendanceHistory' | t" (click)="openHistory(s)">📅</button>
               </div>
             </td>
           </tr>

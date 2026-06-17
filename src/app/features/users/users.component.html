@@ -1,180 +1,136 @@
-<!-- SCHOOL BRANDING (logo) -->
-<div class="card mb-4">
-  <div class="card-title">🖼️ {{ 'schoolLogo' | t }}</div>
-  <p class="text-xs text-muted mb-3">💡 {{ 'logoHint' | t }}</p>
-  <div class="flex items-center gap-3 flex-wrap">
-    <div class="w-16 h-16 rounded-xl border border-line bg-page flex items-center justify-center overflow-hidden shrink-0">
-      @if (logo()) {
-        <img [src]="logo()" class="w-full h-full object-contain" alt="logo" />
-      } @else {
-        <span class="text-3xl text-muted">🏫</span>
-      }
-    </div>
-    <div class="flex flex-col gap-1.5">
-      <label class="btn-blue btn-sm cursor-pointer">
-        {{ logoBusy() ? ('uploading' | t) : ('uploadLogo' | t) }}
-        <input type="file" accept="image/*" class="hidden" (change)="onLogoPick($event)" [disabled]="logoBusy()" />
-      </label>
-      @if (logo()) {
-        <button class="text-[11px] text-danger font-semibold text-left" (click)="removeLogo()">🗑️ {{ 'removeLogo' | t }}</button>
-      }
-    </div>
-  </div>
-  @if (logoError()) {
-    <div class="bg-danger-light text-danger rounded-lg px-3 py-2 mt-3 text-xs font-medium">{{ logoError() }}</div>
-  }
+<!-- TABS -->
+<div class="flex gap-1 bg-page rounded-xl p-1 mb-4 max-w-md">
+  <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'users' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('users')">👥 {{ 'tabUsers' | t }}</button>
+  <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'classes' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('classes')">🏫 {{ 'tabClasses' | t }}</button>
 </div>
 
-<div class="card mb-4">
-  <div class="card-title">👥 {{ 'addUser' | t }}</div>
-  <p class="text-xs text-muted mb-3">💡 {{ 'autoFillHint' | t }}</p>
-  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-2.5">
-    <select class="input" [ngModel]="role()" (ngModelChange)="setRole($event)">
-      @for (r of creatableRoles; track r) {
-        <option [value]="r">{{ roleLabels[r].icon }} {{ roleLabels[r].label | t }}</option>
-      }
-    </select>
-    @if (role() === 'teacher') {
-      <select class="input" [ngModel]="linkedTeacherId()" (ngModelChange)="pickTeacher($event)">
-        <option value="">{{ 'selectTeacher' | t }}...</option>
-        @for (tch of data.teachers(); track tch.id) {
-          <option [value]="tch.id">{{ tch.name }} ({{ tch.subjects.join(', ') }})</option>
+@if (tab() === 'users') {
+  <div class="card mb-4">
+    <div class="card-title">👥 {{ 'addUser' | t }}</div>
+    <p class="text-xs text-muted mb-3">💡 {{ 'autoFillHint' | t }}</p>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-2.5">
+      <select class="input" [ngModel]="role()" (ngModelChange)="setRole($event)">
+        @for (r of creatableRoles; track r) {
+          <option [value]="r">{{ roleLabels[r].icon }} {{ roleLabels[r].label | t }}</option>
         }
       </select>
-    }
-    @if (needsStudent()) {
-      <select class="input" [ngModel]="studentId()" (ngModelChange)="pickStudent($event)">
-        <option value="">{{ 'selectStudent' | t }}...</option>
-        @for (s of data.students(); track s.id) {
-          <option [value]="s.id">{{ s.name }} ({{ s.classId }})</option>
-        }
-      </select>
-    }
-    <input class="input" [placeholder]="'fullName' | t" [ngModel]="name()" (ngModelChange)="name.set($event)" />
-    <input class="input" type="email" [placeholder]="'email' | t" [ngModel]="email()" (ngModelChange)="email.set($event)" />
-    <input class="input" type="text" [placeholder]="'tempPassword' | t" [ngModel]="password()" (ngModelChange)="password.set($event)" />
-    @if (needsClass()) {
-      <select class="input" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
-        <option value="">{{ 'class' | t }}...</option>
-        @for (c of classes(); track c) {
-          <option [value]="c">{{ c }}</option>
-        }
-      </select>
-    }
-  </div>
-  @if (error(); as err) {
-    <div class="bg-danger-light text-red-700 rounded-lg px-3 py-2 text-xs font-medium mb-2.5">{{ err }}</div>
-  }
-  <div class="flex items-center gap-2 flex-wrap">
-    <button class="btn-blue" [disabled]="busy()" (click)="addUser()">＋ {{ 'addUser' | t }}</button>
-    @if (created()) {
-      <span class="badge badge-green">✓ {{ 'userCreated' | t }}</span>
-    }
-  </div>
-</div>
-
-<!-- MANAGE CLASSES -->
-<div class="card mb-4">
-  <div class="card-title">🏫 {{ 'manageClasses' | t }}</div>
-  <p class="text-xs text-muted mb-3">💡 {{ 'classesHint' | t }}</p>
-  <div class="flex flex-wrap gap-2 mb-3">
-    @for (c of classes(); track c) {
-      <span class="badge badge-blue !text-[12.5px] !py-1.5 gap-1.5">
-        {{ c }}
-        <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-1" (click)="data.removeClass(c)">✕</button>
-      </span>
-    }
-  </div>
-  <div class="flex gap-2 max-w-xs">
-    <input class="input" [placeholder]="'newClassPh' | t" [ngModel]="newClassName()" (ngModelChange)="newClassName.set($event)" (keyup.enter)="addClass()" />
-    <button class="btn-blue shrink-0" (click)="addClass()">＋</button>
-  </div>
-</div>
-
-<!-- CLASS TEACHERS -->
-<div class="card mb-4">
-  <div class="card-title">🧑‍🏫 {{ 'classTeachers' | t }}</div>
-  <p class="text-xs text-muted mb-3">💡 {{ 'reassignHint' | t }}</p>
-  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-    @for (c of classes(); track c) {
-      <div class="flex items-center gap-2 bg-page rounded-lg px-3 py-2">
-        <span class="font-bold text-[13px] w-12 shrink-0">{{ c }}</span>
-        <select class="input !py-1.5 !text-[13px]"
-                [ngModel]="data.classTeacherOf(c)?.teacherId ?? ''"
-                (ngModelChange)="assignTeacher(c, $event)">
-          <option value="">{{ 'notAssigned' | t }}</option>
-          @for (t of teacherUsers(); track t.id) {
-            <option [value]="t.id">{{ t.name }}</option>
+      @if (role() === 'teacher') {
+        <select class="input" [ngModel]="linkedTeacherId()" (ngModelChange)="pickTeacher($event)">
+          <option value="">{{ 'selectTeacher' | t }}...</option>
+          @for (tch of data.teachers(); track tch.id) {
+            <option [value]="tch.id">{{ tch.name }} ({{ tch.subjects.join(', ') }})</option>
           }
         </select>
-      </div>
+      }
+      @if (needsStudent()) {
+        <select class="input" [ngModel]="studentId()" (ngModelChange)="pickStudent($event)">
+          <option value="">{{ 'selectStudent' | t }}...</option>
+          @for (s of data.students(); track s.id) {
+            <option [value]="s.id">{{ s.name }} ({{ s.classId }})</option>
+          }
+        </select>
+      }
+      <input class="input" [placeholder]="'fullName' | t" [ngModel]="name()" (ngModelChange)="name.set($event)" />
+      <input class="input" type="email" [placeholder]="'email' | t" [ngModel]="email()" (ngModelChange)="email.set($event)" />
+      <input class="input" type="text" [placeholder]="'tempPassword' | t" [ngModel]="password()" (ngModelChange)="password.set($event)" />
+      @if (needsClass()) {
+        <select class="input" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
+          <option value="">{{ 'class' | t }}...</option>
+          @for (c of classes(); track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+      }
+    </div>
+    @if (error(); as err) {
+      <div class="bg-danger-light text-red-700 rounded-lg px-3 py-2 text-xs font-medium mb-2.5">{{ err }}</div>
     }
+    <div class="flex items-center gap-2 flex-wrap">
+      <button class="btn-blue" [disabled]="busy()" (click)="addUser()">＋ {{ 'addUser' | t }}</button>
+      @if (created()) {
+        <span class="badge badge-green">✓ {{ 'userCreated' | t }}</span>
+      }
+    </div>
   </div>
-</div>
 
-<!-- TEACHER ATTENDANCE (TODAY) -->
-<div class="card mb-4">
-  <div class="card-title">
-    ✅ {{ 'teacherAttendanceToday' | t }}
-    <span class="badge badge-green ml-auto">{{ 'teachersPresent' | t }}: {{ teachersPresent() }}/{{ teacherUsers().length }}</span>
-  </div>
-  <div class="divide-y divide-line">
-    @for (t of teacherUsers(); track t.id) {
-      <div class="flex items-center gap-3 py-2"
-           [class]="data.teacherAttToday()[t.id] === 'absent' ? 'bg-danger-light/30' : data.teacherAttToday()[t.id] === 'present' ? 'bg-success-light/30' : ''">
-        <span class="flex-1 min-w-0 font-semibold text-[14px] truncate">{{ t.name }}</span>
-        <div class="flex gap-1.5 shrink-0">
-          <button class="w-9 h-9 rounded-lg border border-line text-[15px] cursor-pointer hover:border-primary" [title]="'attendanceHistory' | t" (click)="openTeacherHistory(t)">📅</button>
-          <button class="w-11 h-9 rounded-lg border text-[13px] font-bold cursor-pointer"
-                  [class]="data.teacherAttToday()[t.id] === 'present' ? 'bg-success text-white border-success' : 'bg-white text-muted border-line hover:border-success'"
-                  (click)="data.markTeacher(t.id, 'present')">P</button>
-          <button class="w-11 h-9 rounded-lg border text-[13px] font-bold cursor-pointer"
-                  [class]="data.teacherAttToday()[t.id] === 'absent' ? 'bg-danger text-white border-danger' : 'bg-white text-muted border-line hover:border-danger'"
-                  (click)="data.markTeacher(t.id, 'absent')">A</button>
-        </div>
-      </div>
-    } @empty {
-      <div class="py-4 text-center text-muted text-sm">{{ 'noUsersYet' | t }}</div>
-    }
-  </div>
-</div>
-
-<div class="card !p-0 overflow-hidden">
-  <div class="px-5 py-4 text-[15px] font-bold">👥 {{ 'userManagement' | t }} ({{ schoolSvc.schoolUsers().length }})</div>
-  <div class="overflow-x-auto">
-    <table class="rtable w-full border-collapse text-[13.5px]">
-      <thead>
-        <tr>
-          <th class="th">{{ 'fullName' | t }}</th>
-          <th class="th">{{ 'email' | t }}</th>
-          <th class="th">{{ 'roleLabel' | t }}</th>
-          <th class="th">{{ 'class' | t }}</th>
-          <th class="th">{{ 'status' | t }}</th>
-          <th class="th">{{ 'action' | t }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (u of schoolSvc.schoolUsers(); track u.id) {
-          <tr class="hover:bg-blue-50/40" [class.opacity-60]="u.disabled">
-            <td class="td font-bold" [attr.data-label]="'fullName' | t">{{ u.name }}</td>
-            <td class="td" [attr.data-label]="'email' | t">{{ u.email }}</td>
-            <td class="td" [attr.data-label]="'roleLabel' | t"><span class="badge badge-blue">{{ roleLabels[u.role].icon }} {{ roleLabels[u.role].label | t }}</span></td>
-            <td class="td" [attr.data-label]="'class' | t">{{ u.classId ?? '—' }}</td>
-            <td class="td" [attr.data-label]="'status' | t">
-              <span class="badge" [class]="u.disabled ? 'badge-red' : 'badge-green'">{{ (u.disabled ? 'disabled' : 'active') | t }}</span>
-            </td>
-            <td class="td" [attr.data-label]="'action' | t">
-              @if (u.disabled) {
-                <button class="btn-green btn-sm" (click)="toggleUserDisabled(u)">{{ 'enable' | t }}</button>
-              } @else {
-                <button class="btn-red btn-sm" (click)="toggleUserDisabled(u)">{{ 'disable' | t }}</button>
-              }
-            </td>
+  <div class="card !p-0 overflow-hidden">
+    <div class="px-5 py-4 text-[15px] font-bold">👥 {{ 'userManagement' | t }} ({{ schoolSvc.schoolUsers().length }})</div>
+    <div class="overflow-x-auto">
+      <table class="rtable w-full border-collapse text-[13.5px]">
+        <thead>
+          <tr>
+            <th class="th">{{ 'fullName' | t }}</th>
+            <th class="th">{{ 'email' | t }}</th>
+            <th class="th">{{ 'roleLabel' | t }}</th>
+            <th class="th">{{ 'class' | t }}</th>
+            <th class="th">{{ 'status' | t }}</th>
+            <th class="th">{{ 'action' | t }}</th>
           </tr>
-        } @empty {
-          <tr><td class="td text-muted" colspan="6">{{ 'noUsersYet' | t }}</td></tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (u of schoolSvc.schoolUsers(); track u.id) {
+            <tr class="hover:bg-blue-50/40" [class.opacity-60]="u.disabled">
+              <td class="td font-bold" [attr.data-label]="'fullName' | t">{{ u.name }}</td>
+              <td class="td" [attr.data-label]="'email' | t">{{ u.email }}</td>
+              <td class="td" [attr.data-label]="'roleLabel' | t"><span class="badge badge-blue">{{ roleLabels[u.role].icon }} {{ roleLabels[u.role].label | t }}</span></td>
+              <td class="td" [attr.data-label]="'class' | t">{{ u.classId ?? '—' }}</td>
+              <td class="td" [attr.data-label]="'status' | t">
+                <span class="badge" [class]="u.disabled ? 'badge-red' : 'badge-green'">{{ (u.disabled ? 'disabled' : 'active') | t }}</span>
+              </td>
+              <td class="td" [attr.data-label]="'action' | t">
+                @if (u.disabled) {
+                  <button class="btn-green btn-sm" (click)="toggleUserDisabled(u)">{{ 'enable' | t }}</button>
+                } @else {
+                  <button class="btn-red btn-sm" (click)="toggleUserDisabled(u)">{{ 'disable' | t }}</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td class="td text-muted" colspan="6">{{ 'noUsersYet' | t }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
+}
+
+@if (tab() === 'classes') {
+  <!-- MANAGE CLASSES -->
+  <div class="card mb-4">
+    <div class="card-title">🏫 {{ 'manageClasses' | t }}</div>
+    <p class="text-xs text-muted mb-3">💡 {{ 'classesHint' | t }}</p>
+    <div class="flex flex-wrap gap-2 mb-3">
+      @for (c of classes(); track c) {
+        <span class="badge badge-blue !text-[12.5px] !py-1.5 gap-1.5">
+          {{ c }}
+          <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-1" (click)="data.removeClass(c)">✕</button>
+        </span>
+      }
+    </div>
+    <div class="flex gap-2 max-w-xs">
+      <input class="input" [placeholder]="'newClassPh' | t" [ngModel]="newClassName()" (ngModelChange)="newClassName.set($event)" (keyup.enter)="addClass()" />
+      <button class="btn-blue shrink-0" (click)="addClass()">＋</button>
+    </div>
+  </div>
+
+  <!-- CLASS TEACHERS -->
+  <div class="card mb-4">
+    <div class="card-title">🧑‍🏫 {{ 'classTeachers' | t }}</div>
+    <p class="text-xs text-muted mb-3">💡 {{ 'reassignHint' | t }}</p>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+      @for (c of classes(); track c) {
+        <div class="flex items-center gap-2 bg-page rounded-lg px-3 py-2">
+          <span class="font-bold text-[13px] w-12 shrink-0">{{ c }}</span>
+          <select class="input !py-1.5 !text-[13px]"
+                  [ngModel]="data.classTeacherOf(c)?.teacherId ?? ''"
+                  (ngModelChange)="assignTeacher(c, $event)">
+            <option value="">{{ 'notAssigned' | t }}</option>
+            @for (t of teacherUsers(); track t.id) {
+              <option [value]="t.id">{{ t.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+  </div>
+}
