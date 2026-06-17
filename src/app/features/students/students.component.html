@@ -118,6 +118,7 @@
             }
             <td class="td" [attr.data-label]="'action' | t">
               <div class="flex gap-1.5 justify-end">
+                <button class="btn-outline btn-sm" [title]="'attendanceHistory' | t" (click)="openHistory(s)">📅</button>
                 <button class="btn-outline btn-sm" (click)="viewing.set(s)">{{ 'viewDetails' | t }}</button>
                 @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
                   <button class="btn-outline btn-sm" (click)="startEdit(s)">✏️ {{ 'edit' | t }}</button>
@@ -140,6 +141,7 @@
       <div class="flex items-center justify-between px-5 py-4 border-b border-line sticky top-0 bg-white z-10">
         <div class="font-bold text-[15px]">👤 {{ 'studentDetails' | t }}</div>
         <div class="flex items-center gap-2">
+          <button class="btn-outline btn-sm" (click)="openHistory(s)">📅 {{ 'attendanceHistory' | t }}</button>
           @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
             <button class="btn-outline btn-sm" (click)="startEdit(s)">✏️ {{ 'edit' | t }}</button>
           }

@@ -8,6 +8,7 @@ import { SchoolService } from '../core/school.service';
 import { applyTheme } from '../core/themes';
 import { TourService } from '../core/tour.service';
 import { TPipe, TranslateService } from '../core/translate.service';
+import { AttendanceHistoryComponent } from './attendance-history.component';
 import { BulkSendBarComponent } from './bulk-send-bar.component';
 import { IconComponent } from './icon.component';
 import { NAV, PAGE_TITLES, ROLE_LABELS } from './nav-config';
@@ -16,7 +17,7 @@ import { TourOverlayComponent } from './tour-overlay.component';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, IconComponent, BulkSendBarComponent, TourOverlayComponent, ShareChooserComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, IconComponent, BulkSendBarComponent, TourOverlayComponent, ShareChooserComponent, AttendanceHistoryComponent],
   templateUrl: './shell.component.html',
 })
 export class ShellComponent {

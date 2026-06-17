@@ -1,9 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AttendanceHistoryService } from '../../core/attendance-history.service';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { fileToSquareLogo } from '../../core/image';
-import { Role } from '../../core/models';
+import { AppUser, Role } from '../../core/models';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 import { ROLE_LABELS } from '../../layout/nav-config';
@@ -19,6 +20,11 @@ export class UsersComponent {
   auth = inject(AuthService);
   schoolSvc = inject(SchoolService);
   data = inject(DataService);
+  hist = inject(AttendanceHistoryService);
+
+  async openTeacherHistory(t: AppUser) {
+    this.hist.open(t.name, await this.data.teacherAttendanceMap(t.id));
+  }
 
   classes = computed(() => this.data.schoolClasses());
   roleLabels = ROLE_LABELS;

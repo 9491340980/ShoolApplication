@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import { environment } from '../../../environments/environment';
+import { AttendanceHistoryService } from '../../core/attendance-history.service';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { ExportFormat, exportData } from '../../core/export';
@@ -18,7 +19,12 @@ import { TKey } from '../../core/translations';
 export class StudentsComponent {
   auth = inject(AuthService);
   data = inject(DataService);
+  hist = inject(AttendanceHistoryService);
   private schoolSvc = inject(SchoolService);
+
+  openHistory(s: Student) {
+    this.hist.open(s.name, this.data.studentAttendanceMap(s.id));
+  }
 
   private brand() {
     const s = this.schoolSvc.currentSchool();

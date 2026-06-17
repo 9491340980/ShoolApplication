@@ -5,6 +5,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
   query,
   setDoc,
@@ -444,6 +445,37 @@ export class DataService {
       absentDates: recs.filter((r) => !r.present).map((r) => r.date),
       byMonth: [...monthMap.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([month, v]) => ({ month, ...v })),
     };
+  }
+
+  /** date → present/absent for one student (from the already-loaded attendance records). */
+  studentAttendanceMap(studentId: string): Record<string, 'present' | 'absent'> {
+    const stu = this.student(studentId);
+    if (!stu) return {};
+    const keys = [studentId, stu.id, stu.id.replace(`${this.sid}_`, '')];
+    const map: Record<string, 'present' | 'absent'> = {};
+    for (const a of this.db().attendance) {
+      if (a.classId !== stu.classId) continue;
+      const k = keys.find((key) => a.statuses[key] !== undefined);
+      if (k !== undefined) map[a.date] = a.statuses[k];
+    }
+    return map;
+  }
+
+  /** date → present/absent for one teacher across all recorded days (fetched on demand). */
+  async teacherAttendanceMap(teacherId: string): Promise<Record<string, 'present' | 'absent'>> {
+    const map: Record<string, 'present' | 'absent'> = {};
+    if (!this.fs) {
+      const t = this.teacherAttSig()[teacherId];
+      if (t) map[this.todayStr] = t;
+      return map;
+    }
+    const snap = await getDocs(query(collection(this.fs, 'teacherAttendance'), where('schoolId', '==', this.sid)));
+    snap.forEach((d) => {
+      const data = d.data() as { date: string; statuses: Record<string, 'present' | 'absent'> };
+      const st = data.statuses?.[teacherId];
+      if (st) map[data.date] = st;
+    });
+    return map;
   }
 
   /** Amount collected so far — from the payment history, falling back to older records. */

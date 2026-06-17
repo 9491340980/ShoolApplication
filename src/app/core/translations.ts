@@ -345,6 +345,8 @@ export const DICT = {
     sendLinkOpt: 'Send parent link',
     sendLinkOptHint: 'A private link to view attendance, marks & fees — no login',
     parentLinkMsg: 'View {name}\'s attendance, marks & fees here (no app/login needed):',
+    attendanceHistory: 'Attendance History',
+    noAttendanceMonth: 'No attendance marked this month',
   },
   te: {
     appName: 'విద్యాసేతు',
@@ -674,5 +676,7 @@ export const DICT = {
     sendLinkOpt: 'పేరెంట్ లింక్ పంపండి',
     sendLinkOptHint: 'హాజరు, మార్కులు & ఫీజులు చూడటానికి ప్రైవేట్ లింక్ — లాగిన్ అవసరం లేదు',
     parentLinkMsg: '{name} యొక్క హాజరు, మార్కులు & ఫీజులను ఇక్కడ చూడండి (యాప్/లాగిన్ అవసరం లేదు):',
+    attendanceHistory: 'హాజరు చరిత్ర',
+    noAttendanceMonth: 'ఈ నెలలో హాజరు నమోదు కాలేదు',
   },
 } satisfies Record<Lang, Record<string, string>>;

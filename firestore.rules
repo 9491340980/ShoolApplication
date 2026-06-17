@@ -51,6 +51,10 @@ service cloud.firestore {
     match /homework/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isStaff() && sameSchool(); }
     // Class-teacher assignments & teacher attendance — Head Master or Super Admin managed.
     match /assignments/{id}      { allow read: if sameSchool() || isSuper(); allow create, update: if isSuper() || (isHM() && writingOwnSchool()); allow delete: if isSuper() || (isHM() && sameSchool()); }
-    match /teacherAttendance/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isSuper() || (isHM() && writingOwnSchool()); }
+    match /teacherAttendance/{id} {
+      // Allow listening to today's doc before it exists (resource == null), else scope to own school.
+      allow read: if isSuper() || (isStaff() && (resource == null || resource.data.schoolId == me().schoolId));
+      allow create, update: if isSuper() || (isHM() && writingOwnSchool());
+    }
   }
 }

@@ -46,6 +46,23 @@ async function clearCollection(name) {
   if (n) console.log(`  cleared ${n} from ${name}`);
 }
 
+/** Remove leftover one-click demo-login accounts (teacher/parent/student) so the
+ *  user list only shows our seeded teachers. Keeps the demo Head Master. */
+async function clearLegacyDemoUsers() {
+  const snap = await db.collection('users').where('schoolId', '==', SID).get();
+  const batch = db.batch();
+  let n = 0;
+  snap.docs.forEach((d) => {
+    const role = d.data().role;
+    if (['teacher', 'parent', 'student'].includes(role) && !d.id.startsWith(`${SID}_tu`)) {
+      batch.delete(d.ref);
+      n++;
+    }
+  });
+  if (n) await batch.commit();
+  if (n) console.log(`  cleared ${n} legacy demo-login users`);
+}
+
 async function main() {
   console.log(`\nSeeding DEMO school [${SID}] for ${today}\n`);
 
@@ -53,6 +70,7 @@ async function main() {
   for (const c of ['students', 'teachers', 'assignments', 'attendance', 'teacherAttendance', 'marks', 'fees', 'notices', 'homework']) {
     await clearCollection(c);
   }
+  await clearLegacyDemoUsers();
 
   // school doc
   await db.collection('schools').doc(SID).set(
@@ -87,10 +105,12 @@ async function main() {
   }
   console.log(`✓ ${count} students`);
 
-  // ---- teachers + class-teacher assignments ----
+  // ---- teachers + login accounts + class-teacher assignments ----
+  const teacherUserIds = []; // users-collection ids (what teacher attendance is keyed by)
   for (let i = 0; i < TEACHER_NAMES.length; i++) {
     const name = TEACHER_NAMES[i];
     const tid = `${SID}_t${String(i + 1).padStart(2, '0')}`;
+    const uid = `${SID}_tu${String(i + 1).padStart(2, '0')}`;
     const classTeacherOf = i < CLASSES.length ? CLASSES[i] : null;
     await db.collection('teachers').doc(tid).set({
       schoolId: SID, name,
@@ -98,24 +118,41 @@ async function main() {
       classes: classTeacherOf ? [classTeacherOf] : [],
       experienceYears: 4 + (i % 15), phone: `98760${String(10000 + i).slice(-5)}`, active: true,
     });
+    // user account so the teacher shows up in HM's teacher-attendance list
+    await db.collection('users').doc(uid).set({
+      role: 'teacher', name, email: `demo-teacher${i + 1}@vidyasetu.app`,
+      phone: `98760${String(10000 + i).slice(-5)}`, schoolId: SID, classId: classTeacherOf, studentId: null,
+    });
+    teacherUserIds.push(uid);
     if (classTeacherOf) {
-      await db.collection('assignments').doc(`${SID}_${classTeacherOf}`).set({ schoolId: SID, classId: classTeacherOf, teacherId: tid, teacherName: name });
+      await db.collection('assignments').doc(`${SID}_${classTeacherOf}`).set({ schoolId: SID, classId: classTeacherOf, teacherId: uid, teacherName: name });
     }
   }
-  console.log(`✓ ${TEACHER_NAMES.length} teachers (8 class teachers)`);
+  console.log(`✓ ${TEACHER_NAMES.length} teachers (+ login accounts, 8 class teachers)`);
 
-  // ---- teacher attendance today (most present) ----
-  const tStatuses = {};
-  for (let i = 0; i < TEACHER_NAMES.length; i++) tStatuses[`${SID}_t${String(i + 1).padStart(2, '0')}`] = i % 7 === 3 ? 'absent' : 'present';
-  await db.collection('teacherAttendance').doc(`${SID}_${today}`).set({ schoolId: SID, date: today, statuses: tStatuses });
-
-  // ---- class attendance today (most present, a few absent) ----
-  for (const classId of CLASSES) {
-    const statuses = {};
-    studentsByClass[classId].forEach((s, i) => (statuses[s.id] = i % 9 === 4 ? 'absent' : 'present'));
-    await db.collection('attendance').doc(`${SID}_${classId}_${today}`).set({ schoolId: SID, classId, date: today, statuses });
+  // recent school days (Mon–Sat), newest first
+  const days = [];
+  for (let d = new Date(today + 'T00:00:00Z'); days.length < 22; d.setUTCDate(d.getUTCDate() - 1)) {
+    if (d.getUTCDay() !== 0) days.push(d.toISOString().slice(0, 10)); // skip Sundays
   }
-  console.log('✓ today\'s class + teacher attendance');
+
+  // ---- class attendance across recent days (mostly present, varied absentees) ----
+  for (const date of days) {
+    const seed = Number(date.slice(8, 10));
+    for (const classId of CLASSES) {
+      const statuses = {};
+      studentsByClass[classId].forEach((s, i) => (statuses[s.id] = (i + seed) % 8 === 3 ? 'absent' : 'present'));
+      await db.collection('attendance').doc(`${SID}_${classId}_${date}`).set({ schoolId: SID, classId, date, statuses });
+    }
+  }
+  // ---- teacher attendance across the same days ----
+  for (const date of days) {
+    const seed = Number(date.slice(8, 10));
+    const statuses = {};
+    teacherUserIds.forEach((uid, i) => (statuses[uid] = (i + seed) % 7 === 3 ? 'absent' : 'present'));
+    await db.collection('teacherAttendance').doc(`${SID}_${date}`).set({ schoolId: SID, date, statuses });
+  }
+  console.log(`✓ class + teacher attendance for ${days.length} recent days`);
 
   // ---- marks: Quarterly for 8A & 9A ----
   for (const classId of ['8A', '9A']) {
