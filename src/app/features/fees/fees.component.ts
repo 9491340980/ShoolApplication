@@ -6,6 +6,7 @@ import { DataService } from '../../core/data.service';
 import { FeeItem, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { SchoolService } from '../../core/school.service';
+import { ShareService } from '../../core/share.service';
 import { TPipe, TranslateService } from '../../core/translate.service';
 
 @Component({
@@ -18,6 +19,7 @@ export class FeesComponent {
   data = inject(DataService);
   notify = inject(NotifyService);
   i18n = inject(TranslateService);
+  share = inject(ShareService);
   private schoolSvc = inject(SchoolService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
@@ -47,7 +49,7 @@ export class FeesComponent {
   receiptNo(s: Student): string {
     return `R-${s.roll}-${this.receiptDate.replace(/-/g, '')}`;
   }
-  sendReceiptWa(s: Student) {
+  receiptWaLink(s: Student): string {
     const msg = this.notify.receiptMessage({
       name: s.name,
       classId: s.classId,
@@ -57,7 +59,7 @@ export class FeesComponent {
       paid: this.receiptPaid(),
       balance: this.receiptBalance(),
     });
-    window.open(this.notify.whatsappLink(s.parentPhone, msg), '_blank');
+    return this.notify.whatsappLink(s.parentPhone, msg);
   }
 
   // ---- payment history (per student) ----

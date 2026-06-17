@@ -5,6 +5,7 @@ import { DataService } from '../../core/data.service';
 import { BulkSendService } from '../../core/bulk-send.service';
 import { AttendanceStatus } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
+import { ShareService } from '../../core/share.service';
 import { TPipe, TranslateService } from '../../core/translate.service';
 
 @Component({
@@ -18,6 +19,7 @@ export class AttendanceComponent {
   i18n = inject(TranslateService);
   notify = inject(NotifyService);
   bulk = inject(BulkSendService);
+  share = inject(ShareService);
 
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
 

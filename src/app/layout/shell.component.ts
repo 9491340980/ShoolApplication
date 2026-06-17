@@ -11,11 +11,12 @@ import { TPipe, TranslateService } from '../core/translate.service';
 import { BulkSendBarComponent } from './bulk-send-bar.component';
 import { IconComponent } from './icon.component';
 import { NAV, PAGE_TITLES, ROLE_LABELS } from './nav-config';
+import { ShareChooserComponent } from './share-chooser.component';
 import { TourOverlayComponent } from './tour-overlay.component';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, IconComponent, BulkSendBarComponent, TourOverlayComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TPipe, IconComponent, BulkSendBarComponent, TourOverlayComponent, ShareChooserComponent],
   templateUrl: './shell.component.html',
 })
 export class ShellComponent {

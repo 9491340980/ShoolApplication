@@ -58,6 +58,26 @@ export interface Student {
   motherTongue?: string;
   aadhaar?: string;
   address?: string;
+  /** Token for the passwordless parent-view link (`/p/:token`); set on first share. */
+  shareToken?: string;
+}
+
+/** Read-only snapshot of one child, exposed at /p/:token for parents (no login). */
+export interface ShareSnapshot {
+  token: string;
+  schoolId: string;
+  schoolName: string;
+  logo?: string;
+  studentName: string;
+  classId: string;
+  roll: string;
+  attendance: { present: number; absent: number; total: number; pct: number | null; byMonth: { month: string; present: number; absent: number }[] };
+  fees: { label: string; amount: number; paid: number; balance: number }[];
+  feeTotal: number;
+  feePaid: number;
+  feeBalance: number;
+  exams: { label: string; subjects: { subject: string; score: number; max: number }[]; total: number; max: number; pct: number }[];
+  updatedAt: string;
 }
 
 export interface Teacher {

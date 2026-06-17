@@ -32,6 +32,16 @@ export class NotifyService {
     return this.fill(this.i18n.t('feeMsg'), { name, cls: classId, amt: amount, due: dueDate, school: this.school() });
   }
 
+  /** Invitation message carrying the passwordless parent-view link. */
+  parentLinkMessage(name: string, url: string): string {
+    return [
+      `🏫 *${this.school()}*`,
+      this.fill(this.i18n.t('parentLinkMsg'), { name }),
+      '',
+      url,
+    ].join('\n');
+  }
+
   /** A fee receipt as a formatted WhatsApp/SMS message. */
   receiptMessage(info: {
     name: string;

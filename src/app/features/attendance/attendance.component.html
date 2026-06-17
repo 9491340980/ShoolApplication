@@ -70,10 +70,10 @@
               <span class="text-muted font-normal text-[12px]">· 📞 {{ s.parentPhone }}</span>
             </span>
             <div class="flex gap-2 shrink-0">
-              <a [href]="waAbsence(s)" target="_blank" rel="noopener"
+              <button (click)="share.openChooser(s, waAbsence(s))"
                  class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold inline-flex items-center gap-1.5 px-3 py-1.5">
                 <span>🟢</span> {{ 'whatsapp' | t }}
-              </a>
+              </button>
               <a [href]="smsAbsence(s)"
                  class="btn-sm rounded-lg bg-primary text-white font-semibold inline-flex items-center gap-1.5 px-3 py-1.5">
                 <span>✉️</span> {{ 'sms' | t }}

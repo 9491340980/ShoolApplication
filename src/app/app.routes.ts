@@ -11,6 +11,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent),
   },
   {
+    path: 'p/:token',
+    loadComponent: () => import('./features/share/parent-share.component').then((m) => m.ParentShareComponent),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),

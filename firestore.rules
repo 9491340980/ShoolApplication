@@ -24,7 +24,21 @@ service cloud.firestore {
       allow update: if signedIn() && (request.auth.uid == uid || isSuper() || (isHM() && resource.data.schoolId == me().schoolId));
       allow delete: if isSuper() || (isHM() && sameSchool());
     }
-    match /students/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /students/{id}   {
+      allow read: if sameSchool() || isSuper();
+      allow create: if isHM() && writingOwnSchool();
+      // HM edits anything; any staff may set only the parent-link token.
+      allow update: if (isHM() && writingOwnSchool())
+        || (isStaff() && sameSchool() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shareToken']));
+      allow delete: if isHM() && sameSchool();
+    }
+    // Passwordless parent-view links: openable by anyone who has the unguessable
+    // token (get by id only — never listable), writable by the school's staff.
+    match /shares/{token} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isStaff() && request.resource.data.schoolId == me().schoolId;
+    }
     match /teachers/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /timetables/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /subjects/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
