@@ -52,3 +52,9 @@ firebase-debug.log
 
 # Demo recording output
 demo-videos/
+
+# E2E test artifacts (local only)
+/playwright-report/
+/test-results/
+/blob-report/
+/e2e/.cache/
