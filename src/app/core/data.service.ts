@@ -743,20 +743,55 @@ export class DataService {
   }
 
   /** Promote (or graduate) a whole class: move every student to the target class. */
-  async promoteClass(fromClass: string, toClass: string): Promise<number> {
-    const studs = this.studentsOf(fromClass);
-    if (!studs.length) return 0;
+  /**
+   * Apply a whole promotion plan atomically. `plan` maps each source class to a
+   * target (another class, the same class to keep, or 'PASSED' to graduate).
+   * Every student moves in one shot, and roll numbers in each receiving class are
+   * re-sequenced 1..N so two cohorts can never end up with clashing rolls.
+   */
+  async promoteAll(plan: { from: string; to: string }[]): Promise<{ moved: number; graduated: number }> {
+    const map = new Map(plan.filter((p) => p.to && p.to !== p.from).map((p) => [p.from, p.to]));
+    if (!map.size) return { moved: 0, graduated: 0 };
+    const students = this.db().students;
+    const finalClass = (s: Student) => map.get(s.classId) ?? s.classId;
+
+    const moved = students.filter((s) => finalClass(s) !== s.classId);
+    const updates: { id: string; classId: string; roll?: string }[] = [];
+
+    // Re-sequence rolls only in active classes that actually receive someone.
+    const affected = new Set(moved.map((s) => finalClass(s)).filter((c) => c !== 'PASSED'));
+    for (const cls of affected) {
+      const roster = students
+        .filter((s) => finalClass(s) === cls)
+        .sort((a, b) => (Number(a.roll) || 0) - (Number(b.roll) || 0) || a.name.localeCompare(b.name));
+      roster.forEach((s, i) => {
+        const roll = String(i + 1);
+        if (s.classId !== cls || s.roll !== roll) updates.push({ id: s.id, classId: cls, roll });
+      });
+    }
+    // Graduating students leave the active roster.
+    let graduated = 0;
+    for (const s of students) {
+      if (finalClass(s) === 'PASSED' && s.classId !== 'PASSED') {
+        updates.push({ id: s.id, classId: 'PASSED' });
+        graduated++;
+      }
+    }
+
     if (this.fs) {
       const fs = this.fs;
-      const batch = writeBatch(fs);
-      studs.forEach((s) => batch.update(doc(fs, 'students', s.id), { classId: toClass }));
-      await batch.commit();
-      return studs.length;
+      for (let i = 0; i < updates.length; i += 450) {
+        const batch = writeBatch(fs);
+        for (const u of updates.slice(i, i + 450)) {
+          batch.update(doc(fs, 'students', u.id), u.roll !== undefined ? { classId: u.classId, roll: u.roll } : { classId: u.classId });
+        }
+        await batch.commit();
+      }
+    } else {
+      const byId = new Map(updates.map((u) => [u.id, u]));
+      this.commit({ students: students.map((s) => (byId.has(s.id) ? { ...s, ...byId.get(s.id)! } : s)) });
     }
-    this.commit({
-      students: this.db().students.map((s) => (s.classId === fromClass ? { ...s, classId: toClass } : s)),
-    });
-    return studs.length;
+    return { moved: moved.length, graduated };
   }
 
   addTeacher(input: Omit<Teacher, 'id' | 'schoolId'>) {
