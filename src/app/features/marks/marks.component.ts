@@ -259,6 +259,8 @@ export class MarksComponent {
 
   schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
   logo = computed(() => this.schoolSvc.currentSchool()?.logo || '');
+  schoolAddress = computed(() => this.schoolSvc.currentSchool()?.address || '');
+  schoolPhone = computed(() => this.schoolSvc.currentSchool()?.phone || '');
 
   openReport(student: Student, examId: string) {
     this.reportExamId.set(examId);
@@ -329,6 +331,7 @@ export class MarksComponent {
     const r = this.reportInfoFor(s, exam);
     const doc = buildReportPdf({
       schoolName: this.schoolName(),
+      schoolAddress: this.schoolAddress() || undefined,
       logo: this.logo() || undefined,
       name: s.name,
       classId: s.classId,

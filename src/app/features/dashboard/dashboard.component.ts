@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
+import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
 @Component({
@@ -12,6 +13,9 @@ import { TPipe } from '../../core/translate.service';
 export class DashboardComponent {
   auth = inject(AuthService);
   data = inject(DataService);
+  private schoolSvc = inject(SchoolService);
+
+  school = computed(() => this.schoolSvc.currentSchool());
 
   constructor() {
     // The super admin's home is the schools panel.

@@ -26,6 +26,8 @@ export class FeesComponent {
   classes = computed(() => this.data.schoolClasses());
   schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
   logo = computed(() => this.schoolSvc.currentSchool()?.logo || '');
+  schoolAddress = computed(() => this.schoolSvc.currentSchool()?.address || '');
+  schoolPhone = computed(() => this.schoolSvc.currentSchool()?.phone || '');
 
   // ---- fee receipt ----
   receiptStudent = signal<Student | null>(null);

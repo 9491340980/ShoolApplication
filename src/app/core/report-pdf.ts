@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 
 export interface ReportPdfInfo {
   schoolName: string;
+  schoolAddress?: string;
   logo?: string; // square PNG data URL
   name: string;
   classId: string;
@@ -54,13 +55,21 @@ export function buildReportPdf(info: ReportPdfInfo): jsPDF {
   doc.setFontSize(16);
   doc.setTextColor(26, 86, 219);
   doc.text(info.schoolName, mid, 18, { align: 'center' });
+  let hy = 24;
+  if (info.schoolAddress) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(110);
+    doc.text(info.schoolAddress, mid, hy, { align: 'center' });
+    hy += 5;
+  }
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.setTextColor(80);
-  doc.text(`Progress Report — ${info.examLabel}`, mid, 25, { align: 'center' });
+  doc.text(`Progress Report — ${info.examLabel}`, mid, hy, { align: 'center' });
   doc.setDrawColor(26, 86, 219);
   doc.setLineWidth(0.5);
-  doc.line(14, 29, W - 14, 29);
+  doc.line(14, hy + 4, W - 14, hy + 4);
 
   // Student details
   doc.setFontSize(10);

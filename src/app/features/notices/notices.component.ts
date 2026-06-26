@@ -25,6 +25,8 @@ export class NoticesComponent {
   isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
   schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
   logo = computed(() => this.schoolSvc.currentSchool()?.logo || '');
+  schoolAddress = computed(() => this.schoolSvc.currentSchool()?.address || '');
+  schoolPhone = computed(() => this.schoolSvc.currentSchool()?.phone || '');
 
   /** Notice currently shown in the printable board view. */
   printing = signal<Notice | null>(null);

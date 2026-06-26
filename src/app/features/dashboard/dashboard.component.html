@@ -3,6 +3,9 @@
      style="background: linear-gradient(135deg, #1a56db 0%, #2563eb 60%, #1e40af 100%)">
   <div class="relative z-10">
     <h2 class="font-display text-xl font-bold">{{ 'welcome' | t }}, {{ auth.user()?.name }}! 🙏</h2>
+    @if (school(); as sc) {
+      <p class="text-[12px] opacity-90 mt-0.5 font-semibold">🏫 {{ sc.name }}@if (sc.address) { <span class="opacity-80 font-normal">· 📍 {{ sc.address }}</span> }</p>
+    }
     <p class="text-[13px] opacity-85 mt-1">
       @if (isStaff()) {
         {{ 'todayAttendance' | t }}: {{ todayAttendancePct() === null ? ('notMarkedToday' | t) : todayAttendancePct() + '%' }}
