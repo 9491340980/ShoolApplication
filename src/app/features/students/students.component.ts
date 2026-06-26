@@ -40,6 +40,31 @@ export class StudentsComponent {
   /** Fees/fee status are visible to the Head Master only. */
   isHM = computed(() => this.auth.role() === 'headmaster');
 
+  // ---- active vs recycle bin ----
+  tab = signal<'active' | 'bin'>('active');
+  deactivated = computed(() => this.data.deactivatedStudents());
+  openBin() {
+    this.data.purgeExpired(); // clear anything past 30 days
+    this.tab.set('bin');
+  }
+  daysLeft(s: Student): number {
+    return this.data.daysLeft(s.deactivatedAt);
+  }
+
+  /** Always soft-delete to the recycle bin (Gmail-style); hard delete is explicit, from the bin. */
+  remove(s: Student) {
+    const d = this.data.studentDeps(s.id);
+    const note = d.has ? `\nLinked records (attendance ${d.attendance}, marks ${d.marks}, fees ${d.fees}) are kept and return if you restore.` : '';
+    const msg = `Move "${s.name}" to Deactivated?${note}\n\nIt is removed permanently after ${this.data.RETENTION_DAYS} days unless you restore it.`;
+    if (confirm(msg)) this.data.deactivateStudent(s.id);
+  }
+  restore(s: Student) {
+    this.data.restoreStudent(s.id);
+  }
+  deleteNow(s: Student) {
+    if (confirm(`Permanently delete "${s.name}" now? This cannot be undone.`)) this.data.deleteStudent(s.id);
+  }
+
   /** Teacher sees only their assigned classes; Head Master sees all of the school's classes. */
   classes = computed(() => {
     if (this.auth.role() === 'teacher') return this.data.classesForTeacher(this.auth.user()!.id);

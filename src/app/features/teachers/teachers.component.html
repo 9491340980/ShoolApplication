@@ -1,7 +1,10 @@
 <!-- TABS -->
-<div class="flex gap-1 bg-page rounded-xl p-1 mb-4 max-w-md">
+<div class="flex gap-1 bg-page rounded-xl p-1 mb-4 max-w-2xl">
   <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'list' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('list')">🎓 {{ 'tabTeacherList' | t }}</button>
   <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'attendance' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('attendance')">✅ {{ 'teacherAttendanceTab' | t }}</button>
+  @if (isHM()) {
+    <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'bin' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="openBin()">🗑️ {{ 'deactivated' | t }} ({{ deactivated().length }})</button>
+  }
 </div>
 
 @if (tab() === 'list') {
@@ -60,7 +63,10 @@
                 <td class="td" [attr.data-label]="'status' | t"><span class="badge badge-green">✓ {{ 'active' | t }}</span></td>
                 @if (auth.role() === 'headmaster') {
                   <td class="td" [attr.data-label]="'action' | t">
-                    <button class="btn-outline btn-sm" (click)="startEdit(tch)">✏️ {{ 'edit' | t }}</button>
+                    <div class="flex gap-1.5 justify-end">
+                      <button class="btn-outline btn-sm" (click)="startEdit(tch)">✏️ {{ 'edit' | t }}</button>
+                      <button class="btn-outline btn-sm !text-danger !border-danger/40" [title]="'remove' | t" (click)="remove(tch)">🗑️</button>
+                    </div>
                   </td>
                 }
               </tr>
@@ -84,12 +90,55 @@
             <div>📞 {{ tch.phone }}</div>
           </div>
           @if (auth.role() === 'headmaster') {
-            <button class="btn-outline btn-sm mt-3" (click)="startEdit(tch)">✏️ {{ 'edit' | t }}</button>
+            <div class="flex gap-1.5 mt-3">
+              <button class="btn-outline btn-sm" (click)="startEdit(tch)">✏️ {{ 'edit' | t }}</button>
+              <button class="btn-outline btn-sm !text-danger !border-danger/40" [title]="'remove' | t" (click)="remove(tch)">🗑️ {{ 'remove' | t }}</button>
+            </div>
           }
         </div>
       }
     </div>
   }
+}
+
+@if (tab() === 'bin') {
+  <div class="card !p-0 overflow-hidden">
+    <div class="px-5 py-4">
+      <div class="text-[15px] font-bold">🗑️ {{ 'deactivatedTeachers' | t }}</div>
+      <div class="text-[12px] text-muted mt-0.5">💡 {{ 'binHint' | t }}</div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="rtable w-full border-collapse text-[13.5px]">
+        <thead>
+          <tr>
+            <th class="th">{{ 'teacherName' | t }}</th>
+            <th class="th">{{ 'subjects' | t }}</th>
+            <th class="th">{{ 'autoRemoveIn' | t }}</th>
+            <th class="th">{{ 'action' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tch of deactivated(); track tch.id) {
+            <tr class="opacity-80">
+              <td class="td font-bold" [attr.data-label]="'teacherName' | t">{{ tch.name }}</td>
+              <td class="td" [attr.data-label]="'subjects' | t">{{ tch.subjects.join(', ') }}</td>
+              <td class="td" [attr.data-label]="'autoRemoveIn' | t">
+                <span class="badge" [class]="daysLeft(tch) <= 5 ? 'badge-red' : 'badge-yellow'">{{ daysLeft(tch) }} {{ 'days' | t }}</span>
+              </td>
+              <td class="td" [attr.data-label]="'action' | t">
+                <div class="flex gap-1.5 justify-end">
+                  <button class="btn-green btn-sm" (click)="restore(tch)">↩️ {{ 'restore' | t }}</button>
+                  <button class="btn-red btn-sm" (click)="deleteNow(tch)">🗑️ {{ 'deleteNow' | t }}</button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td class="td text-muted text-center" colspan="4">{{ 'binEmpty' | t }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
 }
 
 @if (tab() === 'attendance') {

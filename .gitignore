@@ -59,3 +59,5 @@ demo-videos/
 /blob-report/
 /e2e/.cache/
 /test-report.pdf
+
+.npmrc

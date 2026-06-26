@@ -1,3 +1,11 @@
+@if (isHM()) {
+  <div class="flex gap-1 bg-page rounded-xl p-1 mb-4 max-w-md">
+    <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'active' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('active')">👥 {{ 'studentsList' | t }}</button>
+    <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'bin' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="openBin()">🗑️ {{ 'deactivated' | t }} ({{ deactivated().length }})</button>
+  </div>
+}
+
+@if (tab() === 'active') {
 <div class="flex gap-2.5 mb-4 flex-wrap items-center">
   <input class="input max-w-[250px]" [placeholder]="'🔍 ' + ('search' | t) + '...'" [ngModel]="search()" (ngModelChange)="search.set($event)" />
   <select class="input max-w-[150px]" [ngModel]="classFilter()" (ngModelChange)="classFilter.set($event)">
@@ -123,6 +131,9 @@
                   <button class="btn-outline btn-sm" (click)="startEdit(s)">✏️ {{ 'edit' | t }}</button>
                 }
                 <button class="btn-outline btn-sm" [title]="'attendanceHistory' | t" (click)="openHistory(s)">📅</button>
+                @if (isHM()) {
+                  <button class="btn-outline btn-sm !text-danger !border-danger/40" [title]="'remove' | t" (click)="remove(s)">🗑️</button>
+                }
               </div>
             </td>
           </tr>
@@ -133,6 +144,49 @@
     </table>
   </div>
 </div>
+}
+
+@if (tab() === 'bin') {
+  <div class="card !p-0 overflow-hidden">
+    <div class="px-5 py-4">
+      <div class="text-[15px] font-bold">🗑️ {{ 'deactivatedStudents' | t }}</div>
+      <div class="text-[12px] text-muted mt-0.5">💡 {{ 'binHint' | t }}</div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="rtable w-full border-collapse text-[13.5px]">
+        <thead>
+          <tr>
+            <th class="th">{{ 'studentName' | t }}</th>
+            <th class="th">{{ 'class' | t }}</th>
+            <th class="th">{{ 'rollNo' | t }}</th>
+            <th class="th">{{ 'autoRemoveIn' | t }}</th>
+            <th class="th">{{ 'action' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of deactivated(); track s.id) {
+            <tr class="opacity-80">
+              <td class="td font-bold" [attr.data-label]="'studentName' | t">{{ s.name }}</td>
+              <td class="td" [attr.data-label]="'class' | t"><span class="badge badge-blue">{{ s.classId }}</span></td>
+              <td class="td" [attr.data-label]="'rollNo' | t">{{ s.roll }}</td>
+              <td class="td" [attr.data-label]="'autoRemoveIn' | t">
+                <span class="badge" [class]="daysLeft(s) <= 5 ? 'badge-red' : 'badge-yellow'">{{ daysLeft(s) }} {{ 'days' | t }}</span>
+              </td>
+              <td class="td" [attr.data-label]="'action' | t">
+                <div class="flex gap-1.5 justify-end">
+                  <button class="btn-green btn-sm" (click)="restore(s)">↩️ {{ 'restore' | t }}</button>
+                  <button class="btn-red btn-sm" (click)="deleteNow(s)">🗑️ {{ 'deleteNow' | t }}</button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td class="td text-muted text-center" colspan="5">{{ 'binEmpty' | t }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
 
 <!-- STUDENT DETAILS -->
 @if (viewing(); as s) {

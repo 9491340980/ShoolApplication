@@ -18,16 +18,39 @@ export class TeachersComponent {
   private schoolSvc = inject(SchoolService);
   private hist = inject(AttendanceHistoryService);
 
-  /** Tabs: directory list vs. daily teacher attendance. */
-  tab = signal<'list' | 'attendance'>('list');
+  /** Tabs: directory list, teacher attendance, or recycle bin. */
+  tab = signal<'list' | 'attendance' | 'bin'>('list');
   /** List display: compact list (default) or cards. */
   viewMode = signal<'list' | 'card'>('list');
+  isHM = computed(() => this.auth.role() === 'headmaster');
 
   search = signal('');
   filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
     return this.data.teachers().filter((t) => !q || t.name.toLowerCase().includes(q));
   });
+
+  // ---- recycle bin ----
+  deactivated = computed(() => this.data.deactivatedTeachers());
+  openBin() {
+    this.data.purgeExpired();
+    this.tab.set('bin');
+  }
+  daysLeft(t: Teacher): number {
+    return this.data.daysLeft(t.deactivatedAt);
+  }
+  remove(t: Teacher) {
+    const d = this.data.teacherDeps(t.id);
+    const note = d.has ? `\n"${t.name}" is a class teacher / assigned to classes — those links return if you restore.` : '';
+    const msg = `Move "${t.name}" to Deactivated?${note}\n\nRemoved permanently after ${this.data.RETENTION_DAYS} days unless you restore it.`;
+    if (confirm(msg)) this.data.deactivateTeacher(t.id);
+  }
+  restore(t: Teacher) {
+    this.data.restoreTeacher(t.id);
+  }
+  deleteNow(t: Teacher) {
+    if (confirm(`Permanently delete "${t.name}" now? This cannot be undone.`)) this.data.deleteTeacher(t.id);
+  }
 
   // ---- teacher attendance (today) ----
   teacherUsers = computed(() => this.schoolSvc.schoolUsers().filter((u) => u.role === 'teacher'));

@@ -60,6 +60,8 @@ export interface Student {
   address?: string;
   /** Token for the passwordless parent-view link (`/p/:token`); set on first share. */
   shareToken?: string;
+  /** Soft-delete timestamp (ISO). When set, the record is in the recycle bin. */
+  deactivatedAt?: string | null;
 }
 
 /** Read-only snapshot of one child, exposed at /p/:token for parents (no login). */
@@ -89,6 +91,8 @@ export interface Teacher {
   experienceYears: number;
   phone: string;
   active: boolean;
+  /** Soft-delete timestamp (ISO). When set, the record is in the recycle bin. */
+  deactivatedAt?: string | null;
 }
 
 export interface Homework {

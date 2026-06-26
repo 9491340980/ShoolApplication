@@ -96,8 +96,12 @@ export class DataService {
   private unsubs: (() => void)[] = [];
   private seedAttempted = false;
 
-  readonly students = computed(() => this.db().students);
-  readonly teachers = computed(() => this.db().teachers);
+  /** Active records only — deactivated (recycle-bin) ones are hidden everywhere. */
+  readonly students = computed(() => this.db().students.filter((s) => !s.deactivatedAt));
+  readonly teachers = computed(() => this.db().teachers.filter((t) => !t.deactivatedAt));
+  /** Recycle bin (soft-deleted). */
+  readonly deactivatedStudents = computed(() => this.db().students.filter((s) => s.deactivatedAt));
+  readonly deactivatedTeachers = computed(() => this.db().teachers.filter((t) => t.deactivatedAt));
   readonly notices = computed(() =>
     [...this.db().notices].sort((a, b) => b.date.localeCompare(a.date)),
   );
@@ -349,7 +353,7 @@ export class DataService {
   // ---------- queries (already school-scoped by the listeners) ----------
 
   studentsOf(classId: string): Student[] {
-    return this.db().students.filter((s) => s.classId === classId);
+    return this.db().students.filter((s) => s.classId === classId && !s.deactivatedAt);
   }
 
   student(id: string): Student | undefined {
@@ -667,6 +671,81 @@ export class DataService {
       return;
     }
     this.commit({ teachers: this.db().teachers.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
+  }
+
+  // ---------- recycle bin (soft delete + 30-day retention) ----------
+
+  /** Days kept in the recycle bin before a record is removed for good. */
+  readonly RETENTION_DAYS = 30;
+
+  /** Records in other modules that make a hard delete unsafe → deactivate instead. */
+  studentDeps(id: string): { attendance: number; marks: number; fees: number; has: boolean } {
+    const stu = this.db().students.find((s) => s.id === id);
+    const keys = stu ? [id, stu.id, stu.id.replace(`${this.sid}_`, '')] : [id];
+    const attendance = this.db().attendance.filter((a) => keys.some((k) => a.statuses[k] !== undefined)).length;
+    const marks = this.db().marks.filter((m) => keys.some((k) => m.scores[k] !== undefined)).length;
+    const fees = this.db().fees.filter((f) => keys.includes(f.studentId)).length;
+    return { attendance, marks, fees, has: attendance + marks + fees > 0 };
+  }
+  teacherDeps(id: string): { classes: number; assignments: number; has: boolean } {
+    const t = this.db().teachers.find((x) => x.id === id);
+    const classes = t?.classes.length ?? 0;
+    const assignments = Object.values(this.assignments()).filter((a) => a.teacherName === t?.name).length;
+    return { classes, assignments, has: classes + assignments > 0 };
+  }
+
+  /** Days remaining before a recycle-bin record is purged (0 = due now). */
+  daysLeft(deactivatedAt?: string | null): number {
+    if (!deactivatedAt) return this.RETENTION_DAYS;
+    const elapsed = (Date.now() - new Date(deactivatedAt).getTime()) / 86400000;
+    return Math.max(0, Math.ceil(this.RETENTION_DAYS - elapsed));
+  }
+
+  deactivateStudent(id: string) {
+    this.updateStudent(id, { deactivatedAt: new Date().toISOString() });
+  }
+  restoreStudent(id: string) {
+    this.updateStudent(id, { deactivatedAt: null });
+  }
+  deactivateTeacher(id: string) {
+    this.updateTeacher(id, { deactivatedAt: new Date().toISOString() });
+  }
+  restoreTeacher(id: string) {
+    this.updateTeacher(id, { deactivatedAt: null });
+  }
+
+  /** Permanently remove a student (and their fee records). */
+  deleteStudent(id: string) {
+    const stu = this.db().students.find((s) => s.id === id);
+    const keys = stu ? [id, stu.id, stu.id.replace(`${this.sid}_`, '')] : [id];
+    const feeIds = this.db().fees.filter((f) => keys.includes(f.studentId)).map((f) => f.id);
+    if (this.fs) {
+      void deleteDoc(doc(this.fs, 'students', id));
+      feeIds.forEach((fid) => void deleteDoc(doc(this.fs!, 'fees', fid)));
+      return;
+    }
+    this.commit({
+      students: this.db().students.filter((s) => s.id !== id),
+      fees: this.db().fees.filter((f) => !feeIds.includes(f.id)),
+    });
+  }
+  deleteTeacher(id: string) {
+    if (this.fs) {
+      void deleteDoc(doc(this.fs, 'teachers', id));
+      return;
+    }
+    this.commit({ teachers: this.db().teachers.filter((t) => t.id !== id) });
+  }
+
+  /** Remove recycle-bin records older than the retention window (called when the bin is viewed). */
+  purgeExpired() {
+    const cutoff = Date.now() - this.RETENTION_DAYS * 86400000;
+    this.db().students
+      .filter((s) => s.deactivatedAt && new Date(s.deactivatedAt).getTime() < cutoff)
+      .forEach((s) => this.deleteStudent(s.id));
+    this.db().teachers
+      .filter((t) => t.deactivatedAt && new Date(t.deactivatedAt).getTime() < cutoff)
+      .forEach((t) => this.deleteTeacher(t.id));
   }
 
   private feeSlug(label: string): string {
