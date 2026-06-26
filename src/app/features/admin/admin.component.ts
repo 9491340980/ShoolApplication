@@ -62,6 +62,45 @@ export class AdminComponent {
   /** School whose class teachers the super admin is currently managing. */
   managing = signal<School | null>(null);
 
+  // ---- edit school details ----
+  editing = signal<School | null>(null);
+  editName = signal('');
+  editEmail = signal('');
+  editPhone = signal('');
+  editAddress = signal('');
+  editError = signal<string | null>(null);
+  editBusy = signal(false);
+
+  startEdit(school: School) {
+    this.editing.set(school);
+    this.editName.set(school.name);
+    this.editEmail.set(school.adminEmail);
+    this.editPhone.set(school.phone);
+    this.editAddress.set(school.address);
+    this.editError.set(null);
+  }
+  closeEdit() {
+    this.editing.set(null);
+  }
+  async saveEdit() {
+    const s = this.editing();
+    if (!s) return;
+    this.editBusy.set(true);
+    this.editError.set(null);
+    const err = await this.schoolSvc.updateSchool(s.id, {
+      name: this.editName(),
+      adminEmail: this.editEmail(),
+      phone: this.editPhone(),
+      address: this.editAddress(),
+    });
+    this.editBusy.set(false);
+    if (err) {
+      this.editError.set(err);
+      return;
+    }
+    this.closeEdit();
+  }
+
   activeCount = computed(() => this.schoolSvc.schools().filter((s) => s.active).length);
 
   manageClassTeachers(school: School) {

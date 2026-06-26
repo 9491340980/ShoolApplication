@@ -18,7 +18,9 @@ export class ProfileComponent {
   data = inject(DataService);
   private schoolSvc = inject(SchoolService);
 
-  schoolName = environment.schoolName;
+  schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
+  schoolAddress = computed(() => this.schoolSvc.currentSchool()?.address || '—');
+  schoolPhone = computed(() => this.schoolSvc.currentSchool()?.phone || '');
   roleLabels = ROLE_LABELS;
 
   // ---- school logo (Head Master only) ----

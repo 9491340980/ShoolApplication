@@ -6,7 +6,7 @@
     </div>
     <div>
       <div class="font-display text-xl font-bold">{{ user.name }}</div>
-      <div class="text-[13px] opacity-80 mt-1">{{ roleLabels[user.role].label | t }} | {{ schoolName }}</div>
+      <div class="text-[13px] opacity-80 mt-1">{{ roleLabels[user.role].label | t }} | {{ schoolName() }}</div>
       <div class="flex gap-2 mt-2.5 flex-wrap">
         <span class="bg-white/20 px-3 py-1 rounded-full text-[11.5px] font-semibold">{{ roleLabels[user.role].icon }} {{ roleLabels[user.role].label | t }}</span>
         @if (myStudent(); as stu) {
@@ -66,7 +66,7 @@
         </div>
         <div class="bg-page rounded-xl px-3.5 py-3">
           <div class="text-[11px] text-muted font-semibold uppercase tracking-wide mb-1">{{ 'address' | t }}</div>
-          <div class="text-xs font-semibold">Vijayawada, AP</div>
+          <div class="text-xs font-semibold">{{ schoolAddress() }}</div>
         </div>
       </div>
     </div>

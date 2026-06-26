@@ -111,6 +111,23 @@ export class SchoolService {
     await updateDoc(doc(this.fs, 'schools', schoolId), { active });
   }
 
+  /** Super admin: edit a school's core details. */
+  async updateSchool(schoolId: string, patch: { name: string; adminEmail: string; phone: string; address: string }): Promise<string | null> {
+    if (!this.fs) return 'Firebase is not connected.';
+    if (!patch.name.trim() || !patch.adminEmail.trim()) return 'Name and admin email are required.';
+    try {
+      await updateDoc(doc(this.fs, 'schools', schoolId), {
+        name: patch.name.trim(),
+        adminEmail: patch.adminEmail.trim().toLowerCase(),
+        phone: patch.phone.trim(),
+        address: patch.address.trim(),
+      });
+      return null;
+    } catch {
+      return 'Could not update the school. Please try again.';
+    }
+  }
+
   /** Disable/enable a user's access (e.g. a teacher who left the school). */
   async setUserDisabled(uid: string, disabled: boolean) {
     if (!this.fs) return;

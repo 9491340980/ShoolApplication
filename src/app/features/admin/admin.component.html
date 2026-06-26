@@ -64,6 +64,7 @@
             </td>
             <td class="td" [attr.data-label]="'action' | t">
               <div class="flex gap-1.5 flex-wrap justify-end">
+                <button class="btn-outline btn-sm" (click)="startEdit(s)">✏️ {{ 'edit' | t }}</button>
                 <button class="btn-outline btn-sm" (click)="manageClassTeachers(s)">🧑‍🏫 {{ 'classTeachers' | t }}</button>
                 @if (s.active) {
                   <button class="btn-red btn-sm" (click)="schoolSvc.setSchoolActive(s.id, false)">{{ 'deactivate' | t }}</button>
@@ -147,6 +148,44 @@
             }
           </div>
         }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- EDIT SCHOOL DETAILS (super admin) -->
+@if (editing(); as school) {
+  <div class="fixed inset-0 bg-black/40 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4" (click)="closeEdit()">
+    <div class="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-line">
+        <div class="font-bold text-[15px]">✏️ {{ 'editSchool' | t }}</div>
+        <button class="text-muted hover:text-ink cursor-pointer text-xl" (click)="closeEdit()">✕</button>
+      </div>
+      <div class="p-5">
+        <div class="grid gap-2.5 mb-3">
+          <label class="text-[11px] font-semibold text-muted">{{ 'schoolNameLabel' | t }}
+            <input class="input mt-1" [ngModel]="editName()" (ngModelChange)="editName.set($event)" />
+          </label>
+          <label class="text-[11px] font-semibold text-muted">{{ 'adminGmail' | t }}
+            <input class="input mt-1" type="email" [ngModel]="editEmail()" (ngModelChange)="editEmail.set($event)" />
+          </label>
+          <div class="grid sm:grid-cols-2 gap-2.5">
+            <label class="text-[11px] font-semibold text-muted">{{ 'phone' | t }}
+              <input class="input mt-1" [ngModel]="editPhone()" (ngModelChange)="editPhone.set($event)" />
+            </label>
+            <label class="text-[11px] font-semibold text-muted">{{ 'cityAddress' | t }}
+              <input class="input mt-1" [ngModel]="editAddress()" (ngModelChange)="editAddress.set($event)" />
+            </label>
+          </div>
+        </div>
+        @if (editError(); as err) {
+          <div class="bg-danger-light text-red-700 rounded-lg px-3 py-2 text-xs font-medium mb-3">{{ err }}</div>
+        }
+        <p class="text-[11px] text-muted mb-3">💡 {{ 'editEmailHint' | t }}</p>
+        <div class="flex gap-2">
+          <button class="btn-blue" [disabled]="editBusy()" (click)="saveEdit()">💾 {{ 'save' | t }}</button>
+          <button class="btn-outline" (click)="closeEdit()">{{ 'cancel' | t }}</button>
+        </div>
       </div>
     </div>
   </div>
