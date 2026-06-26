@@ -7,7 +7,9 @@ export const environment = {
   superAdminEmails: ['claudesubuser@gmail.com', 'sandeepreddy1248@gmail.com'],
   firebase: {
     apiKey: 'AIzaSyAF0tOkHMGTDZYUxy2TpE9I9PPOd8PGNGA',
-    authDomain: 'vidyasetu-d0ee7.firebaseapp.com',
+    // Must match the domain the app is served from (web.app), otherwise Google
+    // sign-in redirects cross-domain and fails with "missing initial state".
+    authDomain: 'vidyasetu-d0ee7.web.app',
     projectId: 'vidyasetu-d0ee7',
     storageBucket: 'vidyasetu-d0ee7.firebasestorage.app',
     messagingSenderId: '709702363399',

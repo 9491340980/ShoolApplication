@@ -3,9 +3,12 @@ import { Router } from '@angular/router';
 import {
   Auth,
   GoogleAuthProvider,
+  User,
+  getRedirectResult,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   updatePassword,
 } from '@angular/fire/auth';
@@ -24,6 +27,28 @@ export class AuthService {
 
   readonly user = signal<AppUser | null>(this.restore());
   readonly role = computed<Role | null>(() => this.user()?.role ?? null);
+  /** True while a Google redirect sign-in is being completed on app load. */
+  readonly resolvingRedirect = signal(false);
+
+  constructor() {
+    // Complete a Google sign-in that used the redirect flow (mobile / WebView).
+    if (this.fbAuth) {
+      this.resolvingRedirect.set(true);
+      getRedirectResult(this.fbAuth)
+        .then((res) => {
+          if (res?.user) return this.handleGoogleUser(res.user);
+          return null;
+        })
+        .catch(() => null)
+        .finally(() => this.resolvingRedirect.set(false));
+    }
+  }
+
+  /** Mobile browsers & WebViews need the redirect flow; popups are unreliable there. */
+  private prefersRedirect(): boolean {
+    const w = window as unknown as { Capacitor?: unknown };
+    return !!w.Capacitor || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  }
 
   private restore(): AppUser | null {
     try {
@@ -59,17 +84,36 @@ export class AuthService {
    */
   async loginWithGoogle(): Promise<string | null> {
     if (!this.fbAuth) return 'Google sign-in needs Firebase connected.';
-    let uid: string;
-    let email: string;
-    let displayName: string;
-    try {
-      const cred = await signInWithPopup(this.fbAuth, new GoogleAuthProvider());
-      uid = cred.user.uid;
-      email = (cred.user.email ?? '').toLowerCase();
-      displayName = cred.user.displayName ?? email;
-    } catch {
-      return 'Google sign-in was cancelled.';
+    const provider = new GoogleAuthProvider();
+    // On mobile/WebView use redirect (popups fail and break the session state).
+    if (this.prefersRedirect()) {
+      try {
+        await signInWithRedirect(this.fbAuth, provider);
+        return null; // the page navigates away; handleGoogleUser runs on return
+      } catch {
+        return 'Could not start Google sign-in. Please try again.';
+      }
     }
+    try {
+      const cred = await signInWithPopup(this.fbAuth, provider);
+      return this.handleGoogleUser(cred.user);
+    } catch {
+      // popup blocked → fall back to redirect
+      try {
+        await signInWithRedirect(this.fbAuth, provider);
+        return null;
+      } catch {
+        return 'Google sign-in was cancelled.';
+      }
+    }
+  }
+
+  /** Route a signed-in Google user to super admin / Head Master based on their email. */
+  private async handleGoogleUser(user: User): Promise<string | null> {
+    if (!this.fbAuth) return null;
+    const uid = user.uid;
+    const email = (user.email ?? '').toLowerCase();
+    const displayName = user.displayName ?? email;
 
     if (environment.superAdminEmails.includes(email)) {
       const profile: AppUser = { id: uid, role: 'superadmin', name: displayName, phone: '', email };
