@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VidyaSetu</string>
+    <string name="title_activity_main">VidyaSetu</string>
+    <string name="package_name">com.vidyasetu.app</string>
+    <string name="custom_url_scheme">com.vidyasetu.app</string>
+</resources>
