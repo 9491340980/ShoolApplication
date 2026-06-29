@@ -28,17 +28,19 @@
     <div class="card mb-4">
       <div class="card-title">📅 {{ 'manageExams' | t }}</div>
       <p class="text-xs text-muted mb-3">💡 {{ 'examsHint' | t }}</p>
-      <div class="flex flex-wrap gap-2 mb-3">
+      <div class="grid gap-2 mb-3 max-w-md">
         @for (e of exams(); track e.id) {
-          <span class="badge badge-blue !text-[12.5px] !py-1.5 gap-1.5">
-            {{ e.label }}
-            <button class="cursor-pointer text-red-500 hover:text-red-700 font-bold ml-1" (click)="data.removeExam(e.id)">✕</button>
-          </span>
+          <div class="flex items-center gap-2">
+            <input class="input" [value]="e.label" (change)="data.renameExam(e.id, $any($event.target).value)" />
+            <button class="w-9 h-9 shrink-0 rounded-lg border border-line text-red-500 hover:border-danger font-bold" [title]="'remove' | t" (click)="data.removeExam(e.id)">✕</button>
+          </div>
+        } @empty {
+          <p class="text-sm text-muted">—</p>
         }
       </div>
       <div class="flex gap-2 max-w-md">
         <input class="input" placeholder="FA1 / SA1 / Slip Test…" [ngModel]="newExam()" (ngModelChange)="newExam.set($event)" (keyup.enter)="addExam()" />
-        <button class="btn-blue shrink-0" (click)="addExam()">＋</button>
+        <button class="btn-blue shrink-0" (click)="addExam()">＋ {{ 'add' | t }}</button>
       </div>
     </div>
   }

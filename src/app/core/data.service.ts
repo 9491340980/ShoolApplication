@@ -1047,6 +1047,13 @@ export class DataService {
     this.saveExams(this.schoolExams().filter((e) => e.id !== id));
   }
 
+  /** Rename an exam, keeping its id so marks already entered stay linked to it. */
+  renameExam(id: string, label: string) {
+    const clean = label.trim();
+    if (!clean) return;
+    this.saveExams(this.schoolExams().map((e) => (e.id === id ? { ...e, label: clean } : e)));
+  }
+
   private saveExams(exams: Exam[]) {
     if (this.fs) {
       void setDoc(doc(this.fs, 'examsList', this.docId('list')), { schoolId: this.sid, exams });
