@@ -4,7 +4,8 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { EXPENSE_CATEGORIES, Expense, INCOME_CATEGORIES, PAYMENT_METHODS } from '../../core/models';
-import { ExportFormat, exportData } from '../../core/export';
+import { ExportFormat, buildExportName, exportData } from '../../core/export';
+import { downloadElementPdf } from '../../core/report-pdf';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
@@ -165,8 +166,17 @@ export class ExpensesComponent {
     return e.type === 'income';
   }
 
-  print() {
-    window.print();
+  downloading = signal(false);
+  async print() {
+    const el = document.getElementById('exp-print');
+    if (!el) return;
+    this.downloading.set(true);
+    const name = buildExportName({ module: 'CashBook', category: this.month() }, this.schoolName());
+    try {
+      await downloadElementPdf(el, `${name}.pdf`);
+    } finally {
+      this.downloading.set(false);
+    }
   }
   export(format: ExportFormat) {
     const brand = { schoolName: this.schoolName(), logo: this.logo() || undefined };

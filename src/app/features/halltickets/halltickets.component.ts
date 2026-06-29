@@ -4,6 +4,8 @@ import { environment } from '../../../environments/environment';
 import { DataService } from '../../core/data.service';
 import { SUBJECTS, Student } from '../../core/models';
 import { SchoolService } from '../../core/school.service';
+import { buildExportName } from '../../core/export';
+import { downloadElementPdf } from '../../core/report-pdf';
 import { TPipe } from '../../core/translate.service';
 
 interface SchedRow {
@@ -86,8 +88,17 @@ export class HallTicketsComponent {
   back() {
     this.generated.set(false);
   }
-  print() {
-    window.print();
+  downloading = signal(false);
+  async print() {
+    const el = document.getElementById('ht-print');
+    if (!el) return;
+    this.downloading.set(true);
+    const name = buildExportName({ module: 'HallTickets', category: this.examTitle() || 'Exam', target: this.classId() || 'All' }, this.schoolName());
+    try {
+      await downloadElementPdf(el, `${name}.pdf`);
+    } finally {
+      this.downloading.set(false);
+    }
   }
 
   /** yyyy-mm-dd → dd/mm/yyyy for display. */

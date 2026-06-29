@@ -56,7 +56,7 @@
   <div class="no-print flex items-center justify-between gap-2 mb-4 flex-wrap">
     <button class="btn-outline btn-sm" (click)="back()">← {{ 'back' | t }}</button>
     <span class="text-[13px] font-semibold text-muted">{{ ticketStudents().length }} {{ 'hallTickets' | t }}</span>
-    <button class="btn-blue" (click)="print()">🖨️ {{ 'downloadPrint' | t }}</button>
+    <button class="btn-blue" [disabled]="downloading()" (click)="print()">⬇️ {{ downloading() ? '…' : ('downloadPrint' | t) }}</button>
   </div>
 
   <div id="ht-print">

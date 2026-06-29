@@ -61,7 +61,7 @@
         <label class="text-[11px] font-semibold text-muted lg:col-span-2">Remarks<input class="input mt-1" [ngModel]="tcRemarks()" (ngModelChange)="tcRemarks.set($event)" /></label>
       </div>
     }
-    <div class="mt-3"><button class="btn-blue" (click)="print()">🖨️ {{ 'downloadPrint' | t }}</button></div>
+    <div class="mt-3"><button class="btn-blue" [disabled]="downloading()" (click)="download()">⬇️ {{ downloading() ? '…' : ('downloadPrint' | t) }}</button></div>
   } @else {
     <p class="text-sm text-muted mt-3">— {{ 'selectStudent' | t }}</p>
   }

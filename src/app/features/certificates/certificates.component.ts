@@ -4,6 +4,8 @@ import { environment } from '../../../environments/environment';
 import { DataService } from '../../core/data.service';
 import { SchoolService } from '../../core/school.service';
 import { Student } from '../../core/models';
+import { buildExportName } from '../../core/export';
+import { downloadElementPdf } from '../../core/report-pdf';
 import { TPipe } from '../../core/translate.service';
 
 type CertType = 'bonafide' | 'tc';
@@ -115,7 +117,18 @@ export class CertificatesComponent {
     return d ? d.split('-').reverse().join('-') : '—';
   }
 
-  print() {
-    window.print();
+  downloading = signal(false);
+  async download() {
+    const el = document.getElementById('cert-print');
+    const s = this.student();
+    if (!el || !s) return;
+    this.downloading.set(true);
+    const module = this.tab() === 'bonafide' ? 'Bonafide' : 'TC';
+    const name = buildExportName({ module, target: s.name }, this.schoolName());
+    try {
+      await downloadElementPdf(el, `${name}.pdf`);
+    } finally {
+      this.downloading.set(false);
+    }
   }
 }

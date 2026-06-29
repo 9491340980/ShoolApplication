@@ -144,6 +144,42 @@ export async function sharePdf(doc: jsPDF, fileName: string, text: string): Prom
 }
 
 /**
+ * Render a DOM element to a multi-page A4 PDF and download / share it. Works on
+ * phones and inside the native app, where window.print() does nothing — use
+ * this for receipts, hall tickets and certificates. The element may be hidden
+ * (e.g. a print-only block); it is briefly rendered off-screen for capture.
+ */
+export async function downloadElementPdf(el: HTMLElement, fileName: string, text = ''): Promise<ShareResult> {
+  const prev = el.getAttribute('style') ?? '';
+  el.setAttribute('style', `${prev};display:block;position:fixed;left:-10000px;top:0;width:760px;background:#ffffff;padding:28px;z-index:-1`);
+  try {
+    const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 820 });
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const imgW = pageW - margin * 2;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const img = canvas.toDataURL('image/png');
+    let heightLeft = imgH;
+    let position = margin;
+    pdf.addImage(img, 'PNG', margin, position, imgW, imgH);
+    heightLeft -= pageH - margin * 2;
+    while (heightLeft > 0) {
+      position = margin - (imgH - heightLeft);
+      pdf.addPage();
+      pdf.addImage(img, 'PNG', margin, position, imgW, imgH);
+      heightLeft -= pageH - margin * 2;
+    }
+    const blob = pdf.output('blob');
+    const file = new File([blob], fileName, { type: 'application/pdf' });
+    return await shareFile(file, text, () => pdf.save(fileName));
+  } finally {
+    el.setAttribute('style', prev);
+  }
+}
+
+/**
  * Capture a DOM element as a PNG image and share it (shows inline in WhatsApp).
  * Renders the actual styled card, so Telugu text is preserved.
  */

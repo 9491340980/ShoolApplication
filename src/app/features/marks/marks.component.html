@@ -106,8 +106,8 @@
         <table class="w-full border-collapse text-[13px]">
           <thead>
             <tr>
-              <th class="th">{{ 'rollNo' | t }}</th>
-              <th class="th">{{ 'studentName' | t }}</th>
+              <th class="th sticky left-0 z-20 bg-slate-50 w-11">{{ 'rollNo' | t }}</th>
+              <th class="th sticky left-11 z-20 bg-slate-50">{{ 'studentName' | t }}</th>
               @for (s of subjects(); track s.name) {
                 <th class="th !text-center">{{ s.name }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ s.max }}</div></th>
               }
@@ -120,8 +120,8 @@
           <tbody>
             @for (row of sheet(); track row.student.id) {
               <tr class="hover:bg-blue-50/40">
-                <td class="td font-bold">{{ row.student.roll }}</td>
-                <td class="td font-semibold whitespace-nowrap">{{ row.student.name }}</td>
+                <td class="td font-bold sticky left-0 z-10 bg-white w-11">{{ row.student.roll }}</td>
+                <td class="td font-semibold whitespace-nowrap sticky left-11 z-10 bg-white">{{ row.student.name }}</td>
                 @for (v of row.scores; track $index) {
                   <td class="td text-center"
                       [class.text-success]="(v ?? 0) >= 75"

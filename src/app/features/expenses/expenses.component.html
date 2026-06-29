@@ -69,7 +69,7 @@
     <span class="ml-auto flex gap-2">
       <button class="btn-outline btn-sm" (click)="export('excel')">📊 Excel</button>
       <button class="btn-outline btn-sm" (click)="export('pdf')">📄 PDF</button>
-      <button class="btn-blue btn-sm" (click)="print()">🧾 {{ 'printStatement' | t }}</button>
+      <button class="btn-blue btn-sm" [disabled]="downloading()" (click)="print()">🧾 {{ downloading() ? '…' : ('printStatement' | t) }}</button>
     </span>
   </div>
   <!-- type chips -->
