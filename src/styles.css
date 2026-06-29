@@ -107,6 +107,35 @@ body {
   }
 }
 
+/* ===== Safe areas (notch / status bar / gesture bar) =====
+   env() resolves to 0 on desktop, so the web layout is unchanged; on phones
+   and inside the native app it keeps chrome clear of the system bars. */
+.app-header {
+  padding-top: calc(0.875rem + env(safe-area-inset-top));
+}
+.app-sidebar-top {
+  padding-top: calc(1.25rem + env(safe-area-inset-top));
+}
+.app-sidebar-footer {
+  padding-bottom: calc(0.875rem + env(safe-area-inset-bottom));
+}
+.app-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Inside the Android/iOS wrapper, guarantee clearance over the system bars
+   even when the WebView reports zero insets — fixes the logout button
+   overlapping the on-screen back/gesture bar. */
+html.native .app-header {
+  padding-top: max(1.5rem, calc(0.875rem + env(safe-area-inset-top)));
+}
+html.native .app-sidebar-footer {
+  padding-bottom: max(1.4rem, calc(0.875rem + env(safe-area-inset-bottom)));
+}
+html.native .app-bottom-nav {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
 /* ===== MOBILE: native-app feel ===== */
 @media (max-width: 1023px) {
   /* iOS zooms the whole page when focusing a field under 16px and never
@@ -116,6 +145,26 @@ body {
   textarea,
   .input {
     font-size: 16px !important;
+  }
+
+  /* Keep page content clear of the fixed bottom nav + gesture bar. */
+  .app-main {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+
+  /* Denser, app-like cards on phones. */
+  .card {
+    padding: 1rem;
+    border-radius: 0.875rem;
+  }
+  .card-title {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Any non-stacked table stays swipeable instead of breaking the layout. */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Turn wide data tables into stacked cards (label : value rows). */

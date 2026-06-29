@@ -9,7 +9,7 @@
     class="fixed top-0 left-0 h-screen w-60 bg-primary-dark flex flex-col z-50 transition-transform duration-200 lg:translate-x-0"
     [class.-translate-x-full]="!drawerOpen()"
   >
-    <div class="px-4 py-5 border-b border-white/10">
+    <div class="app-sidebar-top px-4 py-5 border-b border-white/10">
       <div class="flex items-center gap-2.5">
         @if (schoolLogo()) {
           <img [src]="schoolLogo()" class="w-9 h-9 rounded-lg bg-white object-contain p-0.5 shrink-0" alt="logo" />
@@ -42,7 +42,7 @@
       }
     </nav>
 
-    <div class="px-4 py-3.5 border-t border-white/10 flex items-center gap-2.5">
+    <div class="app-sidebar-footer px-4 py-3.5 border-t border-white/10 flex items-center gap-2.5">
       <div class="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-white font-bold shrink-0">
         {{ initial() }}
       </div>
@@ -60,17 +60,17 @@
 
   <!-- MAIN -->
   <div class="flex-1 flex flex-col min-w-0 lg:ml-60">
-    <header class="bg-white px-4 lg:px-7 py-3.5 border-b border-line flex items-center justify-between sticky top-0 z-30 shadow-sm">
-      <div class="flex items-center gap-3">
-        <button class="lg:hidden cursor-pointer p-1 text-ink" (click)="drawerOpen.set(true)" aria-label="Menu">
+    <header class="app-header bg-white px-4 lg:px-7 py-3.5 border-b border-line flex items-center justify-between sticky top-0 z-30 shadow-sm">
+      <div class="flex items-center gap-3 min-w-0 flex-1">
+        <button class="lg:hidden cursor-pointer p-1 text-ink shrink-0" (click)="drawerOpen.set(true)" aria-label="Menu">
           <app-icon name="menu" [size]="22" />
         </button>
-        <h1 class="text-lg font-bold">{{ pageTitle() | t }}</h1>
+        <h1 class="text-base lg:text-lg font-bold truncate">{{ pageTitle() | t }}</h1>
       </div>
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2 shrink-0">
         @if (tour.canTour()) {
-          <button class="bg-accent text-white rounded-xl px-3 py-1.5 text-xs font-bold cursor-pointer hover:opacity-90" (click)="tour.start()">
-            🧭 {{ 'takeTour' | t }}
+          <button class="bg-accent text-white rounded-xl px-3 py-1.5 text-xs font-bold cursor-pointer hover:opacity-90 whitespace-nowrap" (click)="tour.start()">
+            🧭 <span class="hidden sm:inline">{{ 'takeTour' | t }}</span>
           </button>
         }
         <button
@@ -86,7 +86,7 @@
       </div>
     </header>
 
-    <main class="p-4 lg:p-7 flex-1 pb-24 lg:pb-7">
+    <main class="app-main p-4 lg:p-7 flex-1 pb-24 lg:pb-7">
       <router-outlet />
     </main>
   </div>
@@ -97,7 +97,7 @@
   <app-attendance-history />
 
   <!-- MOBILE BOTTOM NAV (app-style) -->
-  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-line flex lg:hidden z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
+  <nav class="app-bottom-nav fixed bottom-0 inset-x-0 bg-white border-t border-line flex lg:hidden z-40 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
     @for (item of bottomNav(); track item.path) {
       <a
         [routerLink]="item.path"
