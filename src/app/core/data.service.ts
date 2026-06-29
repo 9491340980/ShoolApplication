@@ -1006,7 +1006,8 @@ export class DataService {
   }
 
   removeSubject(name: string) {
-    this.saveSubjects(this.subjects().filter((s) => s.name !== name));
+    // Removes a standalone subject, or every part of a collapsed split group.
+    this.saveSubjects(this.subjects().filter((s) => s.name !== name && s.group !== name));
   }
 
   private saveSubjects(subjects: Subject[]) {
@@ -1035,12 +1036,12 @@ export class DataService {
     this.commit({ classesList: names });
   }
 
-  addExam(label: string) {
+  addExam(label: string, maxMarks = 100) {
     const clean = label.trim();
     if (!clean) return;
     const id = clean.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) || `e${Date.now()}`;
     if (this.schoolExams().some((e) => e.id === id)) return;
-    this.saveExams([...this.schoolExams(), { id, label: clean }]);
+    this.saveExams([...this.schoolExams(), { id, label: clean, maxMarks: Math.max(1, Math.floor(maxMarks) || 100) }]);
   }
 
   removeExam(id: string) {
@@ -1052,6 +1053,12 @@ export class DataService {
     const clean = label.trim();
     if (!clean) return;
     this.saveExams(this.schoolExams().map((e) => (e.id === id ? { ...e, label: clean } : e)));
+  }
+
+  /** Set an exam's max marks per subject (e.g. FA = 25, SA = 100). */
+  setExamMax(id: string, maxMarks: number) {
+    const m = Math.max(1, Math.floor(Number(maxMarks) || 1));
+    this.saveExams(this.schoolExams().map((e) => (e.id === id ? { ...e, maxMarks: m } : e)));
   }
 
   private saveExams(exams: Exam[]) {

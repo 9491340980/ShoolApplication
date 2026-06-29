@@ -39,10 +39,14 @@ export class MarksComponent {
   // exam management
   showExams = signal(false);
   newExam = signal('');
+  newExamMax = signal(100);
   addExam() {
-    this.data.addExam(this.newExam());
+    this.data.addExam(this.newExam(), Number(this.newExamMax()) || 100);
     this.newExam.set('');
+    this.newExamMax.set(100);
   }
+  /** Max marks per subject for the exam currently selected for entry. */
+  examMax = computed(() => this.exams().find((e) => e.id === this.examId())?.maxMarks ?? 100);
 
   /** Teacher sees only their assigned classes; Head Master sees all. */
   classes = computed(() => {
@@ -72,35 +76,26 @@ export class MarksComponent {
 
   showSubjects = signal(false);
   newSubject = signal('');
-  newPart = signal('');
-  newSubjectMax = signal(100);
 
   students = computed(() => this.data.studentsOf(this.classId()));
 
-  /** Group split parts under one heading; standalone subjects stay single. */
-  entryColumns = computed(() => {
-    const cols: { key: string; group?: string; max: number; parts: { name: string; label: string; max: number }[] }[] = [];
-    const idxByGroup = new Map<string, number>();
+  /**
+   * The subject columns for entry & results: one per subject, with split
+   * subjects collapsed to a single column (the group name). Every column is
+   * graded out of the selected exam's max marks.
+   */
+  units = computed<string[]>(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
     for (const s of this.subjects()) {
-      if (s.group) {
-        let i = idxByGroup.get(s.group);
-        if (i === undefined) {
-          i = cols.length;
-          idxByGroup.set(s.group, i);
-          cols.push({ key: s.group, group: s.group, max: 0, parts: [] });
-        }
-        cols[i].parts.push({ name: s.name, label: s.label ?? s.name, max: s.max });
-        cols[i].max += s.max;
-      } else {
-        cols.push({ key: s.name, max: s.max, parts: [{ name: s.name, label: s.name, max: s.max }] });
+      const u = s.group ?? s.name;
+      if (!seen.has(u)) {
+        seen.add(u);
+        out.push(u);
       }
     }
-    return cols;
+    return out;
   });
-
-  private maxOf(subject: string): number {
-    return this.subjects().find((s) => s.name === subject)?.max ?? 100;
-  }
 
   /** Seeded demo data keys scores by raw ids (s01); new data by full doc ids. */
   private rawId(id: string): string {
@@ -108,24 +103,25 @@ export class MarksComponent {
     return id.startsWith(`${sid}_`) ? id.slice(sid.length + 1) : id;
   }
 
-  /** Grand total of all subject maxes (e.g. 100×5 + 70 + 30 = 600). */
-  grandMax = computed(() => this.subjects().reduce((a, s) => a + s.max, 0));
+  /** Grand total for the exam = number of subjects × the exam's max marks. */
+  grandMax = computed(() => this.units().length * this.examMax());
 
   /** Load every subject's saved marks for this class & exam into the grid. */
   private loader = effect(() => {
     const cls = this.classId();
     const exam = this.examId();
-    const subs = this.subjects();
+    const units = this.units();
+    const max = this.examMax();
     const studs = this.students();
     const m: Record<string, Record<string, number>> = {};
     for (const stu of studs) m[stu.id] = {};
-    for (const sub of subs) {
-      const docu = this.data.marksDoc(cls, exam, sub.name);
+    for (const unit of units) {
+      const docu = this.data.marksDoc(cls, exam, unit);
       if (!docu) continue;
       for (const stu of studs) {
         const v = docu.scores[stu.id] ?? docu.scores[this.rawId(stu.id)];
-        // Clamp to the subject's current max (handles marks saved under an older, higher max).
-        if (v !== undefined) m[stu.id][sub.name] = Math.max(0, Math.min(v, sub.max));
+        // Clamp to the exam's max (handles marks saved under a different max).
+        if (v !== undefined) m[stu.id][unit] = Math.max(0, Math.min(v, max));
       }
     }
     this.matrix.set(m);
@@ -136,7 +132,7 @@ export class MarksComponent {
   }
 
   setCell(studentId: string, subject: string, value: string) {
-    const max = this.maxOf(subject);
+    const max = this.examMax();
     const raw = value === '' ? NaN : Number(value);
     this.matrix.update((m) => {
       const row = { ...(m[studentId] ?? {}) };
@@ -155,10 +151,10 @@ export class MarksComponent {
     return Object.values(row).reduce((sum, v) => sum + v, 0);
   }
 
-  /** Sum of max marks across the subjects this student actually has scores for. */
+  /** Max possible across the subjects this student has scores for = count × exam max. */
   private studentMaxTotal(studentId: string): number {
     const row = this.matrix()[studentId] ?? {};
-    return Object.keys(row).reduce((sum, sub) => sum + this.maxOf(sub), 0);
+    return Object.keys(row).length * this.examMax();
   }
 
   studentPct(studentId: string): number {
@@ -169,13 +165,14 @@ export class MarksComponent {
 
   save() {
     const m = this.matrix();
-    const entries = this.subjects().map((sub) => {
+    const max = this.examMax();
+    const entries = this.units().map((unit) => {
       const scores: Record<string, number> = {};
       for (const stu of this.students()) {
-        const v = m[stu.id]?.[sub.name];
+        const v = m[stu.id]?.[unit];
         if (v !== undefined && !Number.isNaN(v)) scores[stu.id] = v;
       }
-      return { subject: sub.name, max: sub.max, scores };
+      return { subject: unit, max, scores };
     });
     this.data.saveMarksMatrix(this.classId(), this.examId(), entries);
     this.saved.set(true);
@@ -184,25 +181,9 @@ export class MarksComponent {
 
   addSubject() {
     const subject = this.newSubject().trim();
-    const part = this.newPart().trim();
-    const max = Number(this.newSubjectMax()) || 100;
     if (!subject) return;
-    if (part) {
-      // A named part of a split subject: stored as "Science Theory", grouped under "Science".
-      this.data.addSubject(`${subject} ${part}`, max, subject, part);
-    } else {
-      this.data.addSubject(subject, max);
-    }
+    this.data.addSubject(subject);
     this.newSubject.set('');
-    this.newPart.set('');
-    this.newSubjectMax.set(100);
-  }
-
-  /** Prefill the add form to add another part to an existing split subject. */
-  splitFrom(group: string) {
-    this.showSubjects.set(true);
-    this.newSubject.set(group);
-    this.newPart.set('');
   }
 
   grade(score: number | undefined, max = 100): string {
@@ -219,10 +200,11 @@ export class MarksComponent {
 
   /** Export the result sheet (students × subjects + total/%/rank). */
   exportSheet(format: ExportFormat) {
-    const subs = this.subjects();
+    const units = this.units();
+    const max = this.examMax();
     const rows = this.sheet().map((r) => {
       const row: Record<string, unknown> = { Roll: r.student.roll, Name: r.student.name };
-      subs.forEach((s, i) => (row[`${s.name} /${s.max}`] = r.scores[i] ?? ''));
+      units.forEach((u, i) => (row[`${u} /${max}`] = r.scores[i] ?? ''));
       row['Total'] = r.total;
       row['%'] = r.pct;
       row['Rank'] = r.rank;
@@ -238,11 +220,11 @@ export class MarksComponent {
 
   /** Result sheet: every student × every subject for the selected class & exam. */
   sheet = computed<SheetRow[]>(() => {
-    const subjects = this.subjects();
+    const units = this.units();
     const rows = this.students().map((student) => {
       const marks = this.data.studentMarks(student.id, this.examId());
       const bySubject = new Map(marks.map((m) => [m.subject, m.score]));
-      const scores = subjects.map((sub) => bySubject.get(sub.name));
+      const scores = units.map((u) => bySubject.get(u));
       const total = marks.reduce((sum, m) => sum + m.score, 0);
       const maxTotal = marks.reduce((sum, m) => sum + m.max, 0);
       const pct = maxTotal ? Math.round((total / maxTotal) * 1000) / 10 : 0;

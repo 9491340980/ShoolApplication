@@ -231,9 +231,11 @@ export const SUBJECTS: Subject[] = [
 export interface Exam {
   id: string;
   label: string;
+  /** Max marks per subject for this exam (e.g. FA = 25, SA = 100). Absent → 100. */
+  maxMarks?: number;
 }
 export const EXAMS: Exam[] = [
-  { id: 'quarterly', label: 'Quarterly Exam' },
-  { id: 'halfyearly', label: 'Half Yearly' },
-  { id: 'annual', label: 'Annual Exam' },
+  { id: 'quarterly', label: 'Quarterly Exam', maxMarks: 100 },
+  { id: 'halfyearly', label: 'Half Yearly', maxMarks: 100 },
+  { id: 'annual', label: 'Annual Exam', maxMarks: 100 },
 ];
