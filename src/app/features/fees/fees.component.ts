@@ -4,6 +4,8 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { FeeItem, Student } from '../../core/models';
+import { buildExportName } from '../../core/export';
+import { downloadElementPdf } from '../../core/report-pdf';
 import { NotifyService } from '../../core/notify.service';
 import { SchoolService } from '../../core/school.service';
 import { ShareService } from '../../core/share.service';
@@ -39,8 +41,18 @@ export class FeesComponent {
   closeReceipt() {
     this.receiptStudent.set(null);
   }
-  printReceipt() {
-    window.print();
+  downloading = signal(false);
+  async printReceipt() {
+    const el = document.getElementById('receipt-card');
+    const s = this.receiptStudent();
+    if (!el || !s) return;
+    this.downloading.set(true);
+    const name = buildExportName({ module: 'Receipt', target: s.name }, this.schoolName());
+    try {
+      await downloadElementPdf(el, `${name}.pdf`);
+    } finally {
+      this.downloading.set(false);
+    }
   }
   receiptFees = computed(() => {
     const s = this.receiptStudent();

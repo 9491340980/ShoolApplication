@@ -110,7 +110,7 @@
         <button class="text-muted hover:text-ink cursor-pointer text-sm font-semibold" (click)="closeReceipt()">✕ {{ 'close' | t }}</button>
         <div class="flex gap-2">
           <button class="btn-sm rounded-lg bg-[#128C7E] text-white font-semibold px-3 py-1.5" (click)="share.openChooser(s, receiptWaLink(s))">💬 {{ 'whatsapp' | t }}</button>
-          <button class="btn-blue btn-sm" (click)="printReceipt()">🖨️ {{ 'downloadPrint' | t }}</button>
+          <button class="btn-blue btn-sm" [disabled]="downloading()" (click)="printReceipt()">⬇️ {{ downloading() ? '…' : ('downloadPrint' | t) }}</button>
         </div>
       </div>
 

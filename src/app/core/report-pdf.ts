@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Capacitor } from '@capacitor/core';
 
 export interface ReportPdfInfo {
   schoolName: string;
@@ -122,11 +123,46 @@ export function buildReportPdf(info: ReportPdfInfo): jsPDF {
 
 type ShareResult = 'shared' | 'downloaded' | 'cancelled';
 
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onloadend = () => resolve((r.result as string).split(',')[1] ?? '');
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Inside the native app the WebView can't download blobs or print, so write the
+ * file to the app's cache with the Filesystem plugin and hand it to the OS via
+ * the Share sheet (Save to Files / Drive / WhatsApp / Print all appear there).
+ * Throws if the plugins aren't in the installed APK, so the caller can fall back.
+ */
+async function nativeSave(file: File, text: string): Promise<ShareResult> {
+  const data = await blobToBase64(file);
+  const { Filesystem, Directory } = await import('@capacitor/filesystem');
+  const written = await Filesystem.writeFile({ path: file.name, data, directory: Directory.Cache });
+  const { Share } = await import('@capacitor/share');
+  try {
+    await Share.share({ title: file.name, text, url: written.uri });
+    return 'shared';
+  } catch {
+    return 'cancelled'; // user dismissed the share sheet
+  }
+}
+
 async function shareFile(file: File, text: string, fallback: () => void): Promise<ShareResult> {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      return await nativeSave(file, text);
+    } catch {
+      /* plugins missing (older APK) → try the web paths below */
+    }
+  }
   const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean };
   if (nav.canShare && nav.canShare({ files: [file] })) {
     try {
-      await nav.share({ files: [file], title: 'Report Card', text } as ShareData);
+      await nav.share({ files: [file], title: file.name, text } as ShareData);
       return 'shared';
     } catch {
       return 'cancelled';
