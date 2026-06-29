@@ -4,7 +4,7 @@ import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { SchoolService } from '../../core/school.service';
 import { ConfigRole, Role, SchoolPermissions } from '../../core/models';
-import { CONFIG_ROLES, DEFAULT_PERMS, FEATURES, Feature, ROLE_LABELS } from '../../layout/nav-config';
+import { CONFIG_ROLES, DEFAULT_DISABLED_ROLES, DEFAULT_PERMS, FEATURES, Feature, ROLE_LABELS } from '../../layout/nav-config';
 import { TKey } from '../../core/translations';
 import { TPipe } from '../../core/translate.service';
 
@@ -88,7 +88,8 @@ export class RolesComponent {
     for (const role of CONFIG_ROLES) next[role] = [...(roles[role] ?? DEFAULT_PERMS[role])];
     this.draft.set(next);
     this.draftDisabledModules.set([...(this.existingDoc?.disabledModules ?? [])]);
-    this.draftDisabledRoles.set([...(this.existingDoc?.disabledRoles ?? [])]);
+    // No config yet → parent & student start disabled by default.
+    this.draftDisabledRoles.set([...(this.existingDoc?.disabledRoles ?? DEFAULT_DISABLED_ROLES)]);
     this.loading.set(false);
   }
 
@@ -125,7 +126,7 @@ export class RolesComponent {
     for (const role of this.editableRoles()) roles[role] = this.draft()[role];
     // Only the super admin edits the school-level module/role switches; the HM preserves them.
     const disabledModules = this.isSuper() ? this.draftDisabledModules() : this.existingDoc?.disabledModules ?? [];
-    const disabledRoles = this.isSuper() ? this.draftDisabledRoles() : this.existingDoc?.disabledRoles ?? [];
+    const disabledRoles = this.isSuper() ? this.draftDisabledRoles() : this.existingDoc?.disabledRoles ?? DEFAULT_DISABLED_ROLES;
     await this.data.savePermissions(id, { roles, disabledModules, disabledRoles });
     this.existingDoc = { schoolId: id, roles, disabledModules, disabledRoles };
     this.saved.set(true);

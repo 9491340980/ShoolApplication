@@ -151,6 +151,9 @@ export const NAV: Record<Role, NavSection[]> = {
 /** Roles whose tabs can be configured, in display order. */
 export const CONFIG_ROLES: ConfigRole[] = ['headmaster', 'teacher', 'accountant', 'parent', 'student'];
 
+/** Roles a brand-new school starts with switched OFF (super admin opts them in). */
+export const DEFAULT_DISABLED_ROLES: Role[] = ['parent', 'student'];
+
 /**
  * The catalogue of toggleable features for the permission matrix. `roles` lists
  * the roles that may be granted this tab; `core` features are always on (shown

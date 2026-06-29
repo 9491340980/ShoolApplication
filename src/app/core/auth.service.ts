@@ -18,6 +18,7 @@ import { Firestore, collection, doc, getDoc, getDocs, limit, query, setDoc, wher
 import { environment, firebaseEnabled } from '../../environments/environment';
 import { DEMO_PASSWORD, DEMO_USERS } from './demo-data';
 import { AppUser, Role, School } from './models';
+import { DEFAULT_DISABLED_ROLES } from '../layout/nav-config';
 
 const SESSION_KEY = 'vidyasetu-session';
 
@@ -251,8 +252,9 @@ export class AuthService {
     if (!this.fs || !schoolId || role === 'headmaster' || role === 'superadmin') return false;
     try {
       const snap = await getDoc(doc(this.fs, 'permissions', `${schoolId}_perms`));
-      if (!snap.exists()) return false;
-      const disabled = (snap.data()['disabledRoles'] as string[]) ?? [];
+      const disabled = snap.exists()
+        ? ((snap.data()['disabledRoles'] as string[]) ?? DEFAULT_DISABLED_ROLES)
+        : DEFAULT_DISABLED_ROLES;
       return disabled.includes(role);
     } catch {
       return false;
