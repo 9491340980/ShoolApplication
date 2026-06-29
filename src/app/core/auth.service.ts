@@ -8,7 +8,6 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
-  signInWithRedirect,
   signOut,
   updatePassword,
 } from '@angular/fire/auth';
@@ -44,11 +43,6 @@ export class AuthService {
     }
   }
 
-  /** Mobile browsers & WebViews need the redirect flow; popups are unreliable there. */
-  private prefersRedirect(): boolean {
-    const w = window as unknown as { Capacitor?: unknown };
-    return !!w.Capacitor || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  }
 
   private restore(): AppUser | null {
     try {
@@ -85,26 +79,11 @@ export class AuthService {
   async loginWithGoogle(): Promise<string | null> {
     if (!this.fbAuth) return 'Google sign-in needs Firebase connected.';
     const provider = new GoogleAuthProvider();
-    // On mobile/WebView use redirect (popups fail and break the session state).
-    if (this.prefersRedirect()) {
-      try {
-        await signInWithRedirect(this.fbAuth, provider);
-        return null; // the page navigates away; handleGoogleUser runs on return
-      } catch {
-        return 'Could not start Google sign-in. Please try again.';
-      }
-    }
     try {
       const cred = await signInWithPopup(this.fbAuth, provider);
       return this.handleGoogleUser(cred.user);
     } catch {
-      // popup blocked → fall back to redirect
-      try {
-        await signInWithRedirect(this.fbAuth, provider);
-        return null;
-      } catch {
-        return 'Google sign-in was cancelled.';
-      }
+      return 'Google sign-in was cancelled or blocked. On the mobile app, native Google sign-in is required.';
     }
   }
 
