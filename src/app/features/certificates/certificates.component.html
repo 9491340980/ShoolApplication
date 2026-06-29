@@ -1,0 +1,135 @@
+<!-- TABS -->
+<div class="flex gap-1 bg-page rounded-xl p-1 mb-4 max-w-md">
+  <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'bonafide' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('bonafide')">📜 {{ 'bonafide' | t }}</button>
+  <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'tc' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('tc')">📄 {{ 'transferCertificate' | t }}</button>
+</div>
+
+<!-- PICKER + FIELDS -->
+<div class="card mb-4">
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+    <label class="text-[11px] font-semibold text-muted">{{ 'class' | t }}
+      <select class="input mt-1" [ngModel]="classFilter()" (ngModelChange)="classFilter.set($event); studentId.set('')">
+        <option value="">{{ 'allItems' | t }}</option>
+        @for (c of classes(); track c) { <option [value]="c">{{ c }}</option> }
+      </select>
+    </label>
+    <label class="text-[11px] font-semibold text-muted lg:col-span-2">{{ 'selectStudent' | t }}
+      <select class="input mt-1" [ngModel]="studentId()" (ngModelChange)="pickStudent($event)">
+        <option value="">{{ 'selectStudent' | t }}…</option>
+        @for (s of studentList(); track s.id) { <option [value]="s.id">{{ s.roll }} · {{ s.name }} ({{ s.classId }})</option> }
+      </select>
+    </label>
+    <label class="text-[11px] font-semibold text-muted">{{ 'date' | t }}
+      <input class="input mt-1" type="date" [ngModel]="date()" (ngModelChange)="date.set($event)" />
+    </label>
+  </div>
+
+  @if (student()) {
+    @if (tab() === 'bonafide') {
+      <div class="grid sm:grid-cols-3 gap-2.5 mt-3">
+        <label class="text-[11px] font-semibold text-muted">Academic year
+          <input class="input mt-1" [ngModel]="academicYear()" (ngModelChange)="academicYear.set($event)" />
+        </label>
+        <label class="text-[11px] font-semibold text-muted">Conduct & character
+          <input class="input mt-1" [ngModel]="bonafideConduct()" (ngModelChange)="bonafideConduct.set($event)" />
+        </label>
+        <label class="text-[11px] font-semibold text-muted">Purpose (optional)
+          <input class="input mt-1" [ngModel]="purpose()" (ngModelChange)="purpose.set($event)" placeholder="e.g. bank / scholarship / passport" />
+        </label>
+      </div>
+    } @else {
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-3">
+        <label class="text-[11px] font-semibold text-muted">Admission No.<input class="input mt-1" [ngModel]="tcAdmissionNo()" (ngModelChange)="tcAdmissionNo.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Father's name<input class="input mt-1" [ngModel]="tcFather()" (ngModelChange)="tcFather.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Mother's name<input class="input mt-1" [ngModel]="tcMother()" (ngModelChange)="tcMother.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Caste / Category<input class="input mt-1" [ngModel]="tcCaste()" (ngModelChange)="tcCaste.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Nationality<input class="input mt-1" [ngModel]="tcNationality()" (ngModelChange)="tcNationality.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Religion<input class="input mt-1" [ngModel]="tcReligion()" (ngModelChange)="tcReligion.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Date of birth<input class="input mt-1" type="date" [ngModel]="tcDob()" (ngModelChange)="tcDob.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Date of admission<input class="input mt-1" type="date" [ngModel]="tcDoa()" (ngModelChange)="tcDoa.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Class studying<input class="input mt-1" [ngModel]="tcClassStudying()" (ngModelChange)="tcClassStudying.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Promotion status<input class="input mt-1" [ngModel]="tcPromoted()" (ngModelChange)="tcPromoted.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Last attended<input class="input mt-1" type="date" [ngModel]="tcLastAttended()" (ngModelChange)="tcLastAttended.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Date of leaving<input class="input mt-1" type="date" [ngModel]="tcLeaving()" (ngModelChange)="tcLeaving.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Reason for leaving<input class="input mt-1" [ngModel]="tcReason()" (ngModelChange)="tcReason.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Medium<input class="input mt-1" [ngModel]="tcMedium()" (ngModelChange)="tcMedium.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Working days<input class="input mt-1" [ngModel]="tcWorkingDays()" (ngModelChange)="tcWorkingDays.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Days present<input class="input mt-1" [ngModel]="tcDaysPresent()" (ngModelChange)="tcDaysPresent.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted lg:col-span-2">Subjects studied<input class="input mt-1" [ngModel]="tcSubjects()" (ngModelChange)="tcSubjects.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Dues<input class="input mt-1" [ngModel]="tcDues()" (ngModelChange)="tcDues.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted">Conduct & character<input class="input mt-1" [ngModel]="tcConduct()" (ngModelChange)="tcConduct.set($event)" /></label>
+        <label class="text-[11px] font-semibold text-muted lg:col-span-2">Remarks<input class="input mt-1" [ngModel]="tcRemarks()" (ngModelChange)="tcRemarks.set($event)" /></label>
+      </div>
+    }
+    <div class="mt-3"><button class="btn-blue" (click)="print()">🖨️ {{ 'downloadPrint' | t }}</button></div>
+  } @else {
+    <p class="text-sm text-muted mt-3">— {{ 'selectStudent' | t }}</p>
+  }
+</div>
+
+<!-- PRINTABLE CERTIFICATE -->
+@if (student()) {
+  <div class="card">
+    <div id="cert-print" style="max-width:780px;margin:0 auto;color:#111">
+      <!-- letterhead -->
+      <div style="text-align:center;border-bottom:2px solid var(--color-primary, #1a56db);padding-bottom:10px;margin-bottom:14px">
+        @if (logo()) { <img [src]="logo()" style="width:60px;height:60px;object-fit:contain;margin:0 auto 6px" alt="logo" /> }
+        <div style="font-size:22px;font-weight:800">{{ schoolName() }}</div>
+        @if (schoolAddress()) { <div style="font-size:12px;color:#444">{{ schoolAddress() }}</div> }
+        @if (schoolPhone()) { <div style="font-size:12px;color:#444">📞 {{ schoolPhone() }}</div> }
+      </div>
+
+      @if (tab() === 'bonafide') {
+        <div style="text-align:center;font-size:16px;font-weight:800;letter-spacing:1px;text-decoration:underline;margin-bottom:6px">BONAFIDE CERTIFICATE</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#444;margin-bottom:16px">
+          <span>No: {{ bonafideNo() }}</span><span>Date: {{ fmtDate(date()) }}</span>
+        </div>
+        <p style="font-size:14.5px;line-height:2.1;text-align:justify">
+          This is to certify that <b>{{ student()!.name }}</b>, child of <b>{{ tcFather() || student()!.fatherName || '—' }}</b>,
+          bearing Admission No. <b>{{ tcAdmissionNo() || student()!.admissionNo || '—' }}</b> and Roll No. <b>{{ student()!.roll }}</b>,
+          is a bonafide student of this institution studying in Class <b>{{ student()!.classId }}</b> during the academic year <b>{{ academicYear() }}</b>.
+          @if (tcDob() || student()!.dob) {
+            The date of birth as per our records is <b>{{ fmtDate(tcDob() || student()!.dob!) }}</b> ({{ dateWords(tcDob() || student()!.dob!) }}).
+          }
+          The student's conduct and character is <b>{{ bonafideConduct() }}</b>.
+          @if (purpose()) { This certificate is issued for the purpose of <b>{{ purpose() }}</b>. }
+        </p>
+        <div style="display:flex;justify-content:space-between;margin-top:60px;font-size:13px;font-weight:600">
+          <div>Place: ……………………<br />Date: {{ fmtDate(date()) }}</div>
+          <div style="text-align:center">Signature of the Head Master<br />(with seal)</div>
+        </div>
+      } @else {
+        <div style="text-align:center;font-size:16px;font-weight:800;letter-spacing:1px;text-decoration:underline;margin-bottom:6px">TRANSFER CERTIFICATE</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#444;margin-bottom:12px">
+          <span>T.C. No: {{ tcNo() }}</span><span>Date: {{ fmtDate(date()) }}</span>
+        </div>
+        <table class="tk-table" style="table-layout:auto;font-size:13px">
+          <tbody>
+            <tr><td style="width:32px;text-align:center">1</td><td style="width:46%">Name of the pupil</td><td style="text-align:left"><b>{{ student()!.name }}</b></td></tr>
+            <tr><td style="text-align:center">2</td><td>Admission No.</td><td style="text-align:left">{{ tcAdmissionNo() || '—' }}</td></tr>
+            <tr><td style="text-align:center">3</td><td>Father's / Guardian's name</td><td style="text-align:left">{{ tcFather() || '—' }}</td></tr>
+            <tr><td style="text-align:center">4</td><td>Mother's name</td><td style="text-align:left">{{ tcMother() || '—' }}</td></tr>
+            <tr><td style="text-align:center">5</td><td>Nationality / Religion / Caste</td><td style="text-align:left">{{ tcNationality() }} / {{ tcReligion() }} / {{ tcCaste() || '—' }}</td></tr>
+            <tr><td style="text-align:center">6</td><td>Date of birth (in figures &amp; words)</td><td style="text-align:left">{{ fmtDate(tcDob()) }} — {{ dateWords(tcDob()) }}</td></tr>
+            <tr><td style="text-align:center">7</td><td>Class in which studying</td><td style="text-align:left">{{ tcClassStudying() || '—' }}</td></tr>
+            <tr><td style="text-align:center">8</td><td>Date of admission</td><td style="text-align:left">{{ fmtDate(tcDoa()) }}</td></tr>
+            <tr><td style="text-align:center">9</td><td>Whether qualified for promotion</td><td style="text-align:left">{{ tcPromoted() }}</td></tr>
+            <tr><td style="text-align:center">10</td><td>Date on which the pupil last attended</td><td style="text-align:left">{{ fmtDate(tcLastAttended()) }}</td></tr>
+            <tr><td style="text-align:center">11</td><td>Date of leaving the school</td><td style="text-align:left">{{ fmtDate(tcLeaving()) }}</td></tr>
+            <tr><td style="text-align:center">12</td><td>Reason for leaving</td><td style="text-align:left">{{ tcReason() }}</td></tr>
+            <tr><td style="text-align:center">13</td><td>Medium of instruction</td><td style="text-align:left">{{ tcMedium() }}</td></tr>
+            <tr><td style="text-align:center">14</td><td>Subjects studied</td><td style="text-align:left">{{ tcSubjects() }}</td></tr>
+            <tr><td style="text-align:center">15</td><td>Total working days / days present</td><td style="text-align:left">{{ tcWorkingDays() || '—' }} / {{ tcDaysPresent() || '—' }}</td></tr>
+            <tr><td style="text-align:center">16</td><td>Whether all dues are paid</td><td style="text-align:left">{{ tcDues() }}</td></tr>
+            <tr><td style="text-align:center">17</td><td>Conduct &amp; character</td><td style="text-align:left">{{ tcConduct() }}</td></tr>
+            <tr><td style="text-align:center">18</td><td>Remarks</td><td style="text-align:left">{{ tcRemarks() }}</td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex;justify-content:space-between;margin-top:48px;font-size:13px;font-weight:600">
+          <div>Prepared by ……………………<br />Checked by ……………………</div>
+          <div style="text-align:center">Signature of the Head Master<br />(with school seal)</div>
+        </div>
+      }
+    </div>
+  </div>
+}

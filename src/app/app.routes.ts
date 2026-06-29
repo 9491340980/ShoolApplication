@@ -54,6 +54,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/halltickets/halltickets.component').then((m) => m.HallTicketsComponent),
       },
       {
+        path: 'certificates',
+        loadComponent: () => import('./features/certificates/certificates.component').then((m) => m.CertificatesComponent),
+      },
+      {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },

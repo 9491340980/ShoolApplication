@@ -359,8 +359,8 @@ export class DataService {
       attendance: DEMO_ATTENDANCE,
       marks: DEMO_MARKS,
       timetables: DEMO_TIMETABLES,
-      // Offline demo shows every role/module (parent & student are off by default for real schools).
-      permissions: { schoolId: DEMO_SCHOOL_ID, roles: {}, disabledModules: [], disabledRoles: [] },
+      // Offline demo enables every role; Certificates stays off until enabled (still in testing).
+      permissions: { schoolId: DEMO_SCHOOL_ID, roles: {}, disabledModules: ['/certificates'], disabledRoles: [] },
     };
   }
 

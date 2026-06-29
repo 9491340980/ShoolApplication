@@ -48,6 +48,7 @@ export const NAV: Record<Role, NavSection[]> = {
       items: [
         { path: '/reports', icon: 'chart', label: 'reports' },
         { path: '/halltickets', icon: 'file', label: 'hallTickets' },
+        { path: '/certificates', icon: 'file', label: 'certificates' },
         { path: '/timetable', icon: 'calendar', label: 'timetable' },
         { path: '/teachers', icon: 'cap', label: 'teachers' },
         { path: '/users', icon: 'users', label: 'userManagement' },
@@ -154,6 +155,9 @@ export const CONFIG_ROLES: ConfigRole[] = ['headmaster', 'teacher', 'accountant'
 /** Roles a brand-new school starts with switched OFF (super admin opts them in). */
 export const DEFAULT_DISABLED_ROLES: Role[] = ['parent', 'student'];
 
+/** Modules that ship switched OFF (e.g. still under testing) until a super admin enables them. */
+export const DEFAULT_DISABLED_MODULES: string[] = ['/certificates'];
+
 /**
  * The catalogue of toggleable features for the permission matrix. `roles` lists
  * the roles that may be granted this tab; `core` features are always on (shown
@@ -179,6 +183,7 @@ export const FEATURES: Feature[] = [
   { path: '/expenses', icon: 'rupee', label: 'expenses', section: 'studentsSection', roles: ['headmaster', 'accountant'] },
   { path: '/reports', icon: 'chart', label: 'reports', section: 'school', roles: ['headmaster', 'accountant'] },
   { path: '/halltickets', icon: 'file', label: 'hallTickets', section: 'school', roles: ['headmaster'] },
+  { path: '/certificates', icon: 'file', label: 'certificates', section: 'school', roles: ['headmaster', 'accountant'] },
   { path: '/timetable', icon: 'calendar', label: 'timetable', section: 'school', roles: ['headmaster', 'teacher', 'parent', 'student'] },
   { path: '/teachers', icon: 'cap', label: 'teachers', section: 'school', roles: ['headmaster'] },
   { path: '/users', icon: 'users', label: 'userManagement', section: 'school', roles: ['headmaster'] },
@@ -207,6 +212,7 @@ export const PAGE_TITLES: Record<string, TKey> = {
   '/users': 'userManagement',
   '/reports': 'reports',
   '/halltickets': 'hallTickets',
+  '/certificates': 'certificates',
   '/promote': 'promotion',
   '/dashboard': 'dashboard',
   '/notices': 'noticeBoard',

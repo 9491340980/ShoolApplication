@@ -86,14 +86,17 @@ body {
   #ht-print,
   #ht-print *,
   #exp-print,
-  #exp-print * {
+  #exp-print *,
+  #cert-print,
+  #cert-print * {
     visibility: visible !important;
   }
   #report-card,
   #receipt-card,
   #notice-card,
   #ht-print,
-  #exp-print {
+  #exp-print,
+  #cert-print {
     position: absolute;
     left: 0;
     top: 0;

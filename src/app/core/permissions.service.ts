@@ -2,7 +2,7 @@ import { Injectable, computed, inject } from '@angular/core';
 import { AuthService } from './auth.service';
 import { DataService } from './data.service';
 import { ConfigRole, Role } from './models';
-import { CONFIG_ROLES, DEFAULT_DISABLED_ROLES, DEFAULT_PERMS, corePaths } from '../layout/nav-config';
+import { CONFIG_ROLES, DEFAULT_DISABLED_MODULES, DEFAULT_DISABLED_ROLES, DEFAULT_PERMS, corePaths } from '../layout/nav-config';
 
 /**
  * Resolves which tabs a role may see, layering a school's saved overrides on top
@@ -18,8 +18,8 @@ export class PermissionsService {
     return !!role && (CONFIG_ROLES as string[]).includes(role);
   }
 
-  /** Module paths the super admin turned off for this school. */
-  private disabledModules = computed(() => new Set(this.data.permissions()?.disabledModules ?? []));
+  /** Module paths turned off for this school (defaults apply when the school has no config). */
+  private disabledModules = computed(() => new Set(this.data.permissions()?.disabledModules ?? DEFAULT_DISABLED_MODULES));
   /**
    * Roles turned off for this school. When the school has no config yet, parent
    * & student start off by default (the super admin opts them in).
