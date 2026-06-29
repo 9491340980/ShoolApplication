@@ -29,6 +29,15 @@ export class AuthService {
 
   readonly user = signal<AppUser | null>(this.restore());
   readonly role = computed<Role | null>(() => this.user()?.role ?? null);
+  /** Every role the user holds (primary + extras), de-duplicated. */
+  readonly roles = computed<Role[]>(() => {
+    const u = this.user();
+    return u ? [...new Set([u.role, ...(u.extraRoles ?? [])])] : [];
+  });
+  /** Does the signed-in user hold this role (as primary or an extra)? */
+  has(role: Role): boolean {
+    return this.roles().includes(role);
+  }
   /** True while a Google redirect sign-in is being completed on app load. */
   readonly resolvingRedirect = signal(false);
 
@@ -60,7 +69,7 @@ export class AuthService {
    * account (so Firestore reads work); falls back to a local session if the
    * account doesn't exist yet — demos never break.
    */
-  async loginDemo(role: Exclude<Role, 'superadmin'>) {
+  async loginDemo(role: Exclude<Role, 'superadmin' | 'accountant'>) {
     const demoUser = DEMO_USERS[role];
     if (this.fbAuth) {
       try {
@@ -214,6 +223,7 @@ export class AuthService {
         doc(this.fs, 'users', uid),
         {
           role: profile.role,
+          extraRoles: profile.extraRoles ?? [],
           name: profile.name,
           phone: profile.phone,
           email: profile.email,
@@ -237,6 +247,7 @@ export class AuthService {
       return {
         id: uid,
         role: d['role'],
+        extraRoles: d['extraRoles'] ?? [],
         name: d['name'],
         phone: d['phone'] ?? '',
         email: d['email'] ?? '',

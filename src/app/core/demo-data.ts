@@ -1,6 +1,6 @@
 import { AppUser, AttendanceDoc, FeeItem, MarksDoc, Notice, Role, Student, Teacher, TimetableDoc } from './models';
 
-export const DEMO_USERS: Record<Exclude<Role, 'superadmin'>, AppUser> = {
+export const DEMO_USERS: Record<Exclude<Role, 'superadmin' | 'accountant'>, AppUser> = {
   headmaster: { id: 'u-hm', role: 'headmaster', name: 'Ramesh Kumar', phone: '9876543210', email: 'demo-hm@vidyasetu.app', schoolId: 'demo' },
   teacher: { id: 'u-t1', role: 'teacher', name: 'Sunitha Devi', phone: '9876500001', email: 'demo-teacher@vidyasetu.app', classId: '8A', schoolId: 'demo' },
   parent: { id: 'u-p1', role: 'parent', name: 'Lakshmi Reddy', phone: '9876543211', email: 'demo-parent@vidyasetu.app', studentId: 's14', schoolId: 'demo' },

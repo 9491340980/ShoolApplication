@@ -24,8 +24,8 @@ export class DashboardComponent {
     }
   }
 
-  isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
-  isHM = computed(() => this.auth.role() === 'headmaster');
+  isStaff = computed(() => this.auth.has('headmaster') || this.auth.has('teacher') || this.auth.has('accountant'));
+  isHM = computed(() => this.auth.has('headmaster'));
 
   private today = new Date().toISOString().slice(0, 10);
 

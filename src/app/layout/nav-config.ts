@@ -57,6 +57,27 @@ export const NAV: Record<Role, NavSection[]> = {
       ],
     },
   ],
+  accountant: [
+    {
+      label: 'main',
+      items: [
+        { path: '/dashboard', icon: 'dashboard', label: 'dashboard' },
+        { path: '/notices', icon: 'megaphone', label: 'noticeBoard' },
+      ],
+    },
+    {
+      label: 'accounts',
+      items: [
+        { path: '/fees', icon: 'rupee', label: 'feeManagement' },
+        { path: '/expenses', icon: 'rupee', label: 'expenses' },
+        { path: '/reports', icon: 'chart', label: 'reports' },
+      ],
+    },
+    {
+      label: 'account',
+      items: [{ path: '/profile', icon: 'user', label: 'myProfile' }],
+    },
+  ],
   teacher: [
     {
       label: 'main',
@@ -128,7 +149,7 @@ export const NAV: Record<Role, NavSection[]> = {
 };
 
 /** Roles whose tabs can be configured, in display order. */
-export const CONFIG_ROLES: ConfigRole[] = ['headmaster', 'teacher', 'parent', 'student'];
+export const CONFIG_ROLES: ConfigRole[] = ['headmaster', 'teacher', 'accountant', 'parent', 'student'];
 
 /**
  * The catalogue of toggleable features for the permission matrix. `roles` lists
@@ -145,28 +166,29 @@ export interface Feature {
 }
 
 export const FEATURES: Feature[] = [
-  { path: '/dashboard', icon: 'dashboard', label: 'dashboard', section: 'main', roles: ['headmaster', 'teacher', 'parent', 'student'], core: true },
-  { path: '/notices', icon: 'megaphone', label: 'noticeBoard', section: 'main', roles: ['headmaster', 'teacher', 'parent', 'student'] },
+  { path: '/dashboard', icon: 'dashboard', label: 'dashboard', section: 'main', roles: ['headmaster', 'teacher', 'accountant', 'parent', 'student'], core: true },
+  { path: '/notices', icon: 'megaphone', label: 'noticeBoard', section: 'main', roles: ['headmaster', 'teacher', 'accountant', 'parent', 'student'] },
   { path: '/homework', icon: 'book', label: 'homework', section: 'main', roles: ['headmaster', 'teacher', 'parent', 'student'] },
   { path: '/students', icon: 'users', label: 'studentsList', section: 'studentsSection', roles: ['headmaster', 'teacher'] },
   { path: '/attendance', icon: 'check', label: 'attendance', section: 'studentsSection', roles: ['headmaster', 'teacher', 'parent', 'student'] },
   { path: '/marks', icon: 'file', label: 'marksResults', section: 'studentsSection', roles: ['headmaster', 'teacher', 'parent', 'student'] },
-  { path: '/fees', icon: 'rupee', label: 'feeManagement', section: 'studentsSection', roles: ['headmaster', 'teacher', 'parent', 'student'] },
-  { path: '/expenses', icon: 'rupee', label: 'expenses', section: 'studentsSection', roles: ['headmaster'] },
-  { path: '/reports', icon: 'chart', label: 'reports', section: 'school', roles: ['headmaster'] },
+  { path: '/fees', icon: 'rupee', label: 'feeManagement', section: 'studentsSection', roles: ['headmaster', 'teacher', 'accountant', 'parent', 'student'] },
+  { path: '/expenses', icon: 'rupee', label: 'expenses', section: 'studentsSection', roles: ['headmaster', 'accountant'] },
+  { path: '/reports', icon: 'chart', label: 'reports', section: 'school', roles: ['headmaster', 'accountant'] },
   { path: '/halltickets', icon: 'file', label: 'hallTickets', section: 'school', roles: ['headmaster'] },
   { path: '/timetable', icon: 'calendar', label: 'timetable', section: 'school', roles: ['headmaster', 'teacher', 'parent', 'student'] },
   { path: '/teachers', icon: 'cap', label: 'teachers', section: 'school', roles: ['headmaster'] },
   { path: '/users', icon: 'users', label: 'userManagement', section: 'school', roles: ['headmaster'] },
   { path: '/promote', icon: 'promote', label: 'promotion', section: 'school', roles: ['headmaster'] },
   { path: '/roles', icon: 'shield', label: 'rolesPermissions', section: 'school', roles: ['headmaster'], core: true },
-  { path: '/profile', icon: 'user', label: 'myProfile', section: 'account', roles: ['headmaster', 'teacher', 'parent', 'student'], core: true },
+  { path: '/profile', icon: 'user', label: 'myProfile', section: 'account', roles: ['headmaster', 'teacher', 'accountant', 'parent', 'student'], core: true },
 ];
 
 /** Built-in default visible tabs per role (mirrors the static NAV above). */
 export const DEFAULT_PERMS: Record<ConfigRole, string[]> = {
   headmaster: NAV.headmaster.flatMap((s) => s.items.map((i) => i.path)),
   teacher: NAV.teacher.flatMap((s) => s.items.map((i) => i.path)),
+  accountant: NAV.accountant.flatMap((s) => s.items.map((i) => i.path)),
   parent: NAV.parent.flatMap((s) => s.items.map((i) => i.path)),
   student: NAV.student.flatMap((s) => s.items.map((i) => i.path)),
 };
@@ -200,6 +222,7 @@ export const ROLE_LABELS: Record<Role, { icon: string; label: TKey }> = {
   superadmin: { icon: '🛡️', label: 'superAdmin' },
   headmaster: { icon: '👨‍💼', label: 'headmaster' },
   teacher: { icon: '👩‍🏫', label: 'teacher' },
+  accountant: { icon: '💰', label: 'accountant' },
   parent: { icon: '👨‍👩‍👧', label: 'parent' },
   student: { icon: '🧒', label: 'student' },
 };

@@ -218,6 +218,7 @@ export class SchoolService {
     email: string;
     password: string;
     role: Exclude<Role, 'superadmin' | 'headmaster'>;
+    extraRoles?: Role[];
     phone?: string;
     classId?: string;
     studentId?: string;
@@ -233,6 +234,7 @@ export class SchoolService {
       await signOut(secAuth);
       await setDoc(doc(this.fs, 'users', uid), {
         role: input.role,
+        extraRoles: input.extraRoles ?? [],
         name: input.name.trim(),
         email: input.email.trim().toLowerCase(),
         phone: input.phone ?? '',

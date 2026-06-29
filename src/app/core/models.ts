@@ -1,7 +1,7 @@
-export type Role = 'superadmin' | 'headmaster' | 'teacher' | 'parent' | 'student';
+export type Role = 'superadmin' | 'headmaster' | 'teacher' | 'accountant' | 'parent' | 'student';
 
 /** Roles whose visible tabs can be configured (super admin's own tabs are fixed). */
-export type ConfigRole = 'headmaster' | 'teacher' | 'parent' | 'student';
+export type ConfigRole = 'headmaster' | 'teacher' | 'accountant' | 'parent' | 'student';
 
 /**
  * Per-school tab/permission overrides. `roles[role]` is the list of allowed
@@ -36,7 +36,13 @@ export interface School {
 
 export interface AppUser {
   id: string;
+  /** Primary role — drives the default landing view and page-internal behaviour. */
   role: Role;
+  /**
+   * Additional roles this user also holds (e.g. a teacher who is also the
+   * accountant). Visible tabs & capabilities are the union across all roles.
+   */
+  extraRoles?: Role[];
   name: string;
   phone: string;
   email: string;

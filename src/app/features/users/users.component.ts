@@ -24,7 +24,7 @@ export class UsersComponent {
 
   classes = computed(() => this.data.schoolClasses());
   roleLabels = ROLE_LABELS;
-  creatableRoles: CreatableRole[] = ['teacher', 'parent', 'student'];
+  creatableRoles: CreatableRole[] = ['teacher', 'accountant', 'parent', 'student'];
 
   // class management
   newClassName = signal('');
@@ -42,6 +42,8 @@ export class UsersComponent {
   password = signal('');
   phone = signal('');
   role = signal<CreatableRole>('teacher');
+  /** "This teacher also handles accounts" → grants the accountant role on top. */
+  alsoAccountant = signal(false);
   classId = signal('');
   studentId = signal('');
   linkedTeacherId = signal('');
@@ -68,6 +70,7 @@ export class UsersComponent {
     this.role.set(role);
     this.linkedTeacherId.set('');
     this.studentId.set('');
+    if (role !== 'teacher') this.alsoAccountant.set(false);
   }
 
   /** Picking an existing teacher record fills the form — only email & password remain. */
@@ -105,6 +108,7 @@ export class UsersComponent {
       email: this.email(),
       password: this.password(),
       role: this.role(),
+      extraRoles: this.role() === 'teacher' && this.alsoAccountant() ? ['accountant'] : [],
       phone: this.phone() || undefined,
       classId: this.needsClass() ? this.classId() || undefined : undefined,
       studentId: this.needsStudent() ? this.studentId() || undefined : undefined,
@@ -120,6 +124,7 @@ export class UsersComponent {
     this.phone.set('');
     this.linkedTeacherId.set('');
     this.studentId.set('');
+    this.alsoAccountant.set(false);
     this.created.set(true);
     setTimeout(() => this.created.set(false), 3500);
   }

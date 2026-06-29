@@ -22,7 +22,7 @@ export class RolesComponent {
   isSuper = computed(() => this.auth.role() === 'superadmin');
 
   /** Columns that can be edited: super admin → all roles; head master → their staff/parents/students. */
-  editableRoles = computed<ConfigRole[]>(() => (this.isSuper() ? CONFIG_ROLES : (['teacher', 'parent', 'student'] as ConfigRole[])));
+  editableRoles = computed<ConfigRole[]>(() => (this.isSuper() ? CONFIG_ROLES : (['teacher', 'accountant', 'parent', 'student'] as ConfigRole[])));
 
   /** Sections in display order. */
   sections = computed<TKey[]>(() => [...new Set(FEATURES.map((f) => f.section))]);
@@ -33,7 +33,7 @@ export class RolesComponent {
   /** The school being edited. */
   targetSchool = signal<string>('');
   private existing: SchoolPermissions['roles'] = {};
-  draft = signal<Record<ConfigRole, string[]>>({ headmaster: [], teacher: [], parent: [], student: [] });
+  draft = signal<Record<ConfigRole, string[]>>({ headmaster: [], teacher: [], accountant: [], parent: [], student: [] });
   saved = signal(false);
   loading = signal(false);
 
@@ -62,7 +62,7 @@ export class RolesComponent {
     } catch {
       this.existing = {}; // no doc yet / not readable → start from defaults
     }
-    const next: Record<ConfigRole, string[]> = { headmaster: [], teacher: [], parent: [], student: [] };
+    const next: Record<ConfigRole, string[]> = { headmaster: [], teacher: [], accountant: [], parent: [], student: [] };
     for (const role of CONFIG_ROLES) next[role] = [...(this.existing[role] ?? DEFAULT_PERMS[role])];
     this.draft.set(next);
     this.loading.set(false);

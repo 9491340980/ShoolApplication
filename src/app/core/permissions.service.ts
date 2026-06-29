@@ -25,12 +25,17 @@ export class PermissionsService {
     return new Set([...base, ...corePaths(role)]);
   }
 
-  /** Allowed paths for the signed-in user (super admin sees everything). */
+  /**
+   * Allowed paths for the signed-in user: the *union* across every role they
+   * hold (so a teacher who is also the accountant sees both sets of tabs).
+   * Super admin → null (unrestricted).
+   */
   readonly allowed = computed<Set<string> | null>(() => {
-    const role = this.auth.role();
-    if (role === 'superadmin') return null; // null → unrestricted
-    if (!this.isConfigRole(role)) return new Set<string>();
-    return this.allowedFor(role);
+    const roles = this.auth.roles();
+    if (roles.includes('superadmin')) return null;
+    const union = new Set<string>();
+    for (const r of roles) if (this.isConfigRole(r)) for (const p of this.allowedFor(r)) union.add(p);
+    return union;
   });
 
   /** Can the signed-in user open this tab/path? */

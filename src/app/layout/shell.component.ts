@@ -12,7 +12,8 @@ import { TPipe, TranslateService } from '../core/translate.service';
 import { AttendanceHistoryComponent } from './attendance-history.component';
 import { BulkSendBarComponent } from './bulk-send-bar.component';
 import { IconComponent } from './icon.component';
-import { NAV, PAGE_TITLES, ROLE_LABELS } from './nav-config';
+import { NAV, NavItem, PAGE_TITLES, ROLE_LABELS } from './nav-config';
+import { TKey } from '../core/translations';
 import { ShareChooserComponent } from './share-chooser.component';
 import { TourOverlayComponent } from './tour-overlay.component';
 
@@ -48,14 +49,29 @@ export class ShellComponent {
   );
 
   nav = computed(() => {
-    const role = this.auth.role();
-    if (!role) return [];
-    const sections = NAV[role];
-    const allowed = this.perms.allowed(); // null → unrestricted (super admin)
-    if (!allowed) return sections;
-    return sections
-      .map((s) => ({ ...s, items: s.items.filter((i) => allowed.has(i.path)) }))
-      .filter((s) => s.items.length);
+    const roles = this.auth.roles();
+    if (!roles.length) return [];
+    if (roles.includes('superadmin')) return NAV.superadmin;
+    const allowed = this.perms.allowed(); // union across roles (non-null for non-super)
+    // Merge each role's sections, keeping section order and de-duping links by path.
+    const order: TKey[] = [];
+    const buckets = new Map<TKey, NavItem[]>();
+    const seen = new Set<string>();
+    for (const role of roles) {
+      for (const section of NAV[role] ?? []) {
+        if (!buckets.has(section.label)) {
+          buckets.set(section.label, []);
+          order.push(section.label);
+        }
+        const bucket = buckets.get(section.label)!;
+        for (const item of section.items) {
+          if (seen.has(item.path) || (allowed && !allowed.has(item.path))) continue;
+          seen.add(item.path);
+          bucket.push(item);
+        }
+      }
+    }
+    return order.map((label) => ({ label, items: buckets.get(label)! })).filter((s) => s.items.length);
   });
 
   /** First 5 nav items, flattened — shown as an app-style bottom bar on phones. */

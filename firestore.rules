@@ -8,6 +8,10 @@ service cloud.firestore {
     function isStaff() { return signedIn() && me().role in ['headmaster', 'teacher']; }
     function sameSchool() { return signedIn() && resource.data.schoolId == me().schoolId; }
     function writingOwnSchool() { return signedIn() && request.resource.data.schoolId == me().schoolId; }
+    // True if the user holds a role (as primary or an extra role).
+    function hasRole(r) { return signedIn() && (me().role == r || me().get('extraRoles', []).hasAny([r])); }
+    // Who may record money (fees / expenses): the Head Master or an Accountant.
+    function canMoney() { return hasRole('headmaster') || hasRole('accountant'); }
 
     match /schools/{id} {
       allow read: if signedIn();
@@ -44,8 +48,8 @@ service cloud.firestore {
     match /subjects/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /classesList/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /examsList/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
-    match /fees/{id}       { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
-    match /expenses/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /fees/{id}       { allow read: if sameSchool() || isSuper(); allow create, update: if canMoney() && writingOwnSchool(); allow delete: if canMoney() && sameSchool(); }
+    match /expenses/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if canMoney() && writingOwnSchool(); allow delete: if canMoney() && sameSchool(); }
     // Per-role tab permissions: readable by the school (drives each user's sidebar),
     // writable by the school's Head Master or the Super Admin (any school).
     match /permissions/{id} { allow read: if isSuper() || (signedIn() && (resource == null || resource.data.schoolId == me().schoolId)); allow create, update: if isSuper() || (isHM() && writingOwnSchool()); allow delete: if isSuper() || (isHM() && sameSchool()); }

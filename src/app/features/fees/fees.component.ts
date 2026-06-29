@@ -22,7 +22,7 @@ export class FeesComponent {
   share = inject(ShareService);
   private schoolSvc = inject(SchoolService);
 
-  isStaff = computed(() => this.auth.role() === 'headmaster' || this.auth.role() === 'teacher');
+  isStaff = computed(() => this.auth.has('headmaster') || this.auth.has('teacher') || this.auth.has('accountant'));
   classes = computed(() => this.data.schoolClasses());
   schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
   logo = computed(() => this.schoolSvc.currentSchool()?.logo || '');

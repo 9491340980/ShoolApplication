@@ -15,9 +15,10 @@ export class LoginComponent {
   auth = inject(AuthService);
   i18n = inject(TranslateService);
 
+  // Demo quick-login buttons: the four core roles (accountant is created per-school, not a demo button).
   roles = (Object.entries(ROLE_LABELS) as [Role, { icon: string; label: any }][]).filter(
-    ([role]) => role !== 'superadmin',
-  ) as [Exclude<Role, 'superadmin'>, { icon: string; label: any }][];
+    ([role]) => role !== 'superadmin' && role !== 'accountant',
+  ) as [Exclude<Role, 'superadmin' | 'accountant'>, { icon: string; label: any }][];
 
   identifier = signal('');
   password = signal('');
