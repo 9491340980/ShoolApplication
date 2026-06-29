@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, roleGuard } from './core/guards';
+import { authGuard, permGuard, roleGuard } from './core/guards';
 
 export const routes: Routes = [
   {
@@ -17,6 +17,7 @@ export const routes: Routes = [
   {
     path: '',
     canActivate: [authGuard],
+    canActivateChild: [permGuard],
     loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
@@ -27,33 +28,29 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
       },
       {
-        path: 'users',
+        path: 'roles',
         canActivate: [roleGuard],
-        data: { roles: ['headmaster'] },
+        data: { roles: ['superadmin', 'headmaster'] },
+        loadComponent: () => import('./features/roles/roles.component').then((m) => m.RolesComponent),
+      },
+      {
+        path: 'users',
         loadComponent: () => import('./features/users/users.component').then((m) => m.UsersComponent),
       },
       {
         path: 'reports',
-        canActivate: [roleGuard],
-        data: { roles: ['headmaster'] },
         loadComponent: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent),
       },
       {
         path: 'expenses',
-        canActivate: [roleGuard],
-        data: { roles: ['headmaster'] },
         loadComponent: () => import('./features/expenses/expenses.component').then((m) => m.ExpensesComponent),
       },
       {
         path: 'promote',
-        canActivate: [roleGuard],
-        data: { roles: ['headmaster'] },
         loadComponent: () => import('./features/promote/promote.component').then((m) => m.PromoteComponent),
       },
       {
         path: 'halltickets',
-        canActivate: [roleGuard],
-        data: { roles: ['headmaster'] },
         loadComponent: () => import('./features/halltickets/halltickets.component').then((m) => m.HallTicketsComponent),
       },
       {
@@ -70,8 +67,6 @@ export const routes: Routes = [
       },
       {
         path: 'students',
-        canActivate: [roleGuard],
-        data: { roles: ['headmaster', 'teacher'] },
         loadComponent: () => import('./features/students/students.component').then((m) => m.StudentsComponent),
       },
       {
@@ -84,8 +79,6 @@ export const routes: Routes = [
       },
       {
         path: 'fees',
-        canActivate: [roleGuard],
-        data: { roles: ['headmaster', 'parent', 'student'] },
         loadComponent: () => import('./features/fees/fees.component').then((m) => m.FeesComponent),
       },
       {
@@ -94,8 +87,6 @@ export const routes: Routes = [
       },
       {
         path: 'teachers',
-        canActivate: [roleGuard],
-        data: { roles: ['headmaster'] },
         loadComponent: () => import('./features/teachers/teachers.component').then((m) => m.TeachersComponent),
       },
       {

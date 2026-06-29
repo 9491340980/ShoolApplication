@@ -1,4 +1,4 @@
-import { Role } from '../core/models';
+import { ConfigRole, Role } from '../core/models';
 import { TKey } from '../core/translations';
 import { IconName } from './icon.component';
 
@@ -19,6 +19,7 @@ export const NAV: Record<Role, NavSection[]> = {
       label: 'main',
       items: [
         { path: '/admin', icon: 'building', label: 'schools' },
+        { path: '/roles', icon: 'shield', label: 'rolesPermissions' },
         { path: '/profile', icon: 'user', label: 'myProfile' },
       ],
     },
@@ -50,6 +51,7 @@ export const NAV: Record<Role, NavSection[]> = {
         { path: '/timetable', icon: 'calendar', label: 'timetable' },
         { path: '/teachers', icon: 'cap', label: 'teachers' },
         { path: '/users', icon: 'users', label: 'userManagement' },
+        { path: '/roles', icon: 'shield', label: 'rolesPermissions' },
         { path: '/promote', icon: 'promote', label: 'promotion' },
         { path: '/profile', icon: 'user', label: 'myProfile' },
       ],
@@ -125,8 +127,58 @@ export const NAV: Record<Role, NavSection[]> = {
   ],
 };
 
+/** Roles whose tabs can be configured, in display order. */
+export const CONFIG_ROLES: ConfigRole[] = ['headmaster', 'teacher', 'parent', 'student'];
+
+/**
+ * The catalogue of toggleable features for the permission matrix. `roles` lists
+ * the roles that may be granted this tab; `core` features are always on (shown
+ * locked) so no one can be locked out of the essentials.
+ */
+export interface Feature {
+  path: string;
+  icon: IconName;
+  label: TKey;
+  section: TKey;
+  roles: ConfigRole[];
+  core?: boolean;
+}
+
+export const FEATURES: Feature[] = [
+  { path: '/dashboard', icon: 'dashboard', label: 'dashboard', section: 'main', roles: ['headmaster', 'teacher', 'parent', 'student'], core: true },
+  { path: '/notices', icon: 'megaphone', label: 'noticeBoard', section: 'main', roles: ['headmaster', 'teacher', 'parent', 'student'] },
+  { path: '/homework', icon: 'book', label: 'homework', section: 'main', roles: ['headmaster', 'teacher', 'parent', 'student'] },
+  { path: '/students', icon: 'users', label: 'studentsList', section: 'studentsSection', roles: ['headmaster', 'teacher'] },
+  { path: '/attendance', icon: 'check', label: 'attendance', section: 'studentsSection', roles: ['headmaster', 'teacher', 'parent', 'student'] },
+  { path: '/marks', icon: 'file', label: 'marksResults', section: 'studentsSection', roles: ['headmaster', 'teacher', 'parent', 'student'] },
+  { path: '/fees', icon: 'rupee', label: 'feeManagement', section: 'studentsSection', roles: ['headmaster', 'teacher', 'parent', 'student'] },
+  { path: '/expenses', icon: 'rupee', label: 'expenses', section: 'studentsSection', roles: ['headmaster'] },
+  { path: '/reports', icon: 'chart', label: 'reports', section: 'school', roles: ['headmaster'] },
+  { path: '/halltickets', icon: 'file', label: 'hallTickets', section: 'school', roles: ['headmaster'] },
+  { path: '/timetable', icon: 'calendar', label: 'timetable', section: 'school', roles: ['headmaster', 'teacher', 'parent', 'student'] },
+  { path: '/teachers', icon: 'cap', label: 'teachers', section: 'school', roles: ['headmaster'] },
+  { path: '/users', icon: 'users', label: 'userManagement', section: 'school', roles: ['headmaster'] },
+  { path: '/promote', icon: 'promote', label: 'promotion', section: 'school', roles: ['headmaster'] },
+  { path: '/roles', icon: 'shield', label: 'rolesPermissions', section: 'school', roles: ['headmaster'], core: true },
+  { path: '/profile', icon: 'user', label: 'myProfile', section: 'account', roles: ['headmaster', 'teacher', 'parent', 'student'], core: true },
+];
+
+/** Built-in default visible tabs per role (mirrors the static NAV above). */
+export const DEFAULT_PERMS: Record<ConfigRole, string[]> = {
+  headmaster: NAV.headmaster.flatMap((s) => s.items.map((i) => i.path)),
+  teacher: NAV.teacher.flatMap((s) => s.items.map((i) => i.path)),
+  parent: NAV.parent.flatMap((s) => s.items.map((i) => i.path)),
+  student: NAV.student.flatMap((s) => s.items.map((i) => i.path)),
+};
+
+/** Paths a role can never lose (resolved on top of any override). */
+export function corePaths(role: ConfigRole): string[] {
+  return FEATURES.filter((f) => f.core && f.roles.includes(role)).map((f) => f.path);
+}
+
 export const PAGE_TITLES: Record<string, TKey> = {
   '/admin': 'schools',
+  '/roles': 'rolesPermissions',
   '/users': 'userManagement',
   '/reports': 'reports',
   '/halltickets': 'hallTickets',

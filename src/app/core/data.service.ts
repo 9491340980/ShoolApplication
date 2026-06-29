@@ -5,6 +5,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   query,
@@ -40,6 +41,7 @@ import {
   MarksDoc,
   Notice,
   SUBJECTS,
+  SchoolPermissions,
   Student,
   Subject,
   Teacher,
@@ -64,6 +66,8 @@ interface Db {
   classesList?: string[];
   /** School's own exam list; empty → default EXAMS. */
   examsList?: Exam[];
+  /** Per-role tab/permission overrides; null → built-in defaults. */
+  permissions?: SchoolPermissions | null;
 }
 
 const EMPTY_DB: Db = {
@@ -77,6 +81,7 @@ const EMPTY_DB: Db = {
   marks: [],
   timetables: [],
   subjectsList: [],
+  permissions: null,
 };
 
 /**
@@ -113,6 +118,11 @@ export class DataService {
   );
   readonly fees = computed(() => this.db().fees);
   readonly expenses = computed(() => [...this.db().expenses].sort((a, b) => b.date.localeCompare(a.date)));
+  /** Current school's tab/permission overrides (null → built-in defaults). */
+  readonly permissions = computed(() => this.db().permissions ?? null);
+  /** True once the current school's permissions snapshot has arrived (always true offline). */
+  private permsReadySig = signal(!this.fs);
+  readonly permsReady = this.permsReadySig.asReadonly();
   /** Subject master — the school's own list, falling back to sensible defaults. */
   readonly subjects = computed(() => {
     const list = this.db().subjectsList;
@@ -201,6 +211,7 @@ export class DataService {
     this.stopListeners();
     this.listeningFor = schoolId;
     this.db.set(EMPTY_DB);
+    this.permsReadySig.set(false);
 
     const plain = ['students', 'teachers', 'notices', 'homework', 'fees', 'expenses', 'attendance', 'marks'] as const;
     for (const name of plain) {
@@ -237,6 +248,15 @@ export class DataService {
       onSnapshot(query(collection(fs, 'examsList'), where('schoolId', '==', schoolId)), (snap) => {
         const exams = snap.empty ? [] : ((snap.docs[0].data()['exams'] as Exam[]) ?? []);
         this.db.update((db) => ({ ...db, examsList: exams }));
+      }),
+    );
+
+    // Per-role tab permissions (one doc per school).
+    this.unsubs.push(
+      onSnapshot(query(collection(fs, 'permissions'), where('schoolId', '==', schoolId)), (snap) => {
+        const perms = snap.empty ? null : ({ ...(snap.docs[0].data() as object), id: snap.docs[0].id } as SchoolPermissions);
+        this.db.update((db) => ({ ...db, permissions: perms }));
+        this.permsReadySig.set(true);
       }),
     );
 
@@ -920,6 +940,30 @@ export class DataService {
       return;
     }
     this.commit({ expenses: this.db().expenses.filter((e) => e.id !== id) });
+  }
+
+  // ---------- role permissions ----------
+
+  /** Load a specific school's permission doc once (used by the super admin to edit any school). */
+  async fetchPermissions(schoolId: string): Promise<SchoolPermissions | null> {
+    if (!this.fs) {
+      const local = this.loadJson<SchoolPermissions | null>(`vidyasetu-perms-${schoolId}`, null);
+      return local;
+    }
+    const snap = await getDoc(doc(this.fs, 'permissions', `${schoolId}_perms`));
+    return snap.exists() ? ({ ...(snap.data() as object), id: snap.id } as SchoolPermissions) : null;
+  }
+
+  /** Save the full per-role override map for a school. */
+  async savePermissions(schoolId: string, roles: SchoolPermissions['roles']): Promise<void> {
+    if (!this.fs) {
+      const next: SchoolPermissions = { schoolId, roles };
+      localStorage.setItem(`vidyasetu-perms-${schoolId}`, JSON.stringify(next));
+      // Reflect immediately if it's the active school.
+      if (schoolId === this.sid) this.commit({ permissions: next });
+      return;
+    }
+    await setDoc(doc(this.fs, 'permissions', `${schoolId}_perms`), { schoolId, roles });
   }
 
   /** Gives a brand-new school a sensible weekly timetable to start from. */

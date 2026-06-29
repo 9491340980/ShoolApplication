@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/auth.service';
+import { PermissionsService } from '../core/permissions.service';
 import { SchoolService } from '../core/school.service';
 import { applyTheme } from '../core/themes';
 import { TourService } from '../core/tour.service';
@@ -25,6 +26,7 @@ export class ShellComponent {
   i18n = inject(TranslateService);
   schoolSvc = inject(SchoolService);
   tour = inject(TourService);
+  private perms = inject(PermissionsService);
   private router = inject(Router);
 
   /** White-label: the school's own name is the app name for its users. */
@@ -47,7 +49,13 @@ export class ShellComponent {
 
   nav = computed(() => {
     const role = this.auth.role();
-    return role ? NAV[role] : [];
+    if (!role) return [];
+    const sections = NAV[role];
+    const allowed = this.perms.allowed(); // null → unrestricted (super admin)
+    if (!allowed) return sections;
+    return sections
+      .map((s) => ({ ...s, items: s.items.filter((i) => allowed.has(i.path)) }))
+      .filter((s) => s.items.length);
   });
 
   /** First 5 nav items, flattened — shown as an app-style bottom bar on phones. */

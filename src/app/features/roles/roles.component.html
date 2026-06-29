@@ -1,0 +1,80 @@
+<div class="card mb-4">
+  <div class="card-title">🛡️ {{ 'rolesPermissions' | t }}</div>
+  <p class="text-[13px] text-muted -mt-1">{{ 'permsIntro' | t }}</p>
+
+  @if (isSuper()) {
+    <label class="text-[12px] font-semibold text-muted mt-3 block">{{ 'selectSchool' | t }}
+      <select class="input mt-1 max-w-sm" [ngModel]="targetSchool()" (ngModelChange)="targetSchool.set($event)">
+        @for (s of schoolSvc.schools(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+      </select>
+    </label>
+  }
+</div>
+
+@if (loading()) {
+  <div class="card text-center text-muted py-8">…</div>
+} @else {
+  <div class="card !p-0 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-[13px] border-collapse">
+        <thead>
+          <tr class="bg-page text-left">
+            <th class="px-4 py-3 font-semibold sticky left-0 bg-page z-10 min-w-[180px]">{{ 'feature' | t }}</th>
+            @for (role of editableRoles(); track role) {
+              <th class="px-3 py-3 text-center font-semibold whitespace-nowrap">
+                <div>{{ $any(role) | t }}</div>
+                <div class="text-[10px] text-muted font-normal">{{ countOn(role) }} {{ 'tabs' | t }}</div>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (section of sections(); track section) {
+            <tr class="bg-primary/5">
+              <td [attr.colspan]="editableRoles().length + 1" class="px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-primary">{{ $any(section) | t }}</td>
+            </tr>
+            @for (f of featuresOf(section); track f.path) {
+              <tr class="border-t border-line hover:bg-page/60">
+                <td class="px-4 py-2.5 sticky left-0 bg-card z-10 font-medium">{{ $any(f.label) | t }}</td>
+                @for (role of editableRoles(); track role) {
+                  <td class="px-3 py-2.5 text-center">
+                    @if (eligible(f, role)) {
+                      @if (isCore(f, role)) {
+                        <span class="inline-flex items-center justify-center w-8 h-5 rounded bg-success/15 text-success text-[11px]" [title]="'alwaysOn' | t">🔒</span>
+                      } @else {
+                        <button type="button"
+                          class="w-9 h-5 rounded-full relative transition-colors align-middle"
+                          [class]="isOn(role, f.path) ? 'bg-success' : 'bg-line'"
+                          (click)="toggle(f, role)"
+                          [attr.aria-pressed]="isOn(role, f.path)">
+                          <span class="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" [class]="isOn(role, f.path) ? 'left-[18px]' : 'left-0.5'"></span>
+                        </button>
+                      }
+                    } @else {
+                      <span class="text-line">—</span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          }
+          <!-- reset row -->
+          <tr class="border-t border-line bg-page/40">
+            <td class="px-4 py-2 sticky left-0 bg-page/40 z-10 text-[11px] text-muted">{{ 'resetToDefault' | t }}</td>
+            @for (role of editableRoles(); track role) {
+              <td class="px-3 py-2 text-center">
+                <button class="text-[11px] text-primary hover:underline" (click)="resetRole(role)">↺</button>
+              </td>
+            }
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 mt-4">
+    <button class="btn-blue" (click)="save()">💾 {{ 'save' | t }}</button>
+    @if (saved()) { <span class="badge badge-green">✓ {{ 'saved' | t }}</span> }
+    <span class="text-[12px] text-muted ml-auto">🔒 = {{ 'alwaysOn' | t }}</span>
+  </div>
+}

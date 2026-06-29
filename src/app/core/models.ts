@@ -1,5 +1,19 @@
 export type Role = 'superadmin' | 'headmaster' | 'teacher' | 'parent' | 'student';
 
+/** Roles whose visible tabs can be configured (super admin's own tabs are fixed). */
+export type ConfigRole = 'headmaster' | 'teacher' | 'parent' | 'student';
+
+/**
+ * Per-school tab/permission overrides. `roles[role]` is the list of allowed
+ * feature paths for that role; a role absent here falls back to the built-in
+ * defaults. Stored at `permissions/{schoolId}_perms`.
+ */
+export interface SchoolPermissions {
+  id?: string;
+  schoolId: string;
+  roles: Partial<Record<ConfigRole, string[]>>;
+}
+
 export type Lang = 'te' | 'en';
 
 /** The tenant id used by the built-in demo school. */

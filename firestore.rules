@@ -46,6 +46,9 @@ service cloud.firestore {
     match /examsList/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /fees/{id}       { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /expenses/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    // Per-role tab permissions: readable by the school (drives each user's sidebar),
+    // writable by the school's Head Master or the Super Admin (any school).
+    match /permissions/{id} { allow read: if isSuper() || (signedIn() && (resource == null || resource.data.schoolId == me().schoolId)); allow create, update: if isSuper() || (isHM() && writingOwnSchool()); allow delete: if isSuper() || (isHM() && sameSchool()); }
     match /attendance/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /marks/{id}      { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /notices/{id}    { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
