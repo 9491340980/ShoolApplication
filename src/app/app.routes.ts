@@ -45,6 +45,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/promote/promote.component').then((m) => m.PromoteComponent),
       },
       {
+        path: 'halltickets',
+        canActivate: [roleGuard],
+        data: { roles: ['headmaster'] },
+        loadComponent: () => import('./features/halltickets/halltickets.component').then((m) => m.HallTicketsComponent),
+      },
+      {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },

@@ -82,12 +82,15 @@ body {
   #receipt-card,
   #receipt-card *,
   #notice-card,
-  #notice-card * {
+  #notice-card *,
+  #ht-print,
+  #ht-print * {
     visibility: visible !important;
   }
   #report-card,
   #receipt-card,
-  #notice-card {
+  #notice-card,
+  #ht-print {
     position: absolute;
     left: 0;
     top: 0;
@@ -155,3 +158,21 @@ body {
     align-self: center;
   }
 }
+
+/* ===== Exam Hall Ticket ===== */
+.ticket {
+  border: 1.5px solid #000; border-radius: 4px; padding: 14px 18px; margin-bottom: 16px;
+  background: #fff; color: #000; break-inside: avoid; page-break-inside: avoid;
+}
+.tk-head { position: relative; text-align: center; }
+.tk-logo { width: 52px; height: 52px; object-fit: contain; position: absolute; left: 0; top: 0; }
+.tk-school { font-size: 20px; font-weight: 800; letter-spacing: .3px; line-height: 1.1; }
+.tk-sub { font-size: 11px; color: #333; }
+.tk-title-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; padding-bottom: 6px; border-bottom: 1.5px solid #000; font-size: 12.5px; flex-wrap: wrap; }
+.tk-info { display: flex; justify-content: space-between; gap: 12px; margin: 10px 0; font-size: 12.5px; flex-wrap: wrap; }
+.tk-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; table-layout: fixed; }
+.tk-table th, .tk-table td { border: 1px solid #000; padding: 5px 6px; font-size: 11px; text-align: center; word-break: break-word; }
+.tk-table th { background: #f1f1f1; font-weight: 700; width: 88px; text-align: left; }
+.tk-blank { height: 30px; }
+.tk-note { text-align: center; font-weight: 700; font-size: 11px; margin: 8px 0 4px; }
+.tk-sign { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; margin-top: 22px; }

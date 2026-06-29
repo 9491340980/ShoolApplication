@@ -1,0 +1,108 @@
+@if (!generated()) {
+  <!-- BUILDER -->
+  <div class="card mb-4">
+    <div class="card-title">🎫 {{ 'hallTickets' | t }}</div>
+    <p class="text-xs text-muted mb-3">💡 {{ 'hallTicketHint' | t }}</p>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <label class="text-[11px] font-semibold text-muted">{{ 'examName' | t }}
+        <input class="input mt-1" [ngModel]="examTitle()" (ngModelChange)="examTitle.set($event)" placeholder="Summative Assessment - II" />
+      </label>
+      <label class="text-[11px] font-semibold text-muted">{{ 'subtitleOptional' | t }}
+        <input class="input mt-1" [ngModel]="subtitle()" (ngModelChange)="subtitle.set($event)" placeholder="IIT / NEET Foundation" />
+      </label>
+      <label class="text-[11px] font-semibold text-muted">{{ 'examTime' | t }}
+        <input class="input mt-1" [ngModel]="examTime()" (ngModelChange)="examTime.set($event)" placeholder="9:00 AM to 11:30 AM" />
+      </label>
+      <label class="text-[11px] font-semibold text-muted">{{ 'class' | t }}
+        <select class="input mt-1" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
+          <option value="__all__">{{ 'allClasses' | t }}</option>
+          @for (c of classes(); track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="card mb-4">
+    <div class="card-title">📅 {{ 'examSchedule' | t }}</div>
+    <datalist id="subjList">
+      @for (s of subjectNames; track s) { <option [value]="s"></option> }
+    </datalist>
+    <div class="grid gap-2">
+      @for (r of rows(); track $index) {
+        <div class="flex gap-2 items-center">
+          <span class="text-[12px] text-muted w-5 shrink-0">{{ $index + 1 }}</span>
+          <input class="input max-w-[170px]" type="date" [ngModel]="r.date" (ngModelChange)="setDate($index, $event)" />
+          <input class="input flex-1" list="subjList" [ngModel]="r.subject" (ngModelChange)="setSubject($index, $event)" [placeholder]="'subjectPh' | t" />
+          <button class="btn-outline btn-sm !text-danger !border-danger/40 shrink-0" (click)="removeRow($index)" [disabled]="rows().length === 1">✕</button>
+        </div>
+      }
+    </div>
+    <button class="btn-outline btn-sm mt-3" (click)="addRow()">＋ {{ 'addDay' | t }}</button>
+  </div>
+
+  <div class="flex items-center gap-3 flex-wrap">
+    <button class="btn-blue" [disabled]="!canGenerate()" (click)="generate()">🎫 {{ 'generateTickets' | t }} ({{ ticketStudents().length }})</button>
+    <span class="text-[12px] text-muted">{{ 'hallTicketGenNote' | t }}</span>
+  </div>
+} @else {
+  <!-- GENERATED -->
+  <div class="no-print flex items-center justify-between gap-2 mb-4 flex-wrap">
+    <button class="btn-outline btn-sm" (click)="back()">← {{ 'back' | t }}</button>
+    <span class="text-[13px] font-semibold text-muted">{{ ticketStudents().length }} {{ 'hallTickets' | t }}</span>
+    <button class="btn-blue" (click)="print()">🖨️ {{ 'downloadPrint' | t }}</button>
+  </div>
+
+  <div id="ht-print">
+    @for (s of ticketStudents(); track s.id) {
+      <div class="ticket">
+        <!-- header -->
+        <div class="tk-head">
+          @if (logo()) { <img [src]="logo()" class="tk-logo" alt="logo" /> }
+          <div class="tk-head-center">
+            <div class="tk-school">{{ schoolName() }}</div>
+            @if (subtitle()) { <div class="tk-sub">{{ subtitle() }}</div> }
+            @if (schoolAddress()) { <div class="tk-sub">{{ schoolAddress() }}</div> }
+          </div>
+        </div>
+        <div class="tk-title-row">
+          <span><b>HALL TICKET</b> — {{ examTitle() }}</span>
+          <span>EXAM TIME: {{ examTime() }}</span>
+        </div>
+
+        <!-- student line -->
+        <div class="tk-info">
+          <span>NAME: <b>{{ s.name }}</b></span>
+          <span>CLASS: <b>{{ s.classId }}</b></span>
+          <span>ROLL NO: <b>{{ s.roll }}</b></span>
+        </div>
+
+        <!-- schedule table -->
+        <table class="tk-table">
+          <tbody>
+            <tr>
+              <th>DATE'S</th>
+              @for (r of validRows(); track $index) { <td>{{ fmtDate(r.date) }}</td> }
+            </tr>
+            <tr>
+              <th>SUBJECT'S</th>
+              @for (r of validRows(); track $index) { <td>{{ r.subject }}</td> }
+            </tr>
+            <tr>
+              <th>INVIGILATOR'S<br />SIGNATURE</th>
+              @for (r of validRows(); track $index) { <td class="tk-blank"></td> }
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="tk-note">NOTE: STUDENTS MUST BRING THIS HALL TICKET EVERY DAY</div>
+        <div class="tk-sign">
+          <span>CLASS TEACHER'S SIGNATURE</span>
+          <span>PRINCIPAL'S SIGNATURE</span>
+        </div>
+      </div>
+    }
+  </div>
+}

@@ -30,7 +30,7 @@
   </div>
   <div class="card !p-0 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full border-collapse text-[13px]">
+      <table class="w-full border-collapse text-[13px] rtable">
         <thead><tr>
           <th class="th">{{ 'class' | t }}</th>
           <th class="th !text-center">{{ 'totalStudents' | t }}</th>
@@ -41,11 +41,11 @@
         <tbody>
           @for (r of feeRows(); track r.classId) {
             <tr class="hover:bg-blue-50/40">
-              <td class="td font-bold">{{ r.classId }}</td>
-              <td class="td text-center">{{ r.students }}</td>
-              <td class="td text-center">₹{{ r.total.toLocaleString('en-IN') }}</td>
-              <td class="td text-center text-success font-semibold">₹{{ r.collected.toLocaleString('en-IN') }}</td>
-              <td class="td text-center font-bold" [class]="r.pending > 0 ? 'text-danger' : 'text-success'">₹{{ r.pending.toLocaleString('en-IN') }}</td>
+              <td class="td font-bold" [attr.data-label]="'class' | t">{{ r.classId }}</td>
+              <td class="td text-center" [attr.data-label]="'totalStudents' | t">{{ r.students }}</td>
+              <td class="td text-center" [attr.data-label]="'totalFee' | t">₹{{ r.total.toLocaleString('en-IN') }}</td>
+              <td class="td text-center text-success font-semibold" [attr.data-label]="'collected' | t">₹{{ r.collected.toLocaleString('en-IN') }}</td>
+              <td class="td text-center font-bold" [attr.data-label]="'pending' | t" [class]="r.pending > 0 ? 'text-danger' : 'text-success'">₹{{ r.pending.toLocaleString('en-IN') }}</td>
             </tr>
           } @empty { <tr><td class="td text-muted" colspan="5">—</td></tr> }
         </tbody>
@@ -64,7 +64,7 @@
   }
   <div class="card !p-0 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full border-collapse text-[13px]">
+      <table class="w-full border-collapse text-[13px] rtable">
         <thead><tr>
           <th class="th">{{ 'class' | t }}</th>
           <th class="th !text-center">{{ 'totalStudents' | t }}</th>
@@ -74,12 +74,12 @@
         <tbody>
           @for (r of attRows(); track r.classId) {
             <tr class="hover:bg-blue-50/40">
-              <td class="td font-bold">{{ r.classId }}</td>
-              <td class="td text-center">{{ r.students }}</td>
-              <td class="td text-center font-bold" [class]="r.avg === null ? 'text-muted' : r.avg >= 85 ? 'text-success' : 'text-danger'">
+              <td class="td font-bold" [attr.data-label]="'class' | t">{{ r.classId }}</td>
+              <td class="td text-center" [attr.data-label]="'totalStudents' | t">{{ r.students }}</td>
+              <td class="td text-center font-bold" [attr.data-label]="'attendance' | t" [class]="r.avg === null ? 'text-muted' : r.avg >= 85 ? 'text-success' : 'text-danger'">
                 {{ r.avg === null ? '—' : r.avg + '%' }}
               </td>
-              <td class="td text-center" [class.text-danger]="r.below > 0">{{ r.below }}</td>
+              <td class="td text-center" [attr.data-label]="'< 75%'" [class.text-danger]="r.below > 0">{{ r.below }}</td>
             </tr>
           } @empty { <tr><td class="td text-muted" colspan="4">—</td></tr> }
         </tbody>
@@ -95,7 +95,7 @@
   </select>
   <div class="card !p-0 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full border-collapse text-[13px]">
+      <table class="w-full border-collapse text-[13px] rtable">
         <thead><tr>
           <th class="th">{{ 'class' | t }}</th>
           <th class="th !text-center">Appeared</th>
@@ -106,13 +106,13 @@
         <tbody>
           @for (r of examRows(); track r.classId) {
             <tr class="hover:bg-blue-50/40">
-              <td class="td font-bold">{{ r.classId }}</td>
-              <td class="td text-center">{{ r.appeared }}</td>
-              <td class="td text-center font-bold">{{ r.avg === null ? '—' : r.avg + '%' }}</td>
-              <td class="td text-center font-semibold" [class]="r.passPct >= 90 ? 'text-success' : r.passPct < 50 ? 'text-danger' : ''">
+              <td class="td font-bold" [attr.data-label]="'class' | t">{{ r.classId }}</td>
+              <td class="td text-center" data-label="Appeared">{{ r.appeared }}</td>
+              <td class="td text-center font-bold" data-label="Avg %">{{ r.avg === null ? '—' : r.avg + '%' }}</td>
+              <td class="td text-center font-semibold" data-label="Pass %" [class]="r.passPct >= 90 ? 'text-success' : r.passPct < 50 ? 'text-danger' : ''">
                 {{ r.appeared ? r.passPct + '%' : '—' }}
               </td>
-              <td class="td">{{ r.topper ? r.topper.name + ' (' + r.topper.pct + '%)' : '—' }}</td>
+              <td class="td" data-label="Topper">{{ r.topper ? r.topper.name + ' (' + r.topper.pct + '%)' : '—' }}</td>
             </tr>
           } @empty { <tr><td class="td text-muted" colspan="5">—</td></tr> }
         </tbody>
