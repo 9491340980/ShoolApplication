@@ -5,7 +5,10 @@
     <p class="text-xs text-muted mb-3">💡 {{ 'hallTicketHint' | t }}</p>
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
       <label class="text-[11px] font-semibold text-muted">{{ 'examName' | t }}
-        <input class="input mt-1" [ngModel]="examTitle()" (ngModelChange)="examTitle.set($event)" placeholder="Summative Assessment - II" />
+        <input class="input mt-1" list="examList" [ngModel]="examTitle()" (ngModelChange)="examTitle.set($event)" [placeholder]="'examNamePh' | t" />
+        <datalist id="examList">
+          @for (e of exams(); track e.id) { <option [value]="e.label"></option> }
+        </datalist>
       </label>
       <label class="text-[11px] font-semibold text-muted">{{ 'subtitleOptional' | t }}
         <input class="input mt-1" [ngModel]="subtitle()" (ngModelChange)="subtitle.set($event)" placeholder="IIT / NEET Foundation" />
@@ -69,7 +72,7 @@
           </div>
         </div>
         <div class="tk-title-row">
-          <span><b>HALL TICKET</b> — {{ examTitle() }}</span>
+          <span><b>HALL TICKET</b>@if (examTitle()) { — {{ examTitle() }}}</span>
         </div>
 
         <!-- student line -->

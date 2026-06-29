@@ -31,10 +31,11 @@ export class HallTicketsComponent {
   logo = computed(() => this.school.currentSchool()?.logo || '');
   schoolAddress = computed(() => this.school.currentSchool()?.address || '');
   classes = computed(() => this.data.schoolClasses());
+  exams = computed(() => this.data.schoolExams());
   subjectNames = SUBJECTS.map((s) => s.name);
 
-  examTitle = signal('Summative Assessment - II');
-  subtitle = signal('IIT / NEET Foundation · E/M');
+  examTitle = signal('');
+  subtitle = signal('');
   examTime = signal('9:00 AM to 11:30 AM'); // default time for new days
   classId = signal('');
   rows = signal<SchedRow[]>([{ date: '', subject: '', time: '' }]);
