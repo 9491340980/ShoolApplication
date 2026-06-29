@@ -138,14 +138,22 @@ export interface FeeItem {
 export interface Expense {
   id: string;
   schoolId?: string;
+  /** A cash-book entry — money out (expense) or money in (income). Absent → expense. */
+  type?: 'expense' | 'income';
   date: string; // ISO yyyy-mm-dd
   category: string;
   description: string;
   amount: number;
+  /** How it was paid/received: Cash / Bank / UPI / Cheque / Card. */
+  method?: string;
+  /** Vendor (for expense) or source (for income). */
+  payee?: string;
   createdBy: string;
 }
 
-export const EXPENSE_CATEGORIES = ['Salaries', 'Utilities', 'Maintenance', 'Supplies', 'Transport', 'Events', 'Books & Stationery', 'Miscellaneous'];
+export const EXPENSE_CATEGORIES = ['Salaries', 'Utilities', 'Maintenance', 'Supplies', 'Transport', 'Events', 'Rent', 'Books & Stationery', 'Marketing', 'Taxes & Fees', 'Miscellaneous'];
+export const INCOME_CATEGORIES = ['Donation', 'Grant', 'Event Income', 'Hall / Bus Rent', 'Sale of Forms', 'Interest', 'Other Income'];
+export const PAYMENT_METHODS = ['Cash', 'Bank', 'UPI', 'Cheque', 'Card'];
 
 export type AttendanceStatus = 'present' | 'absent';
 

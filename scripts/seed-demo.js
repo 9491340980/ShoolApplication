@@ -205,17 +205,21 @@ async function main() {
   for (let i = 0; i < hw.length; i++) await db.collection('homework').doc(`${SID}_hw${i + 1}`).set({ schoolId: SID, postedBy: 'Class Teacher', ...hw[i] });
   console.log('✓ homework');
 
-  // ---- expenses ----
+  // ---- cash book (expenses + income) ----
   const expenses = [
-    { date: `${ym}-03`, category: 'Salaries', description: 'Teacher salaries', amount: 185000 },
-    { date: `${ym}-05`, category: 'Utilities', description: 'Electricity & water bill', amount: 8400 },
-    { date: `${ym}-08`, category: 'Books & Stationery', description: 'Library books', amount: 9800 },
-    { date: `${ym}-12`, category: 'Maintenance', description: 'Plumbing & paint repair', amount: 3500 },
-    { date: `${ym}-15`, category: 'Transport', description: 'Bus diesel', amount: 14500 },
-    { date: `${ym}-18`, category: 'Supplies', description: 'Science lab consumables', amount: 6200 },
+    { type: 'expense', date: `${ym}-03`, category: 'Salaries', description: 'Teacher salaries', amount: 185000, method: 'Bank', payee: 'Staff payroll' },
+    { type: 'expense', date: `${ym}-05`, category: 'Utilities', description: 'Electricity & water bill', amount: 8400, method: 'UPI', payee: 'APSPDCL' },
+    { type: 'expense', date: `${ym}-08`, category: 'Books & Stationery', description: 'Library books', amount: 9800, method: 'Cash', payee: 'Sri Sai Book House' },
+    { type: 'expense', date: `${ym}-12`, category: 'Maintenance', description: 'Plumbing & paint repair', amount: 3500, method: 'Cash', payee: 'Ramesh Works' },
+    { type: 'expense', date: `${ym}-15`, category: 'Transport', description: 'Bus diesel', amount: 14500, method: 'Card', payee: 'IOC Petrol Bunk' },
+    { type: 'expense', date: `${ym}-18`, category: 'Supplies', description: 'Science lab consumables', amount: 6200, method: 'UPI', payee: 'Lab Mart' },
+    { type: 'expense', date: `${ym}-22`, category: 'Rent', description: 'Annexe building rent', amount: 25000, method: 'Bank', payee: 'Landlord' },
+    { type: 'income', date: `${ym}-06`, category: 'Donation', description: 'Alumni contribution', amount: 50000, method: 'Bank', payee: 'Alumni Association' },
+    { type: 'income', date: `${ym}-14`, category: 'Hall / Bus Rent', description: 'Auditorium rent for event', amount: 12000, method: 'UPI', payee: 'Local committee' },
+    { type: 'income', date: `${ym}-20`, category: 'Sale of Forms', description: 'Admission forms', amount: 7500, method: 'Cash', payee: 'New applicants' },
   ];
   for (let i = 0; i < expenses.length; i++) await db.collection('expenses').doc(`${SID}_exp${i + 1}`).set({ schoolId: SID, createdBy: 'Head Master', ...expenses[i] });
-  console.log('✓ expenses\n');
+  console.log('✓ cash book (expenses + income)\n');
 
   console.log('Done — demo school is now fully populated.');
 }

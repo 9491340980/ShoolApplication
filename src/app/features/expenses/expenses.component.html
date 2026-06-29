@@ -1,64 +1,97 @@
 <!-- SUMMARY -->
 <div class="grid grid-cols-3 gap-3 mb-4">
   <div class="card !p-4 text-center">
-    <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ todayTotal().toLocaleString('en-IN') }}</div>
-    <div class="text-[11px] text-muted mt-1">{{ 'today' | t }}</div>
+    <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ incomeTotal().toLocaleString('en-IN') }}</div>
+    <div class="text-[11px] text-muted mt-1">↗ {{ 'income' | t }}</div>
   </div>
   <div class="card !p-4 text-center">
-    <div class="font-display text-lg sm:text-2xl font-extrabold text-primary leading-none">₹{{ monthTotal().toLocaleString('en-IN') }}</div>
-    <div class="text-[11px] text-muted mt-1">{{ 'thisMonth' | t }}</div>
+    <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ expenseTotal().toLocaleString('en-IN') }}</div>
+    <div class="text-[11px] text-muted mt-1">↘ {{ 'expenses' | t }}</div>
   </div>
   <div class="card !p-4 text-center">
-    <div class="font-display text-lg sm:text-2xl font-extrabold text-ink leading-none">₹{{ yearTotal().toLocaleString('en-IN') }}</div>
-    <div class="text-[11px] text-muted mt-1">{{ 'thisYear' | t }} {{ month().slice(0, 4) }}</div>
+    <div class="font-display text-lg sm:text-2xl font-extrabold leading-none" [class]="balance() >= 0 ? 'text-primary' : 'text-danger'">₹{{ balance().toLocaleString('en-IN') }}</div>
+    <div class="text-[11px] text-muted mt-1">{{ 'balance' | t }}</div>
   </div>
 </div>
 
-<!-- ADD EXPENSE -->
+<!-- ADD / EDIT -->
 <div class="card mb-4">
-  <div class="card-title">➕ {{ 'addExpense' | t }}</div>
-  <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2.5 items-end">
+  <div class="card-title">
+    {{ editingId() ? '✏️ ' + ('edit' | t) : '➕ ' + ('addExpense' | t) }}
+    <span class="ml-auto inline-flex bg-page rounded-lg p-1">
+      <button class="px-3 py-1 rounded-md text-xs font-bold" [class]="entryType() === 'expense' ? 'bg-danger text-white' : 'text-muted'" (click)="setType('expense')">↘ {{ 'expense' | t }}</button>
+      <button class="px-3 py-1 rounded-md text-xs font-bold" [class]="entryType() === 'income' ? 'bg-success text-white' : 'text-muted'" (click)="setType('income')">↗ {{ 'income' | t }}</button>
+    </span>
+  </div>
+  <datalist id="catList">@for (c of formCategories(); track c) { <option [value]="c"></option> }</datalist>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-6 gap-2.5 items-end">
     <label class="text-[11px] font-semibold text-muted">{{ 'date' | t }}
-      <input class="input mt-1" type="date" [ngModel]="newDate()" (ngModelChange)="newDate.set($event)" />
+      <input class="input mt-1" type="date" [ngModel]="fDate()" (ngModelChange)="fDate.set($event)" />
     </label>
     <label class="text-[11px] font-semibold text-muted">{{ 'category' | t }}
-      <select class="input mt-1" [ngModel]="newCategory()" (ngModelChange)="newCategory.set($event)">
-        @for (c of categories; track c) { <option [value]="c">{{ c }}</option> }
+      <input class="input mt-1" list="catList" [ngModel]="fCategory()" (ngModelChange)="fCategory.set($event)" />
+    </label>
+    <label class="text-[11px] font-semibold text-muted">{{ 'payee' | t }}
+      <input class="input mt-1" [ngModel]="fPayee()" (ngModelChange)="fPayee.set($event)" [placeholder]="'payeePh' | t" />
+    </label>
+    <label class="text-[11px] font-semibold text-muted lg:col-span-1">{{ 'method' | t }}
+      <select class="input mt-1" [ngModel]="fMethod()" (ngModelChange)="fMethod.set($event)">
+        @for (m of methods; track m) { <option [value]="m">{{ m }}</option> }
       </select>
     </label>
-    <label class="text-[11px] font-semibold text-muted lg:col-span-2">{{ 'description' | t }}
-      <input class="input mt-1" [ngModel]="newDesc()" (ngModelChange)="newDesc.set($event)" [placeholder]="'expenseDescPh' | t" />
+    <label class="text-[11px] font-semibold text-muted">{{ 'description' | t }}
+      <input class="input mt-1" [ngModel]="fDesc()" (ngModelChange)="fDesc.set($event)" [placeholder]="'expenseDescPh' | t" />
     </label>
     <label class="text-[11px] font-semibold text-muted">{{ 'amount' | t }} (₹)
-      <input class="input mt-1" type="number" min="1" [ngModel]="newAmount()" (ngModelChange)="newAmount.set($event)" placeholder="0" />
+      <input class="input mt-1" type="number" min="1" [ngModel]="fAmount()" (ngModelChange)="fAmount.set($event)" placeholder="0" />
     </label>
   </div>
-  <div class="flex items-center gap-2 mt-3">
-    <button class="btn-blue" (click)="add()">➕ {{ 'addExpense' | t }}</button>
+  <div class="flex items-center gap-2 mt-3 flex-wrap">
+    <button class="btn-blue" (click)="save()">💾 {{ editingId() ? ('update' | t) : entryType() === 'income' ? ('addIncome' | t) : ('addExpense' | t) }}</button>
+    @if (editingId()) { <button class="btn-outline" (click)="cancelEdit()">{{ 'cancel' | t }}</button> }
     @if (added()) { <span class="badge badge-green">✓ {{ 'saved' | t }}</span> }
   </div>
 </div>
 
-<!-- MONTH BROWSER -->
-<div class="flex items-center gap-2.5 mb-4 flex-wrap">
-  <input class="input max-w-[180px]" type="month" [ngModel]="month()" (ngModelChange)="month.set($event)" />
-  <span class="text-[13px] font-semibold">{{ fmtMonth(month()) }} · ₹{{ monthTotal().toLocaleString('en-IN') }}</span>
-  <span class="ml-auto flex gap-2">
-    <button class="btn-outline btn-sm" (click)="export('excel')">📊 Excel</button>
-    <button class="btn-outline btn-sm" (click)="export('pdf')">📄 PDF</button>
-  </span>
+<!-- BROWSER + FILTERS -->
+<div class="card mb-4">
+  <div class="flex items-center gap-2 flex-wrap">
+    <div class="inline-flex items-center gap-1">
+      <button class="w-8 h-8 rounded-lg border border-line font-bold hover:border-primary" (click)="prevMonth()">‹</button>
+      <input class="input max-w-[150px]" type="month" [ngModel]="month()" (ngModelChange)="month.set($event)" />
+      <button class="w-8 h-8 rounded-lg border border-line font-bold hover:border-primary" (click)="nextMonth()">›</button>
+    </div>
+    <input class="input max-w-[180px]" [placeholder]="'🔍 ' + ('search' | t)" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    <select class="input max-w-[150px]" [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event)">
+      <option value="">{{ 'category' | t }}: {{ 'allItems' | t }}</option>
+      @for (c of monthCategories(); track c) { <option [value]="c">{{ c }}</option> }
+    </select>
+    <span class="ml-auto flex gap-2">
+      <button class="btn-outline btn-sm" (click)="export('excel')">📊 Excel</button>
+      <button class="btn-outline btn-sm" (click)="export('pdf')">📄 PDF</button>
+      <button class="btn-blue btn-sm" (click)="print()">🧾 {{ 'printStatement' | t }}</button>
+    </span>
+  </div>
+  <!-- type chips -->
+  <div class="flex gap-1.5 mt-3">
+    @for (t of ['all', 'expense', 'income']; track t) {
+      <button class="px-3 py-1 rounded-full text-[12px] font-semibold border"
+              [class]="filterType() === t ? 'bg-primary text-white border-primary' : 'border-line text-muted'"
+              (click)="filterType.set($any(t))">{{ (t === 'all' ? 'allItems' : t === 'income' ? 'income' : 'expense') | t }}</button>
+    }
+  </div>
 </div>
 
 <!-- CATEGORY BREAKDOWN -->
 @if (byCategory().length) {
   <div class="card mb-4">
-    <div class="card-title">📊 {{ 'byCategory' | t }} — {{ fmtMonth(month()) }}</div>
+    <div class="card-title">📊 {{ 'byCategory' | t }} ({{ 'expenses' | t }}) — {{ fmtMonth(month()) }}</div>
     <div class="grid gap-2">
       @for (c of byCategory(); track c.category) {
         <div class="flex items-center gap-3 text-[13px]">
           <span class="w-36 shrink-0 font-medium truncate">{{ c.category }}</span>
           <div class="flex-1 bg-page rounded-full h-2.5 overflow-hidden">
-            <div class="h-2.5 rounded-full bg-primary" [style.width.%]="monthTotal() ? (c.total / monthTotal()) * 100 : 0"></div>
+            <div class="h-2.5 rounded-full bg-danger" [style.width.%]="expenseTotal() ? (c.total / expenseTotal()) * 100 : 0"></div>
           </div>
           <span class="w-24 text-right font-semibold tabular-nums">₹{{ c.total.toLocaleString('en-IN') }}</span>
         </div>
@@ -68,20 +101,31 @@
 }
 
 <!-- DAY-WISE LIST -->
-<div class="card-title">📅 {{ 'dayWise' | t }}</div>
+<div class="card-title">📅 {{ 'dayWise' | t }} <span class="text-[12px] text-muted font-normal">({{ filtered().length }})</span></div>
 @for (d of byDay(); track d.date) {
   <div class="card !p-0 overflow-hidden mb-3">
-    <div class="flex items-center justify-between px-4 py-2.5 bg-page">
-      <span class="font-bold text-[13.5px]">🗓️ {{ d.date }}</span>
-      <span class="font-extrabold text-danger">₹{{ d.total.toLocaleString('en-IN') }}</span>
+    <div class="flex items-center justify-between px-4 py-2.5 bg-page text-[13px]">
+      <span class="font-bold">🗓️ {{ d.date }}</span>
+      <span class="flex gap-3">
+        @if (d.in) { <span class="text-success font-semibold">↗ ₹{{ d.in.toLocaleString('en-IN') }}</span> }
+        @if (d.out) { <span class="text-danger font-semibold">↘ ₹{{ d.out.toLocaleString('en-IN') }}</span> }
+      </span>
     </div>
     <div class="divide-y divide-line">
       @for (e of d.items; track e.id) {
-        <div class="flex items-center gap-3 px-4 py-2.5">
-          <span class="badge badge-blue shrink-0">{{ e.category }}</span>
-          <span class="flex-1 min-w-0 text-[13.5px] truncate">{{ e.description || '—' }}</span>
-          <span class="font-semibold tabular-nums shrink-0">₹{{ e.amount.toLocaleString('en-IN') }}</span>
-          <button class="text-danger text-sm shrink-0" [title]="'remove' | t" (click)="remove(e)">🗑️</button>
+        <div class="flex items-center gap-2.5 px-4 py-2.5">
+          <span class="shrink-0 w-7 h-7 rounded-full grid place-items-center text-white text-[13px]" [class]="isInc(e) ? 'bg-success' : 'bg-danger'">{{ isInc(e) ? '↗' : '↘' }}</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-[13.5px] font-medium truncate">{{ e.payee || e.description || e.category }}</div>
+            <div class="text-[11px] text-muted truncate">
+              <span class="badge badge-blue !py-0 !text-[10px]">{{ e.category }}</span>
+              @if (e.method) { · {{ e.method }} }
+              @if (e.payee && e.description) { · {{ e.description }} }
+            </div>
+          </div>
+          <span class="font-semibold tabular-nums shrink-0" [class]="isInc(e) ? 'text-success' : 'text-danger'">{{ isInc(e) ? '+' : '−' }}₹{{ e.amount.toLocaleString('en-IN') }}</span>
+          <button class="text-muted hover:text-primary text-sm shrink-0" [title]="'edit' | t" (click)="startEdit(e)">✏️</button>
+          <button class="text-muted hover:text-danger text-sm shrink-0" [title]="'remove' | t" (click)="remove(e)">🗑️</button>
         </div>
       }
     </div>
@@ -89,3 +133,35 @@
 } @empty {
   <div class="card text-center text-muted py-8">— {{ 'noExpenses' | t }}</div>
 }
+
+<!-- PRINTABLE STATEMENT (print only) -->
+<div id="exp-print" class="hidden print:block">
+  <div class="text-center border-b-2 border-primary pb-3 mb-3">
+    @if (logo()) { <img [src]="logo()" style="width:56px;height:56px;object-fit:contain;margin:0 auto 6px" alt="logo" /> }
+    <div style="font-size:20px;font-weight:800">{{ schoolName() }}</div>
+    @if (schoolAddress()) { <div style="font-size:12px;color:#444">{{ schoolAddress() }}</div> }
+    <div style="font-size:13px;font-weight:700;margin-top:4px">Cash Book Statement — {{ fmtMonth(month()) }}</div>
+  </div>
+  <table class="tk-table" style="table-layout:auto">
+    <thead>
+      <tr><th>Date</th><th>Type</th><th>Category</th><th>Payee / Description</th><th>Method</th><th style="text-align:right">Amount (₹)</th></tr>
+    </thead>
+    <tbody>
+      @for (e of monthAll(); track e.id) {
+        <tr>
+          <td>{{ e.date }}</td>
+          <td>{{ isInc(e) ? 'Income' : 'Expense' }}</td>
+          <td>{{ e.category }}</td>
+          <td style="text-align:left">{{ e.payee }}{{ e.payee && e.description ? ' — ' : '' }}{{ e.description }}</td>
+          <td>{{ e.method }}</td>
+          <td style="text-align:right">{{ isInc(e) ? '+' : '−' }}{{ e.amount.toLocaleString('en-IN') }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <div style="display:flex;justify-content:flex-end;gap:24px;margin-top:10px;font-size:13px;font-weight:700">
+    <span style="color:#15803d">Income: ₹{{ incomeTotal().toLocaleString('en-IN') }}</span>
+    <span style="color:#b91c1c">Expense: ₹{{ expenseTotal().toLocaleString('en-IN') }}</span>
+    <span>Balance: ₹{{ balance().toLocaleString('en-IN') }}</span>
+  </div>
+</div>

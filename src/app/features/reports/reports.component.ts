@@ -26,8 +26,12 @@ export class ReportsComponent {
 
   // ---- expenses report ----
   year = signal(new Date().toISOString().slice(0, 4));
-  private yearExpenses = computed(() => this.data.expenses().filter((e) => e.date.startsWith(this.year())));
+  private yearBook = computed(() => this.data.expenses().filter((e) => e.date.startsWith(this.year())));
+  private yearExpenses = computed(() => this.yearBook().filter((e) => e.type !== 'income'));
+  private yearIncome = computed(() => this.yearBook().filter((e) => e.type === 'income'));
   expTotal = computed(() => this.yearExpenses().reduce((a, e) => a + e.amount, 0));
+  /** Non-fee income recorded in the cash book. */
+  otherIncome = computed(() => this.yearIncome().reduce((a, e) => a + e.amount, 0));
   expByCategory = computed(() => {
     const map = new Map<string, number>();
     for (const e of this.yearExpenses()) map.set(e.category, (map.get(e.category) ?? 0) + e.amount);
@@ -41,7 +45,7 @@ export class ReportsComponent {
     }
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([month, total]) => ({ month, total }));
   });
-  netBalance = computed(() => this.feeTotals().collected - this.expTotal());
+  netBalance = computed(() => this.feeTotals().collected + this.otherIncome() - this.expTotal());
 
   private examGuard = effect(() => {
     const ids = this.exams().map((e) => e.id);

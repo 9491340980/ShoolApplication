@@ -1,12 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
-import { EXPENSE_CATEGORIES, Expense } from '../../core/models';
+import { EXPENSE_CATEGORIES, Expense, INCOME_CATEGORIES, PAYMENT_METHODS } from '../../core/models';
 import { ExportFormat, exportData } from '../../core/export';
 import { SchoolService } from '../../core/school.service';
-import { environment } from '../../../environments/environment';
 import { TPipe } from '../../core/translate.service';
+
+type EType = 'expense' | 'income';
 
 @Component({
   selector: 'app-expenses',
@@ -18,77 +20,169 @@ export class ExpensesComponent {
   private auth = inject(AuthService);
   private schoolSvc = inject(SchoolService);
 
-  categories = EXPENSE_CATEGORIES;
+  methods = PAYMENT_METHODS;
+  expenseCats = EXPENSE_CATEGORIES;
+  incomeCats = INCOME_CATEGORIES;
   private todayStr = new Date().toISOString().slice(0, 10);
 
-  // ---- add form ----
-  newDate = signal(this.todayStr);
-  newCategory = signal(EXPENSE_CATEGORIES[0]);
-  newDesc = signal('');
-  newAmount = signal<number | null>(null);
+  schoolName = computed(() => this.schoolSvc.currentSchool()?.name ?? environment.schoolName);
+  schoolAddress = computed(() => this.schoolSvc.currentSchool()?.address || '');
+  logo = computed(() => this.schoolSvc.currentSchool()?.logo || '');
+
+  // ---- add / edit form ----
+  entryType = signal<EType>('expense');
+  formCategories = computed(() => (this.entryType() === 'income' ? this.incomeCats : this.expenseCats));
+  editingId = signal<string | null>(null);
+  fDate = signal(this.todayStr);
+  fCategory = signal(EXPENSE_CATEGORIES[0]);
+  fPayee = signal('');
+  fMethod = signal(PAYMENT_METHODS[0]);
+  fDesc = signal('');
+  fAmount = signal<number | null>(null);
   added = signal(false);
 
-  add() {
-    const amount = Number(this.newAmount());
-    if (!this.newDate() || !amount || amount <= 0) return;
-    this.data.addExpense({
-      date: this.newDate(),
-      category: this.newCategory(),
-      description: this.newDesc().trim(),
+  setType(t: EType) {
+    this.entryType.set(t);
+    this.fCategory.set((t === 'income' ? this.incomeCats : this.expenseCats)[0]);
+  }
+  private resetForm() {
+    this.editingId.set(null);
+    this.fDate.set(this.todayStr);
+    this.fPayee.set('');
+    this.fDesc.set('');
+    this.fAmount.set(null);
+    this.fMethod.set(PAYMENT_METHODS[0]);
+  }
+  startEdit(e: Expense) {
+    this.editingId.set(e.id);
+    this.entryType.set(e.type ?? 'expense');
+    this.fDate.set(e.date);
+    this.fCategory.set(e.category);
+    this.fPayee.set(e.payee ?? '');
+    this.fMethod.set(e.method ?? PAYMENT_METHODS[0]);
+    this.fDesc.set(e.description ?? '');
+    this.fAmount.set(e.amount);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  cancelEdit() {
+    this.resetForm();
+  }
+  save() {
+    const amount = Number(this.fAmount());
+    if (!this.fDate() || !amount || amount <= 0) return;
+    const payload = {
+      type: this.entryType(),
+      date: this.fDate(),
+      category: this.fCategory().trim() || (this.entryType() === 'income' ? 'Other Income' : 'Miscellaneous'),
+      description: this.fDesc().trim(),
       amount,
+      method: this.fMethod(),
+      payee: this.fPayee().trim(),
       createdBy: this.auth.user()?.name ?? '',
-    });
-    this.newDesc.set('');
-    this.newAmount.set(null);
+    };
+    const id = this.editingId();
+    if (id) this.data.updateExpense(id, payload);
+    else this.data.addExpense(payload);
+    this.resetForm();
     this.added.set(true);
     setTimeout(() => this.added.set(false), 2000);
   }
   remove(e: Expense) {
-    if (confirm(`Delete expense "${e.description || e.category}" — ₹${e.amount}?`)) this.data.deleteExpense(e.id);
+    if (confirm(`Delete "${e.description || e.category}" — ₹${e.amount}?`)) {
+      this.data.deleteExpense(e.id);
+      if (this.editingId() === e.id) this.resetForm();
+    }
   }
 
-  // ---- month browser ----
-  month = signal(this.todayStr.slice(0, 7)); // yyyy-mm
+  // ---- filters / browser ----
+  month = signal(this.todayStr.slice(0, 7));
+  filterType = signal<'all' | EType>('all');
+  filterCategory = signal('');
+  search = signal('');
+
+  private shiftMonth(ym: string, delta: number): string {
+    const [y, m] = ym.split('-').map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+  prevMonth() {
+    this.month.update((m) => this.shiftMonth(m, -1));
+  }
+  nextMonth() {
+    this.month.update((m) => this.shiftMonth(m, 1));
+  }
+
+  private isIncome = (e: Expense) => e.type === 'income';
   private all = computed(() => this.data.expenses());
+  monthAll = computed(() => this.all().filter((e) => e.date.startsWith(this.month())));
 
-  todayTotal = computed(() => this.sum(this.all().filter((e) => e.date === this.todayStr)));
-  monthTotal = computed(() => this.sum(this.all().filter((e) => e.date.startsWith(this.month()))));
-  yearTotal = computed(() => this.sum(this.all().filter((e) => e.date.startsWith(this.month().slice(0, 4)))));
+  incomeTotal = computed(() => this.sum(this.monthAll().filter(this.isIncome)));
+  expenseTotal = computed(() => this.sum(this.monthAll().filter((e) => !this.isIncome(e))));
+  balance = computed(() => this.incomeTotal() - this.expenseTotal());
 
-  /** Expenses of the chosen month, newest first. */
-  monthExpenses = computed(() => this.all().filter((e) => e.date.startsWith(this.month())));
+  /** Categories present this month (for the filter dropdown). */
+  monthCategories = computed(() => [...new Set(this.monthAll().map((e) => e.category))].sort());
 
-  /** Day-wise groups for the chosen month: [{date, items, total}]. */
-  byDay = computed(() => {
-    const map = new Map<string, Expense[]>();
-    for (const e of this.monthExpenses()) (map.get(e.date) ?? map.set(e.date, []).get(e.date)!).push(e);
-    return [...map.entries()]
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([date, items]) => ({ date, items, total: this.sum(items) }));
+  /** List after the type / category / search filters. */
+  filtered = computed(() => {
+    const t = this.filterType();
+    const cat = this.filterCategory();
+    const q = this.search().trim().toLowerCase();
+    return this.monthAll().filter(
+      (e) =>
+        (t === 'all' || (t === 'income' ? this.isIncome(e) : !this.isIncome(e))) &&
+        (!cat || e.category === cat) &&
+        (!q || (e.description + ' ' + (e.payee ?? '') + ' ' + e.category).toLowerCase().includes(q)),
+    );
   });
 
-  /** Category totals for the chosen month, biggest first. */
+  byDay = computed(() => {
+    const map = new Map<string, Expense[]>();
+    for (const e of this.filtered()) (map.get(e.date) ?? map.set(e.date, []).get(e.date)!).push(e);
+    return [...map.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([date, items]) => ({
+        date,
+        items,
+        in: this.sum(items.filter(this.isIncome)),
+        out: this.sum(items.filter((e) => !this.isIncome(e))),
+      }));
+  });
+
   byCategory = computed(() => {
     const map = new Map<string, number>();
-    for (const e of this.monthExpenses()) map.set(e.category, (map.get(e.category) ?? 0) + e.amount);
+    for (const e of this.monthAll().filter((e) => !this.isIncome(e))) map.set(e.category, (map.get(e.category) ?? 0) + e.amount);
     return [...map.entries()].map(([category, total]) => ({ category, total })).sort((a, b) => b.total - a.total);
   });
 
   private sum(list: Expense[]): number {
     return list.reduce((s, e) => s + e.amount, 0);
   }
-
   fmtMonth(ym: string): string {
     return new Date(ym + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   }
+  isInc(e: Expense): boolean {
+    return e.type === 'income';
+  }
 
+  print() {
+    window.print();
+  }
   export(format: ExportFormat) {
-    const brand = { schoolName: this.schoolSvc.currentSchool()?.name ?? environment.schoolName, logo: this.schoolSvc.currentSchool()?.logo || undefined };
+    const brand = { schoolName: this.schoolName(), logo: this.logo() || undefined };
     exportData(
       format,
-      `Expenses-${this.month()}`,
-      `Expenses — ${this.fmtMonth(this.month())}`,
-      this.monthExpenses().map((e) => ({ Date: e.date, Category: e.category, Description: e.description, Amount: e.amount, By: e.createdBy })),
+      `Cashbook-${this.month()}`,
+      `Cash Book — ${this.fmtMonth(this.month())}`,
+      this.monthAll().map((e) => ({
+        Date: e.date,
+        Type: this.isIncome(e) ? 'Income' : 'Expense',
+        Category: e.category,
+        Payee: e.payee ?? '',
+        Description: e.description,
+        Method: e.method ?? '',
+        Amount: e.amount,
+      })),
       brand,
     );
   }

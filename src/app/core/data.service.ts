@@ -906,6 +906,14 @@ export class DataService {
     this.commit({ expenses: [...this.db().expenses, { ...input, id }] });
   }
 
+  updateExpense(id: string, patch: Partial<Expense>) {
+    if (this.fs) {
+      void updateDoc(doc(this.fs, 'expenses', id), this.clean(patch));
+      return;
+    }
+    this.commit({ expenses: this.db().expenses.map((e) => (e.id === id ? { ...e, ...patch } : e)) });
+  }
+
   deleteExpense(id: string) {
     if (this.fs) {
       void deleteDoc(doc(this.fs, 'expenses', id));

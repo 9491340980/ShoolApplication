@@ -126,10 +126,14 @@
 @if (tab() === 'expenses') {
   <!-- EXPENSES REPORT -->
   <input class="input max-w-[120px] mb-4" type="number" [ngModel]="year()" (ngModelChange)="year.set($event)" />
-  <div class="grid grid-cols-3 gap-3 mb-4">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
     <div class="card !p-4 text-center">
       <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ feeTotals().collected.toLocaleString('en-IN') }}</div>
       <div class="text-[11px] text-muted mt-1">{{ 'collected' | t }}</div>
+    </div>
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ otherIncome().toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'income' | t }}</div>
     </div>
     <div class="card !p-4 text-center">
       <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ expTotal().toLocaleString('en-IN') }}</div>

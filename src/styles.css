@@ -84,13 +84,16 @@ body {
   #notice-card,
   #notice-card *,
   #ht-print,
-  #ht-print * {
+  #ht-print *,
+  #exp-print,
+  #exp-print * {
     visibility: visible !important;
   }
   #report-card,
   #receipt-card,
   #notice-card,
-  #ht-print {
+  #ht-print,
+  #exp-print {
     position: absolute;
     left: 0;
     top: 0;
