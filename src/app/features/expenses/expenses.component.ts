@@ -95,8 +95,10 @@ export class ExpensesComponent {
     }
   }
 
-  // ---- filters / browser ----
+  // ---- period selector (Month / Year) ----
+  view = signal<'month' | 'year'>('month');
   month = signal(this.todayStr.slice(0, 7));
+  year = signal(this.todayStr.slice(0, 4));
   filterType = signal<'all' | EType>('all');
   filterCategory = signal('');
   search = signal('');
@@ -106,30 +108,45 @@ export class ExpensesComponent {
     const d = new Date(y, m - 1 + delta, 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
-  prevMonth() {
-    this.month.update((m) => this.shiftMonth(m, -1));
+  prevPeriod() {
+    if (this.view() === 'month') this.month.update((m) => this.shiftMonth(m, -1));
+    else this.year.update((y) => String(Number(y) - 1));
   }
-  nextMonth() {
-    this.month.update((m) => this.shiftMonth(m, 1));
+  nextPeriod() {
+    if (this.view() === 'month') this.month.update((m) => this.shiftMonth(m, 1));
+    else this.year.update((y) => String(Number(y) + 1));
   }
+  /** Jump from the year view's month list into that month. */
+  openMonth(ym: string) {
+    this.month.set(ym);
+    this.view.set('month');
+  }
+
+  /** Date prefix the current period matches: "2026-06" for a month, "2026" for a year. */
+  periodPrefix = computed(() => (this.view() === 'month' ? this.month() : this.year()));
+  periodLabel = computed(() => (this.view() === 'month' ? this.fmtMonth(this.month()) : this.year()));
 
   private isIncome = (e: Expense) => e.type === 'income';
   private all = computed(() => this.data.expenses());
-  monthAll = computed(() => this.all().filter((e) => e.date.startsWith(this.month())));
+  /** Every entry inside the selected month or year. */
+  scopeAll = computed(() => this.all().filter((e) => e.date.startsWith(this.periodPrefix())));
 
-  incomeTotal = computed(() => this.sum(this.monthAll().filter(this.isIncome)));
-  expenseTotal = computed(() => this.sum(this.monthAll().filter((e) => !this.isIncome(e))));
+  incomeTotal = computed(() => this.sum(this.scopeAll().filter(this.isIncome)));
+  expenseTotal = computed(() => this.sum(this.scopeAll().filter((e) => !this.isIncome(e))));
   balance = computed(() => this.incomeTotal() - this.expenseTotal());
+  /** Today's spend — a quick at-a-glance figure regardless of the period. */
+  todayTotal = computed(() => this.sum(this.all().filter((e) => e.date === this.todayStr && !this.isIncome(e))));
+  entryCount = computed(() => this.scopeAll().length);
 
-  /** Categories present this month (for the filter dropdown). */
-  monthCategories = computed(() => [...new Set(this.monthAll().map((e) => e.category))].sort());
+  /** Categories present in the period (for the filter dropdown). */
+  scopeCategories = computed(() => [...new Set(this.scopeAll().map((e) => e.category))].sort());
 
   /** List after the type / category / search filters. */
   filtered = computed(() => {
     const t = this.filterType();
     const cat = this.filterCategory();
     const q = this.search().trim().toLowerCase();
-    return this.monthAll().filter(
+    return this.scopeAll().filter(
       (e) =>
         (t === 'all' || (t === 'income' ? this.isIncome(e) : !this.isIncome(e))) &&
         (!cat || e.category === cat) &&
@@ -137,6 +154,7 @@ export class ExpensesComponent {
     );
   });
 
+  /** Month view: entries grouped by day (newest first). */
   byDay = computed(() => {
     const map = new Map<string, Expense[]>();
     for (const e of this.filtered()) (map.get(e.date) ?? map.set(e.date, []).get(e.date)!).push(e);
@@ -150,9 +168,28 @@ export class ExpensesComponent {
       }));
   });
 
+  /** Year view: each month's income / expense / balance (newest first). */
+  byMonth = computed(() => {
+    const map = new Map<string, Expense[]>();
+    for (const e of this.filtered()) {
+      const m = e.date.slice(0, 7);
+      (map.get(m) ?? map.set(m, []).get(m)!).push(e);
+    }
+    return [...map.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([m, items]) => ({
+        month: m,
+        label: this.fmtMonth(m),
+        count: items.length,
+        in: this.sum(items.filter(this.isIncome)),
+        out: this.sum(items.filter((e) => !this.isIncome(e))),
+        net: this.sum(items.filter(this.isIncome)) - this.sum(items.filter((e) => !this.isIncome(e))),
+      }));
+  });
+
   byCategory = computed(() => {
     const map = new Map<string, number>();
-    for (const e of this.monthAll().filter((e) => !this.isIncome(e))) map.set(e.category, (map.get(e.category) ?? 0) + e.amount);
+    for (const e of this.scopeAll().filter((e) => !this.isIncome(e))) map.set(e.category, (map.get(e.category) ?? 0) + e.amount);
     return [...map.entries()].map(([category, total]) => ({ category, total })).sort((a, b) => b.total - a.total);
   });
 
@@ -171,7 +208,7 @@ export class ExpensesComponent {
     const el = document.getElementById('exp-print');
     if (!el) return;
     this.downloading.set(true);
-    const name = buildExportName({ module: 'CashBook', category: this.month() }, this.schoolName());
+    const name = buildExportName({ module: 'CashBook', category: this.periodPrefix() }, this.schoolName());
     try {
       await downloadElementPdf(el, `${name}.pdf`);
     } finally {
@@ -182,9 +219,9 @@ export class ExpensesComponent {
     const brand = { schoolName: this.schoolName(), logo: this.logo() || undefined };
     exportData(
       format,
-      `Cashbook-${this.month()}`,
-      `Cash Book — ${this.fmtMonth(this.month())}`,
-      this.monthAll().map((e) => ({
+      `Cashbook-${this.periodPrefix()}`,
+      `Cash Book — ${this.periodLabel()}`,
+      this.scopeAll().map((e) => ({
         Date: e.date,
         Type: this.isIncome(e) ? 'Income' : 'Expense',
         Category: e.category,

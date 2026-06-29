@@ -1,15 +1,36 @@
-<!-- SUMMARY -->
+<!-- PERIOD SELECTOR -->
+<div class="card mb-4">
+  <div class="flex items-center gap-2 flex-wrap">
+    <span class="inline-flex bg-page rounded-lg p-1">
+      <button class="px-4 py-1.5 rounded-md text-[13px] font-bold" [class]="view() === 'month' ? 'bg-primary text-white' : 'text-muted'" (click)="view.set('month')">{{ 'monthView' | t }}</button>
+      <button class="px-4 py-1.5 rounded-md text-[13px] font-bold" [class]="view() === 'year' ? 'bg-primary text-white' : 'text-muted'" (click)="view.set('year')">{{ 'yearView' | t }}</button>
+    </span>
+    <div class="inline-flex items-center gap-1">
+      <button class="w-9 h-9 rounded-lg border border-line font-bold hover:border-primary" (click)="prevPeriod()">‹</button>
+      @if (view() === 'month') {
+        <input class="input max-w-[160px] !text-center font-semibold" type="month" [ngModel]="month()" (ngModelChange)="month.set($event)" />
+      } @else {
+        <input class="input max-w-[110px] !text-center font-semibold" type="number" min="2000" max="2099" [ngModel]="year()" (ngModelChange)="year.set($event)" />
+      }
+      <button class="w-9 h-9 rounded-lg border border-line font-bold hover:border-primary" (click)="nextPeriod()">›</button>
+    </div>
+    <span class="ml-auto text-[12px] text-muted">{{ 'today' | t }}: <b class="text-danger">₹{{ todayTotal().toLocaleString('en-IN') }}</b></span>
+  </div>
+</div>
+
+<!-- SUMMARY (for the selected period) -->
+<div class="text-[12px] font-semibold text-muted mb-2 ml-1">📊 {{ periodLabel() }} · {{ entryCount() }} {{ 'entries' | t }}</div>
 <div class="grid grid-cols-3 gap-3 mb-4">
   <div class="card !p-4 text-center">
-    <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ incomeTotal().toLocaleString('en-IN') }}</div>
+    <div class="font-display text-base sm:text-2xl font-extrabold text-success leading-none">₹{{ incomeTotal().toLocaleString('en-IN') }}</div>
     <div class="text-[11px] text-muted mt-1">↗ {{ 'income' | t }}</div>
   </div>
   <div class="card !p-4 text-center">
-    <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ expenseTotal().toLocaleString('en-IN') }}</div>
+    <div class="font-display text-base sm:text-2xl font-extrabold text-danger leading-none">₹{{ expenseTotal().toLocaleString('en-IN') }}</div>
     <div class="text-[11px] text-muted mt-1">↘ {{ 'expenses' | t }}</div>
   </div>
   <div class="card !p-4 text-center">
-    <div class="font-display text-lg sm:text-2xl font-extrabold leading-none" [class]="balance() >= 0 ? 'text-primary' : 'text-danger'">₹{{ balance().toLocaleString('en-IN') }}</div>
+    <div class="font-display text-base sm:text-2xl font-extrabold leading-none" [class]="balance() >= 0 ? 'text-primary' : 'text-danger'">₹{{ balance().toLocaleString('en-IN') }}</div>
     <div class="text-[11px] text-muted mt-1">{{ 'balance' | t }}</div>
   </div>
 </div>
@@ -53,18 +74,13 @@
   </div>
 </div>
 
-<!-- BROWSER + FILTERS -->
+<!-- FILTERS -->
 <div class="card mb-4">
   <div class="flex items-center gap-2 flex-wrap">
-    <div class="inline-flex items-center gap-1">
-      <button class="w-8 h-8 rounded-lg border border-line font-bold hover:border-primary" (click)="prevMonth()">‹</button>
-      <input class="input max-w-[150px]" type="month" [ngModel]="month()" (ngModelChange)="month.set($event)" />
-      <button class="w-8 h-8 rounded-lg border border-line font-bold hover:border-primary" (click)="nextMonth()">›</button>
-    </div>
     <input class="input max-w-[180px]" [placeholder]="'🔍 ' + ('search' | t)" [ngModel]="search()" (ngModelChange)="search.set($event)" />
     <select class="input max-w-[150px]" [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event)">
       <option value="">{{ 'category' | t }}: {{ 'allItems' | t }}</option>
-      @for (c of monthCategories(); track c) { <option [value]="c">{{ c }}</option> }
+      @for (c of scopeCategories(); track c) { <option [value]="c">{{ c }}</option> }
     </select>
     <span class="ml-auto flex gap-2">
       <button class="btn-outline btn-sm" (click)="export('excel')">📊 Excel</button>
@@ -85,7 +101,7 @@
 <!-- CATEGORY BREAKDOWN -->
 @if (byCategory().length) {
   <div class="card mb-4">
-    <div class="card-title">📊 {{ 'byCategory' | t }} ({{ 'expenses' | t }}) — {{ fmtMonth(month()) }}</div>
+    <div class="card-title">📊 {{ 'byCategory' | t }} ({{ 'expenses' | t }}) — {{ periodLabel() }}</div>
     <div class="grid gap-2">
       @for (c of byCategory(); track c.category) {
         <div class="flex items-center gap-3 text-[13px]">
@@ -100,7 +116,32 @@
   </div>
 }
 
-<!-- DAY-WISE LIST -->
+<!-- YEAR VIEW: month-wise breakdown -->
+@if (view() === 'year') {
+  <div class="card-title">📅 {{ 'monthwise' | t }} <span class="text-[12px] text-muted font-normal">({{ year() }})</span></div>
+  @for (m of byMonth(); track m.month) {
+    <button class="card !p-0 overflow-hidden mb-3 w-full text-left hover:border-primary transition-colors block" (click)="openMonth(m.month)">
+      <div class="flex items-center gap-3 px-4 py-3">
+        <div class="flex-1 min-w-0">
+          <div class="text-[14px] font-bold">{{ m.label }}</div>
+          <div class="text-[11px] text-muted">{{ m.count }} {{ 'entries' | t }} ›</div>
+        </div>
+        <div class="text-right text-[12px]">
+          @if (m.in) { <div class="text-success font-semibold">↗ ₹{{ m.in.toLocaleString('en-IN') }}</div> }
+          <div class="text-danger font-semibold">↘ ₹{{ m.out.toLocaleString('en-IN') }}</div>
+        </div>
+        <div class="w-24 text-right">
+          <div class="text-[10px] text-muted uppercase">{{ 'balance' | t }}</div>
+          <div class="font-extrabold tabular-nums" [class]="m.net >= 0 ? 'text-primary' : 'text-danger'">₹{{ m.net.toLocaleString('en-IN') }}</div>
+        </div>
+      </div>
+    </button>
+  } @empty {
+    <div class="card text-center text-muted py-8">— {{ 'noExpenses' | t }}</div>
+  }
+} @else {
+
+<!-- MONTH VIEW: day-wise list -->
 <div class="card-title">📅 {{ 'dayWise' | t }} <span class="text-[12px] text-muted font-normal">({{ filtered().length }})</span></div>
 @for (d of byDay(); track d.date) {
   <div class="card !p-0 overflow-hidden mb-3">
@@ -133,6 +174,7 @@
 } @empty {
   <div class="card text-center text-muted py-8">— {{ 'noExpenses' | t }}</div>
 }
+}
 
 <!-- PRINTABLE STATEMENT (print only) -->
 <div id="exp-print" class="hidden print:block">
@@ -140,14 +182,14 @@
     @if (logo()) { <img [src]="logo()" style="width:56px;height:56px;object-fit:contain;margin:0 auto 6px" alt="logo" /> }
     <div style="font-size:20px;font-weight:800">{{ schoolName() }}</div>
     @if (schoolAddress()) { <div style="font-size:12px;color:#444">{{ schoolAddress() }}</div> }
-    <div style="font-size:13px;font-weight:700;margin-top:4px">Cash Book Statement — {{ fmtMonth(month()) }}</div>
+    <div style="font-size:13px;font-weight:700;margin-top:4px">Cash Book Statement — {{ periodLabel() }}</div>
   </div>
   <table class="tk-table" style="table-layout:auto">
     <thead>
       <tr><th>Date</th><th>Type</th><th>Category</th><th>Payee / Description</th><th>Method</th><th style="text-align:right">Amount (₹)</th></tr>
     </thead>
     <tbody>
-      @for (e of monthAll(); track e.id) {
+      @for (e of scopeAll(); track e.id) {
         <tr>
           <td>{{ e.date }}</td>
           <td>{{ isInc(e) ? 'Income' : 'Expense' }}</td>
