@@ -18,6 +18,24 @@ export class PermissionsService {
     return !!role && (CONFIG_ROLES as string[]).includes(role);
   }
 
+  /** Module paths the super admin turned off for this school. */
+  private disabledModules = computed(() => new Set(this.data.permissions()?.disabledModules ?? []));
+  /** Roles the super admin turned off for this school. */
+  disabledRoles = computed(() => new Set<Role>(this.data.permissions()?.disabledRoles ?? []));
+
+  /** Is this module switched on for the school? (core modules can't be turned off.) */
+  moduleEnabled(path: string): boolean {
+    if (corePaths('headmaster').includes(path)) return true;
+    return !this.disabledModules().has(path);
+  }
+  /** Is this role allowed to sign in / exist for the school? */
+  roleEnabled(role: Role): boolean {
+    return role === 'headmaster' || role === 'superadmin' || !this.disabledRoles().has(role);
+  }
+
+  /** Roles the signed-in user effectively holds (held roles minus any the school disabled). */
+  readonly effectiveRoles = computed<Role[]>(() => this.auth.roles().filter((r) => this.roleEnabled(r)));
+
   /** Allowed feature paths for a role in the *current* school. */
   allowedFor(role: ConfigRole): Set<string> {
     const override = this.data.permissions()?.roles?.[role];
@@ -31,10 +49,10 @@ export class PermissionsService {
    * Super admin → null (unrestricted).
    */
   readonly allowed = computed<Set<string> | null>(() => {
-    const roles = this.auth.roles();
+    const roles = this.effectiveRoles();
     if (roles.includes('superadmin')) return null;
     const union = new Set<string>();
-    for (const r of roles) if (this.isConfigRole(r)) for (const p of this.allowedFor(r)) union.add(p);
+    for (const r of roles) if (this.isConfigRole(r)) for (const p of this.allowedFor(r)) if (this.moduleEnabled(p)) union.add(p);
     return union;
   });
 

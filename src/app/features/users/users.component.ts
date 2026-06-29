@@ -1,8 +1,9 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { Role } from '../../core/models';
+import { PermissionsService } from '../../core/permissions.service';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 import { ROLE_LABELS } from '../../layout/nav-config';
@@ -18,13 +19,16 @@ export class UsersComponent {
   auth = inject(AuthService);
   schoolSvc = inject(SchoolService);
   data = inject(DataService);
+  perms = inject(PermissionsService);
 
   /** Top tabs: user accounts vs. class & class-teacher setup. */
   tab = signal<'users' | 'classes'>('users');
 
   classes = computed(() => this.data.schoolClasses());
   roleLabels = ROLE_LABELS;
-  creatableRoles: CreatableRole[] = ['teacher', 'accountant', 'parent', 'student'];
+  private allCreatableRoles: CreatableRole[] = ['teacher', 'accountant', 'parent', 'student'];
+  /** Only the roles the super admin has left enabled for this school. */
+  creatableRoles = computed(() => this.allCreatableRoles.filter((r) => this.perms.roleEnabled(r)));
 
   // class management
   newClassName = signal('');
@@ -53,6 +57,12 @@ export class UsersComponent {
 
   needsClass = computed(() => this.role() === 'teacher' || this.role() === 'student');
   needsStudent = computed(() => this.role() === 'parent' || this.role() === 'student');
+
+  /** Keep the selected role valid if the school's enabled-roles change. */
+  private roleGuard = effect(() => {
+    const list = this.creatableRoles();
+    if (list.length && !list.includes(this.role())) this.setRole(list[0]);
+  });
 
   // ---- class teachers ----
   teacherUsers = computed(() => this.schoolSvc.schoolUsers().filter((u) => u.role === 'teacher'));

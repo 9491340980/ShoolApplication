@@ -14,6 +14,40 @@
 @if (loading()) {
   <div class="card text-center text-muted py-8">…</div>
 } @else {
+  @if (isSuper()) {
+    <!-- SCHOOL-LEVEL MODULE SWITCHES -->
+    <div class="card mb-4">
+      <div class="card-title">🧩 {{ 'modulesForSchool' | t }}</div>
+      <p class="text-[12px] text-muted -mt-1 mb-3">{{ 'modulesHint' | t }}</p>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        @for (f of toggleableModules; track f.path) {
+          <div class="flex items-center gap-2.5 bg-page rounded-lg px-3 py-2">
+            <button type="button" class="w-9 h-5 rounded-full relative shrink-0 transition-colors" [class]="moduleOn(f.path) ? 'bg-success' : 'bg-line'" (click)="toggleModule(f.path)">
+              <span class="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" [class]="moduleOn(f.path) ? 'left-[18px]' : 'left-0.5'"></span>
+            </button>
+            <span class="text-[13px] font-medium" [class.text-muted]="!moduleOn(f.path)" [class.line-through]="!moduleOn(f.path)">{{ $any(f.label) | t }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- SCHOOL-LEVEL ALLOWED ROLES -->
+    <div class="card mb-4">
+      <div class="card-title">🔑 {{ 'rolesAllowed' | t }}</div>
+      <p class="text-[12px] text-muted -mt-1 mb-3">{{ 'rolesAllowedHint' | t }}</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="px-3 py-1.5 rounded-full text-[12.5px] font-semibold bg-success/10 border border-success text-success">{{ roleLabels['headmaster'].icon }} {{ roleLabels['headmaster'].label | t }} 🔒</span>
+        @for (r of toggleableRoles; track r) {
+          <button type="button" class="px-3 py-1.5 rounded-full text-[12.5px] font-semibold border flex items-center gap-1.5"
+            [class]="roleOn(r) ? 'bg-success/10 border-success text-success' : 'border-line text-muted line-through'"
+            (click)="toggleRoleEnabled(r)">
+            {{ roleLabels[r].icon }} {{ roleLabels[r].label | t }} {{ roleOn(r) ? '✓' : '✕' }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+
   <div class="card !p-0 overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-[13px] border-collapse">
@@ -35,7 +69,7 @@
             </tr>
             @for (f of featuresOf(section); track f.path) {
               <tr class="border-t border-line hover:bg-page/60">
-                <td class="px-4 py-2.5 sticky left-0 bg-card z-10 font-medium">{{ $any(f.label) | t }}</td>
+                <td class="px-4 py-2.5 sticky left-0 bg-card z-10 font-medium" [class.opacity-40]="isSuper() && !moduleOn(f.path)" [class.line-through]="isSuper() && !moduleOn(f.path)">{{ $any(f.label) | t }}</td>
                 @for (role of editableRoles(); track role) {
                   <td class="px-3 py-2.5 text-center">
                     @if (eligible(f, role)) {

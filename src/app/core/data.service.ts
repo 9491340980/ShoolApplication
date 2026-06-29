@@ -954,16 +954,23 @@ export class DataService {
     return snap.exists() ? ({ ...(snap.data() as object), id: snap.id } as SchoolPermissions) : null;
   }
 
-  /** Save the full per-role override map for a school. */
-  async savePermissions(schoolId: string, roles: SchoolPermissions['roles']): Promise<void> {
+  /** Save the per-role grants and the school's module/role switches. */
+  async savePermissions(
+    schoolId: string,
+    payload: { roles: SchoolPermissions['roles']; disabledModules?: string[]; disabledRoles?: SchoolPermissions['disabledRoles'] },
+  ): Promise<void> {
+    const next: SchoolPermissions = {
+      schoolId,
+      roles: payload.roles,
+      disabledModules: payload.disabledModules ?? [],
+      disabledRoles: payload.disabledRoles ?? [],
+    };
     if (!this.fs) {
-      const next: SchoolPermissions = { schoolId, roles };
       localStorage.setItem(`vidyasetu-perms-${schoolId}`, JSON.stringify(next));
-      // Reflect immediately if it's the active school.
       if (schoolId === this.sid) this.commit({ permissions: next });
       return;
     }
-    await setDoc(doc(this.fs, 'permissions', `${schoolId}_perms`), { schoolId, roles });
+    await setDoc(doc(this.fs, 'permissions', `${schoolId}_perms`), next);
   }
 
   /** Gives a brand-new school a sensible weekly timetable to start from. */

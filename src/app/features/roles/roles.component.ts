@@ -3,8 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { SchoolService } from '../../core/school.service';
-import { ConfigRole, SchoolPermissions } from '../../core/models';
-import { CONFIG_ROLES, DEFAULT_PERMS, FEATURES, Feature } from '../../layout/nav-config';
+import { ConfigRole, Role, SchoolPermissions } from '../../core/models';
+import { CONFIG_ROLES, DEFAULT_PERMS, FEATURES, Feature, ROLE_LABELS } from '../../layout/nav-config';
 import { TKey } from '../../core/translations';
 import { TPipe } from '../../core/translate.service';
 
@@ -19,6 +19,7 @@ export class RolesComponent {
   schoolSvc = inject(SchoolService);
 
   features = FEATURES;
+  roleLabels = ROLE_LABELS;
   isSuper = computed(() => this.auth.role() === 'superadmin');
 
   /** Columns that can be edited: super admin → all roles; head master → their staff/parents/students. */
@@ -32,10 +33,31 @@ export class RolesComponent {
 
   /** The school being edited. */
   targetSchool = signal<string>('');
-  private existing: SchoolPermissions['roles'] = {};
+  private existingDoc: SchoolPermissions | null = null;
   draft = signal<Record<ConfigRole, string[]>>({ headmaster: [], teacher: [], accountant: [], parent: [], student: [] });
   saved = signal(false);
   loading = signal(false);
+
+  // ---- super-admin: school-level module & role switches ----
+  /** Modules a super admin can switch on/off for the whole school (non-core only). */
+  toggleableModules = FEATURES.filter((f) => !f.core);
+  /** Roles a super admin can allow/disallow for the school (the Head Master is always allowed). */
+  toggleableRoles: Role[] = ['teacher', 'accountant', 'parent', 'student'];
+  draftDisabledModules = signal<string[]>([]);
+  draftDisabledRoles = signal<Role[]>([]);
+
+  moduleOn(path: string): boolean {
+    return !this.draftDisabledModules().includes(path);
+  }
+  toggleModule(path: string) {
+    this.draftDisabledModules.update((d) => (d.includes(path) ? d.filter((p) => p !== path) : [...d, path]));
+  }
+  roleOn(role: Role): boolean {
+    return !this.draftDisabledRoles().includes(role);
+  }
+  toggleRoleEnabled(role: Role) {
+    this.draftDisabledRoles.update((d) => (d.includes(role) ? d.filter((r) => r !== role) : [...d, role]));
+  }
 
   constructor() {
     // Head master always edits their own school.
@@ -57,14 +79,16 @@ export class RolesComponent {
   private async load(schoolId: string) {
     this.loading.set(true);
     try {
-      const perms = await this.data.fetchPermissions(schoolId);
-      this.existing = perms?.roles ?? {};
+      this.existingDoc = await this.data.fetchPermissions(schoolId);
     } catch {
-      this.existing = {}; // no doc yet / not readable → start from defaults
+      this.existingDoc = null; // no doc yet / not readable → start from defaults
     }
+    const roles = this.existingDoc?.roles ?? {};
     const next: Record<ConfigRole, string[]> = { headmaster: [], teacher: [], accountant: [], parent: [], student: [] };
-    for (const role of CONFIG_ROLES) next[role] = [...(this.existing[role] ?? DEFAULT_PERMS[role])];
+    for (const role of CONFIG_ROLES) next[role] = [...(roles[role] ?? DEFAULT_PERMS[role])];
     this.draft.set(next);
+    this.draftDisabledModules.set([...(this.existingDoc?.disabledModules ?? [])]);
+    this.draftDisabledRoles.set([...(this.existingDoc?.disabledRoles ?? [])]);
     this.loading.set(false);
   }
 
@@ -97,10 +121,13 @@ export class RolesComponent {
     const id = this.targetSchool();
     if (!id) return;
     // Keep rows we don't edit (e.g. a head master must not wipe the head-master row).
-    const roles: SchoolPermissions['roles'] = { ...this.existing };
+    const roles: SchoolPermissions['roles'] = { ...(this.existingDoc?.roles ?? {}) };
     for (const role of this.editableRoles()) roles[role] = this.draft()[role];
-    await this.data.savePermissions(id, roles);
-    this.existing = roles;
+    // Only the super admin edits the school-level module/role switches; the HM preserves them.
+    const disabledModules = this.isSuper() ? this.draftDisabledModules() : this.existingDoc?.disabledModules ?? [];
+    const disabledRoles = this.isSuper() ? this.draftDisabledRoles() : this.existingDoc?.disabledRoles ?? [];
+    await this.data.savePermissions(id, { roles, disabledModules, disabledRoles });
+    this.existingDoc = { schoolId: id, roles, disabledModules, disabledRoles };
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2500);
   }

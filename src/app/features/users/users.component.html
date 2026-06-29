@@ -10,7 +10,7 @@
     <p class="text-xs text-muted mb-3">💡 {{ 'autoFillHint' | t }}</p>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-2.5">
       <select class="input" [ngModel]="role()" (ngModelChange)="setRole($event)">
-        @for (r of creatableRoles; track r) {
+        @for (r of creatableRoles(); track r) {
           <option [value]="r">{{ roleLabels[r].icon }} {{ roleLabels[r].label | t }}</option>
         }
       </select>
@@ -42,7 +42,7 @@
         </select>
       }
     </div>
-    @if (role() === 'teacher') {
+    @if (role() === 'teacher' && perms.roleEnabled('accountant')) {
       <label class="flex items-center gap-2 text-[13px] font-medium mb-2.5 cursor-pointer select-none">
         <input type="checkbox" class="w-4 h-4 accent-[var(--color-primary)]" [ngModel]="alsoAccountant()" (ngModelChange)="alsoAccountant.set($event)" />
         💰 {{ 'alsoAccountant' | t }}

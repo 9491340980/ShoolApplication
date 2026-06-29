@@ -12,6 +12,10 @@ export interface SchoolPermissions {
   id?: string;
   schoolId: string;
   roles: Partial<Record<ConfigRole, string[]>>;
+  /** Module paths the super admin turned OFF for the whole school (hidden for everyone). */
+  disabledModules?: string[];
+  /** Roles the super admin turned OFF for the school (can't sign in / be created). */
+  disabledRoles?: Role[];
 }
 
 export type Lang = 'te' | 'en';

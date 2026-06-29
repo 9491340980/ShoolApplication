@@ -49,7 +49,7 @@ export class ShellComponent {
   );
 
   nav = computed(() => {
-    const roles = this.auth.roles();
+    const roles = this.perms.effectiveRoles();
     if (!roles.length) return [];
     if (roles.includes('superadmin')) return NAV.superadmin;
     const allowed = this.perms.allowed(); // union across roles (non-null for non-super)

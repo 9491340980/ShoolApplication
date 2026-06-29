@@ -136,6 +136,10 @@ export class AuthService {
         void signOut(this.fbAuth);
         return 'Your access has been disabled. Please contact your Head Master.';
       }
+      if (await this.roleDisabledForSchool(existing.schoolId, existing.role)) {
+        void signOut(this.fbAuth);
+        return 'This type of account is currently disabled for your school.';
+      }
       this.setSession(existing);
       this.router.navigateByUrl('/dashboard');
       return null;
@@ -201,6 +205,10 @@ export class AuthService {
         void signOut(this.fbAuth);
         return 'Your access has been disabled. Please contact your Head Master.';
       }
+      if (await this.roleDisabledForSchool(profile.schoolId, profile.role)) {
+        void signOut(this.fbAuth);
+        return 'This type of account is currently disabled for your school.';
+      }
       await this.ensureUserDoc(uid, profile);
       this.setSession(profile);
       this.router.navigateByUrl('/dashboard');
@@ -235,6 +243,19 @@ export class AuthService {
       );
     } catch {
       /* rules may forbid this for non-self docs — safe to ignore */
+    }
+  }
+
+  /** Has the super admin disabled this role for the user's school? (HM & super are never disabled.) */
+  private async roleDisabledForSchool(schoolId: string | undefined, role: Role): Promise<boolean> {
+    if (!this.fs || !schoolId || role === 'headmaster' || role === 'superadmin') return false;
+    try {
+      const snap = await getDoc(doc(this.fs, 'permissions', `${schoolId}_perms`));
+      if (!snap.exists()) return false;
+      const disabled = (snap.data()['disabledRoles'] as string[]) ?? [];
+      return disabled.includes(role);
+    } catch {
+      return false;
     }
   }
 
