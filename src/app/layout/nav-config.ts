@@ -39,6 +39,7 @@ export const NAV: Record<Role, NavSection[]> = {
         { path: '/attendance', icon: 'check', label: 'attendance' },
         { path: '/marks', icon: 'file', label: 'marksResults' },
         { path: '/fees', icon: 'rupee', label: 'feeManagement' },
+        { path: '/expenses', icon: 'rupee', label: 'expenses' },
       ],
     },
     {
@@ -137,6 +138,7 @@ export const PAGE_TITLES: Record<string, TKey> = {
   '/attendance': 'attendance',
   '/marks': 'marksResults',
   '/fees': 'feeManagement',
+  '/expenses': 'expenses',
   '/timetable': 'timetable',
   '/teachers': 'teachers',
   '/profile': 'myProfile',

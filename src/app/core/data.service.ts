@@ -34,6 +34,7 @@ import {
   DEMO_SCHOOL_ID,
   EXAMS,
   Exam,
+  Expense,
   FeeItem,
   Homework,
   MarksDoc,
@@ -53,6 +54,7 @@ interface Db {
   notices: Notice[];
   homework: Homework[];
   fees: FeeItem[];
+  expenses: Expense[];
   attendance: AttendanceDoc[];
   marks: MarksDoc[];
   timetables: TimetableDoc[];
@@ -70,6 +72,7 @@ const EMPTY_DB: Db = {
   notices: [],
   homework: [],
   fees: [],
+  expenses: [],
   attendance: [],
   marks: [],
   timetables: [],
@@ -109,6 +112,7 @@ export class DataService {
     [...this.db().homework].sort((a, b) => b.date.localeCompare(a.date)),
   );
   readonly fees = computed(() => this.db().fees);
+  readonly expenses = computed(() => [...this.db().expenses].sort((a, b) => b.date.localeCompare(a.date)));
   /** Subject master — the school's own list, falling back to sensible defaults. */
   readonly subjects = computed(() => {
     const list = this.db().subjectsList;
@@ -198,7 +202,7 @@ export class DataService {
     this.listeningFor = schoolId;
     this.db.set(EMPTY_DB);
 
-    const plain = ['students', 'teachers', 'notices', 'homework', 'fees', 'attendance', 'marks'] as const;
+    const plain = ['students', 'teachers', 'notices', 'homework', 'fees', 'expenses', 'attendance', 'marks'] as const;
     for (const name of plain) {
       this.unsubs.push(
         onSnapshot(query(collection(fs, name), where('schoolId', '==', schoolId)), (snap) => {
@@ -331,6 +335,7 @@ export class DataService {
       notices: DEMO_NOTICES,
       homework: [],
       fees: DEMO_FEES,
+      expenses: [],
       attendance: DEMO_ATTENDANCE,
       marks: DEMO_MARKS,
       timetables: DEMO_TIMETABLES,
@@ -890,6 +895,23 @@ export class DataService {
       return;
     }
     this.commit({ fees: [...this.db().fees, { ...input, id }] });
+  }
+
+  addExpense(input: Omit<Expense, 'id' | 'schoolId'>) {
+    const id = this.docId(`exp${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'expenses', id), this.clean({ ...input, schoolId: this.sid }));
+      return;
+    }
+    this.commit({ expenses: [...this.db().expenses, { ...input, id }] });
+  }
+
+  deleteExpense(id: string) {
+    if (this.fs) {
+      void deleteDoc(doc(this.fs, 'expenses', id));
+      return;
+    }
+    this.commit({ expenses: this.db().expenses.filter((e) => e.id !== id) });
   }
 
   /** Gives a brand-new school a sensible weekly timetable to start from. */

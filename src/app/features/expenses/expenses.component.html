@@ -1,0 +1,91 @@
+<!-- SUMMARY -->
+<div class="grid grid-cols-3 gap-3 mb-4">
+  <div class="card !p-4 text-center">
+    <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ todayTotal().toLocaleString('en-IN') }}</div>
+    <div class="text-[11px] text-muted mt-1">{{ 'today' | t }}</div>
+  </div>
+  <div class="card !p-4 text-center">
+    <div class="font-display text-lg sm:text-2xl font-extrabold text-primary leading-none">₹{{ monthTotal().toLocaleString('en-IN') }}</div>
+    <div class="text-[11px] text-muted mt-1">{{ 'thisMonth' | t }}</div>
+  </div>
+  <div class="card !p-4 text-center">
+    <div class="font-display text-lg sm:text-2xl font-extrabold text-ink leading-none">₹{{ yearTotal().toLocaleString('en-IN') }}</div>
+    <div class="text-[11px] text-muted mt-1">{{ 'thisYear' | t }} {{ month().slice(0, 4) }}</div>
+  </div>
+</div>
+
+<!-- ADD EXPENSE -->
+<div class="card mb-4">
+  <div class="card-title">➕ {{ 'addExpense' | t }}</div>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2.5 items-end">
+    <label class="text-[11px] font-semibold text-muted">{{ 'date' | t }}
+      <input class="input mt-1" type="date" [ngModel]="newDate()" (ngModelChange)="newDate.set($event)" />
+    </label>
+    <label class="text-[11px] font-semibold text-muted">{{ 'category' | t }}
+      <select class="input mt-1" [ngModel]="newCategory()" (ngModelChange)="newCategory.set($event)">
+        @for (c of categories; track c) { <option [value]="c">{{ c }}</option> }
+      </select>
+    </label>
+    <label class="text-[11px] font-semibold text-muted lg:col-span-2">{{ 'description' | t }}
+      <input class="input mt-1" [ngModel]="newDesc()" (ngModelChange)="newDesc.set($event)" [placeholder]="'expenseDescPh' | t" />
+    </label>
+    <label class="text-[11px] font-semibold text-muted">{{ 'amount' | t }} (₹)
+      <input class="input mt-1" type="number" min="1" [ngModel]="newAmount()" (ngModelChange)="newAmount.set($event)" placeholder="0" />
+    </label>
+  </div>
+  <div class="flex items-center gap-2 mt-3">
+    <button class="btn-blue" (click)="add()">➕ {{ 'addExpense' | t }}</button>
+    @if (added()) { <span class="badge badge-green">✓ {{ 'saved' | t }}</span> }
+  </div>
+</div>
+
+<!-- MONTH BROWSER -->
+<div class="flex items-center gap-2.5 mb-4 flex-wrap">
+  <input class="input max-w-[180px]" type="month" [ngModel]="month()" (ngModelChange)="month.set($event)" />
+  <span class="text-[13px] font-semibold">{{ fmtMonth(month()) }} · ₹{{ monthTotal().toLocaleString('en-IN') }}</span>
+  <span class="ml-auto flex gap-2">
+    <button class="btn-outline btn-sm" (click)="export('excel')">📊 Excel</button>
+    <button class="btn-outline btn-sm" (click)="export('pdf')">📄 PDF</button>
+  </span>
+</div>
+
+<!-- CATEGORY BREAKDOWN -->
+@if (byCategory().length) {
+  <div class="card mb-4">
+    <div class="card-title">📊 {{ 'byCategory' | t }} — {{ fmtMonth(month()) }}</div>
+    <div class="grid gap-2">
+      @for (c of byCategory(); track c.category) {
+        <div class="flex items-center gap-3 text-[13px]">
+          <span class="w-36 shrink-0 font-medium truncate">{{ c.category }}</span>
+          <div class="flex-1 bg-page rounded-full h-2.5 overflow-hidden">
+            <div class="h-2.5 rounded-full bg-primary" [style.width.%]="monthTotal() ? (c.total / monthTotal()) * 100 : 0"></div>
+          </div>
+          <span class="w-24 text-right font-semibold tabular-nums">₹{{ c.total.toLocaleString('en-IN') }}</span>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- DAY-WISE LIST -->
+<div class="card-title">📅 {{ 'dayWise' | t }}</div>
+@for (d of byDay(); track d.date) {
+  <div class="card !p-0 overflow-hidden mb-3">
+    <div class="flex items-center justify-between px-4 py-2.5 bg-page">
+      <span class="font-bold text-[13.5px]">🗓️ {{ d.date }}</span>
+      <span class="font-extrabold text-danger">₹{{ d.total.toLocaleString('en-IN') }}</span>
+    </div>
+    <div class="divide-y divide-line">
+      @for (e of d.items; track e.id) {
+        <div class="flex items-center gap-3 px-4 py-2.5">
+          <span class="badge badge-blue shrink-0">{{ e.category }}</span>
+          <span class="flex-1 min-w-0 text-[13.5px] truncate">{{ e.description || '—' }}</span>
+          <span class="font-semibold tabular-nums shrink-0">₹{{ e.amount.toLocaleString('en-IN') }}</span>
+          <button class="text-danger text-sm shrink-0" [title]="'remove' | t" (click)="remove(e)">🗑️</button>
+        </div>
+      }
+    </div>
+  </div>
+} @empty {
+  <div class="card text-center text-muted py-8">— {{ 'noExpenses' | t }}</div>
+}

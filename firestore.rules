@@ -45,6 +45,7 @@ service cloud.firestore {
     match /classesList/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /examsList/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /fees/{id}       { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
+    match /expenses/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /attendance/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /marks/{id}      { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /notices/{id}    { allow read: if sameSchool() || isSuper(); allow create, update: if isStaff() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }

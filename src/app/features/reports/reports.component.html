@@ -1,11 +1,13 @@
 <!-- TABS -->
-<div class="flex gap-1 mb-4 bg-white border border-line p-1 rounded-xl max-w-lg">
+<div class="flex gap-1 mb-4 bg-white border border-line p-1 rounded-xl max-w-2xl flex-wrap">
   <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
           [class]="tab() === 'fee' ? 'bg-primary text-white' : 'text-muted hover:bg-page'" (click)="tab.set('fee')">💰 {{ 'feeManagement' | t }}</button>
   <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
           [class]="tab() === 'attendance' ? 'bg-primary text-white' : 'text-muted hover:bg-page'" (click)="tab.set('attendance')">✅ {{ 'attendance' | t }}</button>
   <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
           [class]="tab() === 'exam' ? 'bg-primary text-white' : 'text-muted hover:bg-page'" (click)="tab.set('exam')">📝 {{ 'marksResults' | t }}</button>
+  <button class="flex-1 px-2.5 py-2 text-center text-[12.5px] font-semibold rounded-lg cursor-pointer transition-colors"
+          [class]="tab() === 'expenses' ? 'bg-primary text-white' : 'text-muted hover:bg-page'" (click)="tab.set('expenses')">🧾 {{ 'expenses' | t }}</button>
 </div>
 <div class="mb-3 flex gap-2">
   <button class="btn-outline btn-sm" (click)="export('excel')">📊 Excel</button>
@@ -117,6 +119,49 @@
           } @empty { <tr><td class="td text-muted" colspan="5">—</td></tr> }
         </tbody>
       </table>
+    </div>
+  </div>
+}
+
+@if (tab() === 'expenses') {
+  <!-- EXPENSES REPORT -->
+  <input class="input max-w-[120px] mb-4" type="number" [ngModel]="year()" (ngModelChange)="year.set($event)" />
+  <div class="grid grid-cols-3 gap-3 mb-4">
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ feeTotals().collected.toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'collected' | t }}</div>
+    </div>
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ expTotal().toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'expenses' | t }} {{ year() }}</div>
+    </div>
+    <div class="card !p-4 text-center">
+      <div class="font-display text-lg sm:text-2xl font-extrabold leading-none" [class]="netBalance() >= 0 ? 'text-primary' : 'text-danger'">₹{{ netBalance().toLocaleString('en-IN') }}</div>
+      <div class="text-[11px] text-muted mt-1">{{ 'netBalance' | t }}</div>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-4">
+    <div class="card">
+      <div class="card-title">📊 {{ 'byCategory' | t }}</div>
+      @for (c of expByCategory(); track c.category) {
+        <div class="flex items-center gap-3 text-[13px] mb-2">
+          <span class="w-36 shrink-0 font-medium truncate">{{ c.category }}</span>
+          <div class="flex-1 bg-page rounded-full h-2.5 overflow-hidden">
+            <div class="h-2.5 rounded-full bg-danger" [style.width.%]="expTotal() ? (c.total / expTotal()) * 100 : 0"></div>
+          </div>
+          <span class="w-24 text-right font-semibold tabular-nums">₹{{ c.total.toLocaleString('en-IN') }}</span>
+        </div>
+      } @empty { <div class="text-sm text-muted text-center py-4">{{ 'noExpenses' | t }}</div> }
+    </div>
+    <div class="card">
+      <div class="card-title">📅 {{ 'monthwise' | t }}</div>
+      @for (m of expByMonth(); track m.month) {
+        <div class="flex items-center justify-between py-2 border-b border-line last:border-0 text-[13px]">
+          <span class="font-medium">{{ m.month }}</span>
+          <span class="font-semibold text-danger tabular-nums">₹{{ m.total.toLocaleString('en-IN') }}</span>
+        </div>
+      } @empty { <div class="text-sm text-muted text-center py-4">{{ 'noExpenses' | t }}</div> }
     </div>
   </div>
 }

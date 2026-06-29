@@ -67,7 +67,7 @@ async function main() {
   console.log(`\nSeeding DEMO school [${SID}] for ${today}\n`);
 
   // wipe old demo content so re-runs are clean
-  for (const c of ['students', 'teachers', 'assignments', 'attendance', 'teacherAttendance', 'marks', 'fees', 'notices', 'homework']) {
+  for (const c of ['students', 'teachers', 'assignments', 'attendance', 'teacherAttendance', 'marks', 'fees', 'notices', 'homework', 'expenses']) {
     await clearCollection(c);
   }
   await clearLegacyDemoUsers();
@@ -203,7 +203,19 @@ async function main() {
     { classId: '9A', subject: 'Telugu', text: 'Padyam memorization — page 32, learn for recitation.', date: today },
   ];
   for (let i = 0; i < hw.length; i++) await db.collection('homework').doc(`${SID}_hw${i + 1}`).set({ schoolId: SID, postedBy: 'Class Teacher', ...hw[i] });
-  console.log('✓ homework\n');
+  console.log('✓ homework');
+
+  // ---- expenses ----
+  const expenses = [
+    { date: `${ym}-03`, category: 'Salaries', description: 'Teacher salaries', amount: 185000 },
+    { date: `${ym}-05`, category: 'Utilities', description: 'Electricity & water bill', amount: 8400 },
+    { date: `${ym}-08`, category: 'Books & Stationery', description: 'Library books', amount: 9800 },
+    { date: `${ym}-12`, category: 'Maintenance', description: 'Plumbing & paint repair', amount: 3500 },
+    { date: `${ym}-15`, category: 'Transport', description: 'Bus diesel', amount: 14500 },
+    { date: `${ym}-18`, category: 'Supplies', description: 'Science lab consumables', amount: 6200 },
+  ];
+  for (let i = 0; i < expenses.length; i++) await db.collection('expenses').doc(`${SID}_exp${i + 1}`).set({ schoolId: SID, createdBy: 'Head Master', ...expenses[i] });
+  console.log('✓ expenses\n');
 
   console.log('Done — demo school is now fully populated.');
 }

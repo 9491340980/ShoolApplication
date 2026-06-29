@@ -135,6 +135,18 @@ export interface FeeItem {
   status: 'paid' | 'pending';
 }
 
+export interface Expense {
+  id: string;
+  schoolId?: string;
+  date: string; // ISO yyyy-mm-dd
+  category: string;
+  description: string;
+  amount: number;
+  createdBy: string;
+}
+
+export const EXPENSE_CATEGORIES = ['Salaries', 'Utilities', 'Maintenance', 'Supplies', 'Transport', 'Events', 'Books & Stationery', 'Miscellaneous'];
+
 export type AttendanceStatus = 'present' | 'absent';
 
 export interface AttendanceDoc {

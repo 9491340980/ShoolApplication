@@ -20,9 +20,28 @@ export class ReportsComponent {
     return { schoolName: s?.name ?? environment.schoolName, logo: s?.logo || undefined };
   }
 
-  tab = signal<'fee' | 'attendance' | 'exam'>('fee');
+  tab = signal<'fee' | 'attendance' | 'exam' | 'expenses'>('fee');
   exams = computed(() => this.data.schoolExams());
   examId = signal('quarterly');
+
+  // ---- expenses report ----
+  year = signal(new Date().toISOString().slice(0, 4));
+  private yearExpenses = computed(() => this.data.expenses().filter((e) => e.date.startsWith(this.year())));
+  expTotal = computed(() => this.yearExpenses().reduce((a, e) => a + e.amount, 0));
+  expByCategory = computed(() => {
+    const map = new Map<string, number>();
+    for (const e of this.yearExpenses()) map.set(e.category, (map.get(e.category) ?? 0) + e.amount);
+    return [...map.entries()].map(([category, total]) => ({ category, total })).sort((a, b) => b.total - a.total);
+  });
+  expByMonth = computed(() => {
+    const map = new Map<string, number>();
+    for (const e of this.yearExpenses()) {
+      const m = e.date.slice(0, 7);
+      map.set(m, (map.get(m) ?? 0) + e.amount);
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([month, total]) => ({ month, total }));
+  });
+  netBalance = computed(() => this.feeTotals().collected - this.expTotal());
 
   private examGuard = effect(() => {
     const ids = this.exams().map((e) => e.id);
@@ -99,9 +118,11 @@ export class ReportsComponent {
       exportData(format, 'Fee-Report', 'Fee Report', this.feeRows().map((r) => ({ Class: r.classId, Students: r.students, TotalFee: r.total, Collected: r.collected, Pending: r.pending })), brand);
     } else if (t === 'attendance') {
       exportData(format, 'Attendance-Report', 'Attendance Report', this.attRows().map((r) => ({ Class: r.classId, Students: r.students, Marked: r.marked, 'Avg%': r.avg ?? '', Below75: r.below })), brand);
-    } else {
+    } else if (t === 'exam') {
       const exam = this.exams().find((e) => e.id === this.examId())?.label ?? this.examId();
       exportData(format, `Exam-Report-${exam}`, `Exam Report — ${exam}`, this.examRows().map((r) => ({ Class: r.classId, Appeared: r.appeared, 'Avg%': r.avg ?? '', 'Pass%': r.passPct, Topper: r.topper ? `${r.topper.name} (${r.topper.pct}%)` : '' })), brand);
+    } else {
+      exportData(format, `Expenses-${this.year()}`, `Expenses ${this.year()}`, this.expByCategory().map((r) => ({ Category: r.category, Total: r.total })), brand);
     }
   }
 }
