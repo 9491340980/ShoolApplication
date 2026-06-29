@@ -61,3 +61,6 @@ demo-videos/
 /test-report.pdf
 
 .npmrc
+
+# Firebase Android config (contains API key; local only)
+android/app/google-services.json

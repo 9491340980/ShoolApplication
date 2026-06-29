@@ -21,6 +21,14 @@ const config: CapacitorConfig = {
   android: {
     backgroundColor: '#1a56db',
   },
+  plugins: {
+    FirebaseAuthentication: {
+      // We sign into the Firebase JS SDK ourselves (so Firestore/@angular/fire
+      // stay authenticated); the plugin just returns the Google credential.
+      skipNativeAuth: true,
+      providers: ['google.com'],
+    },
+  },
 };
 
 export default config;

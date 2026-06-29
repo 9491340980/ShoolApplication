@@ -1,11 +1,14 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import {
   Auth,
   GoogleAuthProvider,
   User,
   getRedirectResult,
   sendPasswordResetEmail,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -78,12 +81,28 @@ export class AuthService {
    */
   async loginWithGoogle(): Promise<string | null> {
     if (!this.fbAuth) return 'Google sign-in needs Firebase connected.';
-    const provider = new GoogleAuthProvider();
+
+    // On the Android/iOS app: use the native Google account picker (no WebView),
+    // then sign into the Firebase JS SDK with the returned credential.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        const idToken = result.credential?.idToken;
+        if (!idToken) return 'Google sign-in failed. Please try again.';
+        const credential = GoogleAuthProvider.credential(idToken);
+        const userCred = await signInWithCredential(this.fbAuth, credential);
+        return this.handleGoogleUser(userCred.user);
+      } catch {
+        return 'Google sign-in was cancelled.';
+      }
+    }
+
+    // On the web: popup flow.
     try {
-      const cred = await signInWithPopup(this.fbAuth, provider);
+      const cred = await signInWithPopup(this.fbAuth, new GoogleAuthProvider());
       return this.handleGoogleUser(cred.user);
     } catch {
-      return 'Google sign-in was cancelled or blocked. On the mobile app, native Google sign-in is required.';
+      return 'Google sign-in was cancelled or blocked.';
     }
   }
 
