@@ -9,6 +9,7 @@ import { TPipe } from '../../core/translate.service';
 interface SchedRow {
   date: string;
   subject: string;
+  time: string;
 }
 const LS_KEY = 'vidyasetu-hallticket';
 
@@ -34,9 +35,9 @@ export class HallTicketsComponent {
 
   examTitle = signal('Summative Assessment - II');
   subtitle = signal('IIT / NEET Foundation · E/M');
-  examTime = signal('9:00 AM to 11:30 AM');
+  examTime = signal('9:00 AM to 11:30 AM'); // default time for new days
   classId = signal('');
-  rows = signal<SchedRow[]>([{ date: '', subject: '' }]);
+  rows = signal<SchedRow[]>([{ date: '', subject: '', time: '' }]);
   generated = signal(false);
 
   constructor() {
@@ -45,7 +46,7 @@ export class HallTicketsComponent {
   }
 
   addRow() {
-    this.rows.update((r) => [...r, { date: '', subject: '' }]);
+    this.rows.update((r) => [...r, { date: '', subject: '', time: this.examTime() }]);
   }
   removeRow(i: number) {
     this.rows.update((r) => r.filter((_, k) => k !== i));
@@ -56,9 +57,16 @@ export class HallTicketsComponent {
   setSubject(i: number, v: string) {
     this.rows.update((r) => r.map((x, k) => (k === i ? { ...x, subject: v } : x)));
   }
+  setTime(i: number, v: string) {
+    this.rows.update((r) => r.map((x, k) => (k === i ? { ...x, time: v } : x)));
+  }
+  /** A day's time, falling back to the default exam time. */
+  rowTime(r: SchedRow): string {
+    return r.time?.trim() || this.examTime();
+  }
 
   /** Rows with at least a date or subject filled. */
-  validRows = computed(() => this.rows().filter((r) => r.date || r.subject));
+  validRows = computed(() => this.rows().filter((r) => r.date || r.subject || r.time));
 
   /** Students who get a ticket (single class, or all classes), sorted class → roll. */
   ticketStudents = computed<Student[]>(() => {
