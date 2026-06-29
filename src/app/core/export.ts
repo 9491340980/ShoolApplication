@@ -10,10 +10,38 @@ export interface ExportBrand {
   logo?: string; // square PNG data URL
 }
 
-/** Export rows in the chosen format (Excel or PDF). */
+/**
+ * Short code for a school from its name — first letter of each word, lowercased.
+ * "Viveka Nanda" → "vn", "ZP High School" → "zhs". Used to suffix download names.
+ */
+export function schoolShort(name?: string): string {
+  if (!name) return '';
+  const words = name.replace(/[^\p{L}\s]/gu, ' ').trim().split(/\s+/).filter(Boolean);
+  const code = words.map((w) => w[0]).join('').toLowerCase();
+  return code.replace(/[^a-z0-9]/g, '').slice(0, 6);
+}
+
+/** Slugify a filename part (student name, category, …) for safe download names. */
+export function slugPart(s: string | undefined | null): string {
+  return (s ?? '').toString().trim().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Build a standardized download name: `module-category-target-<school short>`.
+ * Empty parts are dropped; pass target = student name for per-student files or
+ * "all" for generic exports.
+ */
+export function buildExportName(parts: { module: string; category?: string; target?: string }, schoolName?: string): string {
+  const short = schoolShort(schoolName);
+  return [parts.module, parts.category, parts.target, short].map(slugPart).filter(Boolean).join('-');
+}
+
+/** Export rows in the chosen format (Excel or PDF). The school short code is appended to the file name. */
 export function exportData(format: ExportFormat, fileName: string, title: string, rows: Record<string, unknown>[], brand?: ExportBrand): void {
-  if (format === 'pdf') exportPdf(fileName, title, rows, brand);
-  else exportRows(fileName, title, rows);
+  const short = schoolShort(brand?.schoolName);
+  const named = short && !fileName.toLowerCase().endsWith(`-${short}`) ? `${fileName}-${short}` : fileName;
+  if (format === 'pdf') exportPdf(named, title, rows, brand);
+  else exportRows(named, title, rows);
 }
 
 /** Export an array of plain objects to a downloadable .xlsx file. */

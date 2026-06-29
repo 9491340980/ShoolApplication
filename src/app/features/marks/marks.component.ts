@@ -4,7 +4,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { BulkSendService } from '../../core/bulk-send.service';
-import { ExportFormat, exportData } from '../../core/export';
+import { ExportFormat, buildExportName, exportData } from '../../core/export';
 import { DEMO_SCHOOL_ID, Student } from '../../core/models';
 import { NotifyService } from '../../core/notify.service';
 import { buildReportPdf, shareElementImage, sharePdf } from '../../core/report-pdf';
@@ -348,14 +348,16 @@ export class MarksComponent {
       attPct: r.att.pct,
       pass: r.pass,
     });
-    await sharePdf(doc, `ReportCard-${s.name.replace(/\s+/g, '_')}.pdf`, this.reportText(s, exam));
+    const fileName = buildExportName({ module: 'ReportCard', category: exam, target: s.name }, this.schoolName());
+    await sharePdf(doc, `${fileName}.pdf`, this.reportText(s, exam));
   }
 
   /** Capture the on-screen report card as an image and share it (shows inline in WhatsApp). */
   async sendReportImage(s: Student, exam: string) {
     const el = document.getElementById('report-card');
     if (!el) return;
-    await shareElementImage(el, `ReportCard-${s.name.replace(/\s+/g, '_')}.png`, this.reportText(s, exam));
+    const fileName = buildExportName({ module: 'ReportCard', category: exam, target: s.name }, this.schoolName());
+    await shareElementImage(el, `${fileName}.png`, this.reportText(s, exam));
   }
 
   /** SMS text fallback for parents without WhatsApp. */
