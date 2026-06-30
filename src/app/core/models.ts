@@ -91,6 +91,8 @@ export interface Student {
   /** Passed-out / left timestamp (ISO). Kept permanently (not purged); still
    * eligible for certificates (TC / Bonafide). */
   leftAt?: string | null;
+  /** Academic year the student passed out (e.g. "2025-26") — for batch filtering. */
+  passoutYear?: string;
 }
 
 /** Read-only snapshot of one child, exposed at /p/:token for parents (no login). */

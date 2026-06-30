@@ -213,16 +213,26 @@
 
 @if (tab() === 'left') {
   <div class="card !p-0 overflow-hidden">
-    <div class="px-5 py-4">
-      <div class="text-[15px] font-bold">🎓 {{ 'passedOut' | t }}</div>
-      <div class="text-[12px] text-muted mt-0.5">💡 {{ 'passedOutHint' | t }}</div>
+    <div class="px-5 py-4 flex items-center justify-between gap-2 flex-wrap">
+      <div>
+        <div class="text-[15px] font-bold">🎓 {{ 'passedOut' | t }}</div>
+        <div class="text-[12px] text-muted mt-0.5">💡 {{ 'passedOutHint' | t }}</div>
+      </div>
+      @if (leftYears().length) {
+        <select class="input max-w-[160px]" [ngModel]="leftYearFilter()" (ngModelChange)="leftYearFilter.set($event)">
+          <option value="">{{ 'allBatches' | t }}</option>
+          @for (y of leftYears(); track y) { <option [value]="y">{{ y }}</option> }
+        </select>
+      }
     </div>
     <div class="divide-y divide-line">
       @for (s of leftList(); track s.id) {
         <div class="flex items-center gap-3 px-4 py-2.5">
           @if (s.photo) { <img [src]="s.photo" class="w-9 h-9 rounded-full object-cover shrink-0" alt="" /> } @else { <span class="w-9 h-9 rounded-full bg-page grid place-items-center shrink-0">🎓</span> }
           <div class="flex-1 min-w-0">
-            <div class="font-semibold text-[14px] truncate">{{ s.name }}</div>
+            <div class="font-semibold text-[14px] truncate">{{ s.name }}
+              @if (s.passoutYear) { <span class="badge badge-yellow !text-[10px] ml-1">{{ s.passoutYear }}</span> }
+            </div>
             <div class="text-[11px] text-muted">{{ 'class' | t }} {{ s.classId }} · {{ 'rollNo' | t }} {{ s.roll }} @if (s.admissionNo) { · {{ s.admissionNo }} }</div>
           </div>
           <a class="btn-outline btn-sm" routerLink="/certificates">🧾 {{ 'certificates' | t }}</a>

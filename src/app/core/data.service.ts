@@ -117,10 +117,12 @@ export class DataService {
   private seedAttempted = false;
 
   /** Active records only — deactivated (recycle-bin) ones are hidden everywhere. */
-  readonly students = computed(() => this.db().students.filter((s) => !s.deactivatedAt && !s.leftAt));
+  /** A student is "passed out" if explicitly left, or graduated to the PASSED pseudo-class. */
+  private isLeft = (s: Student) => !!s.leftAt || s.classId === 'PASSED';
+  readonly students = computed(() => this.db().students.filter((s) => !s.deactivatedAt && !this.isLeft(s)));
   readonly teachers = computed(() => this.db().teachers.filter((t) => !t.deactivatedAt));
   /** Passed-out / left students — archived permanently, still certificate-eligible. */
-  readonly leftStudents = computed(() => this.db().students.filter((s) => s.leftAt && !s.deactivatedAt).sort((a, b) => (b.leftAt ?? '').localeCompare(a.leftAt ?? '')));
+  readonly leftStudents = computed(() => this.db().students.filter((s) => this.isLeft(s) && !s.deactivatedAt).sort((a, b) => (b.leftAt ?? '').localeCompare(a.leftAt ?? '')));
   /** Recycle bin (soft-deleted). */
   readonly deactivatedStudents = computed(() => this.db().students.filter((s) => s.deactivatedAt));
   readonly deactivatedTeachers = computed(() => this.db().teachers.filter((t) => t.deactivatedAt));
@@ -780,9 +782,15 @@ export class DataService {
   restoreStudent(id: string) {
     this.updateStudent(id, { deactivatedAt: null });
   }
+  /** The current academic year string, e.g. "2025-26" (rolls over in June). */
+  academicYear(d = new Date()): string {
+    const y = d.getFullYear();
+    const start = d.getMonth() >= 5 ? y : y - 1;
+    return `${start}-${String((start + 1) % 100).padStart(2, '0')}`;
+  }
   /** Mark a student as passed out / left (archived permanently, certificate-eligible). */
   markStudentLeft(id: string) {
-    this.updateStudent(id, { leftAt: new Date().toISOString() });
+    this.updateStudent(id, { leftAt: new Date().toISOString(), passoutYear: this.academicYear() });
   }
   /** Bring a passed-out student back to active rolls. */
   restoreLeftStudent(id: string) {
@@ -1033,7 +1041,8 @@ export class DataService {
     const finalClass = (s: Student) => map.get(s.classId) ?? s.classId;
 
     const moved = students.filter((s) => finalClass(s) !== s.classId);
-    const updates: { id: string; classId: string; roll?: string }[] = [];
+    const updates: { id: string; classId?: string; roll?: string; leftAt?: string; passoutYear?: string }[] = [];
+    const year = this.academicYear();
 
     // Re-sequence rolls only in active classes that actually receive someone.
     const affected = new Set(moved.map((s) => finalClass(s)).filter((c) => c !== 'PASSED'));
@@ -1046,11 +1055,12 @@ export class DataService {
         if (s.classId !== cls || s.roll !== roll) updates.push({ id: s.id, classId: cls, roll });
       });
     }
-    // Graduating students leave the active roster.
+    // Graduating students leave the active roster → Passed-out archive (keep their
+    // final class so the record shows "10A"; tag the batch/academic year).
     let graduated = 0;
     for (const s of students) {
-      if (finalClass(s) === 'PASSED' && s.classId !== 'PASSED') {
-        updates.push({ id: s.id, classId: 'PASSED' });
+      if (finalClass(s) === 'PASSED' && !this.isLeft(s)) {
+        updates.push({ id: s.id, leftAt: new Date().toISOString(), passoutYear: year });
         graduated++;
       }
     }
@@ -1060,7 +1070,12 @@ export class DataService {
       for (let i = 0; i < updates.length; i += 450) {
         const batch = writeBatch(fs);
         for (const u of updates.slice(i, i + 450)) {
-          batch.update(doc(fs, 'students', u.id), u.roll !== undefined ? { classId: u.classId, roll: u.roll } : { classId: u.classId });
+          const patch: Record<string, unknown> = {};
+          if (u.classId !== undefined) patch['classId'] = u.classId;
+          if (u.roll !== undefined) patch['roll'] = u.roll;
+          if (u.leftAt !== undefined) patch['leftAt'] = u.leftAt;
+          if (u.passoutYear !== undefined) patch['passoutYear'] = u.passoutYear;
+          batch.update(doc(fs, 'students', u.id), patch);
         }
         await batch.commit();
       }

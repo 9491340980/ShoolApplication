@@ -45,7 +45,14 @@ export class StudentsComponent {
   // ---- active vs recycle bin vs passed-out ----
   tab = signal<'active' | 'bin' | 'left'>('active');
   deactivated = computed(() => this.data.deactivatedStudents());
-  leftList = computed(() => this.data.leftStudents());
+  private allLeft = computed(() => this.data.leftStudents());
+  /** Batch/year filter for the passed-out archive. */
+  leftYearFilter = signal('');
+  leftYears = computed(() => [...new Set(this.allLeft().map((s) => s.passoutYear).filter((y): y is string => !!y))].sort().reverse());
+  leftList = computed(() => {
+    const y = this.leftYearFilter();
+    return y ? this.allLeft().filter((s) => s.passoutYear === y) : this.allLeft();
+  });
   openBin() {
     this.data.purgeExpired(); // clear anything past 30 days
     this.tab.set('bin');
