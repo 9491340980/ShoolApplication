@@ -2,7 +2,7 @@ import { Injectable, computed, inject } from '@angular/core';
 import { AuthService } from './auth.service';
 import { DataService } from './data.service';
 import { ConfigRole, Role } from './models';
-import { CONFIG_ROLES, DEFAULT_DISABLED_MODULES, DEFAULT_DISABLED_ROLES, DEFAULT_PERMS, corePaths } from '../layout/nav-config';
+import { CONFIG_ROLES, DEFAULT_DISABLED_MODULES, DEFAULT_DISABLED_ROLES, DEFAULT_PERMS, FEATURES, corePaths } from '../layout/nav-config';
 
 /**
  * Resolves which tabs a role may see, layering a school's saved overrides on top
@@ -41,6 +41,12 @@ export class PermissionsService {
 
   /** Allowed feature paths for a role in the *current* school. */
   allowedFor(role: ConfigRole): Set<string> {
+    // The Head Master is the school owner: always sees every tab their role is
+    // eligible for (still subject to the super-admin module switches). This also
+    // means newly-added modules appear without re-saving the permission matrix.
+    if (role === 'headmaster') {
+      return new Set(FEATURES.filter((f) => f.roles.includes('headmaster')).map((f) => f.path));
+    }
     const override = this.data.permissions()?.roles?.[role];
     const base = override ?? DEFAULT_PERMS[role] ?? [];
     return new Set([...base, ...corePaths(role)]);

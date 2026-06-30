@@ -94,6 +94,9 @@ export class RolesComponent {
   }
 
   isCore(f: Feature, role: ConfigRole): boolean {
+    // The Head Master always sees every tab they're eligible for, so show those
+    // cells locked-on (their visibility is governed by the module switches).
+    if (role === 'headmaster') return f.roles.includes('headmaster');
     return !!f.core && f.roles.includes(role);
   }
   eligible(f: Feature, role: ConfigRole): boolean {
