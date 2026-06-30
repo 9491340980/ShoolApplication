@@ -37,11 +37,15 @@ import {
   Exam,
   Expense,
   FeeItem,
+  FeePayment,
   Homework,
   MarksDoc,
+  FeeHead,
+  FeeStructure,
   Notice,
   SUBJECTS,
   SchoolPermissions,
+  StaffSalary,
   Student,
   Subject,
   Teacher,
@@ -68,6 +72,10 @@ interface Db {
   examsList?: Exam[];
   /** Per-role tab/permission overrides; null → built-in defaults. */
   permissions?: SchoolPermissions | null;
+  /** Class fee-structure templates. */
+  feeStructures: FeeStructure[];
+  /** Staff salary setup for payroll. */
+  salaries: StaffSalary[];
 }
 
 const EMPTY_DB: Db = {
@@ -82,6 +90,8 @@ const EMPTY_DB: Db = {
   timetables: [],
   subjectsList: [],
   permissions: null,
+  feeStructures: [],
+  salaries: [],
 };
 
 /**
@@ -213,7 +223,7 @@ export class DataService {
     this.db.set(EMPTY_DB);
     this.permsReadySig.set(false);
 
-    const plain = ['students', 'teachers', 'notices', 'homework', 'fees', 'expenses', 'attendance', 'marks'] as const;
+    const plain = ['students', 'teachers', 'notices', 'homework', 'fees', 'expenses', 'attendance', 'marks', 'feeStructures', 'salaries'] as const;
     for (const name of plain) {
       this.unsubs.push(
         onSnapshot(query(collection(fs, name), where('schoolId', '==', schoolId)), (snap) => {
@@ -361,6 +371,8 @@ export class DataService {
       timetables: DEMO_TIMETABLES,
       // Offline demo enables every role; Certificates stays off until enabled (still in testing).
       permissions: { schoolId: DEMO_SCHOOL_ID, roles: {}, disabledModules: ['/certificates'], disabledRoles: [] },
+      feeStructures: [],
+      salaries: [],
     };
   }
 
@@ -515,9 +527,9 @@ export class DataService {
     return f.paidAmount ?? (f.status === 'paid' ? f.amount : 0);
   }
   feeBalance(f: FeeItem): number {
-    return Math.max(0, f.amount - this.feePaid(f));
+    return Math.max(0, f.amount - (f.concession ?? 0) - this.feePaid(f));
   }
-  feePayments(f: FeeItem): { date: string; amount: number }[] {
+  feePayments(f: FeeItem): FeePayment[] {
     if (f.payments?.length) return f.payments;
     const paid = this.feePaid(f);
     return paid > 0 ? [{ date: f.dueDate, amount: paid }] : [];
@@ -647,23 +659,53 @@ export class DataService {
     this.commit({ marks });
   }
 
-  markFeePaid(feeId: string) {
+  private payerName(): string {
+    return this.auth.user()?.name ?? '';
+  }
+
+  markFeePaid(feeId: string, method = 'Cash') {
     const f = this.db().fees.find((x) => x.id === feeId);
     if (!f) return;
     const bal = this.feeBalance(f);
-    const payments = bal > 0 ? [...this.feePayments(f), { date: this.todayStr, amount: bal }] : this.feePayments(f);
-    this.writeFee(f.id, { payments, paidAmount: f.amount, status: 'paid' });
+    const payments = bal > 0 ? [...this.feePayments(f), { date: this.todayStr, amount: bal, method, by: this.payerName() }] : this.feePayments(f);
+    this.writeFee(f.id, { payments, paidAmount: this.feePaid(f) + Math.max(0, bal), status: 'paid' });
   }
 
-  /** Collect an installment against a fee — records a dated payment and updates the balance. */
-  collectFee(feeId: string, installment: number) {
+  /** Collect an installment against a fee — records a dated payment (with method) and updates the balance. */
+  collectFee(feeId: string, installment: number, method = 'Cash') {
     const f = this.db().fees.find((x) => x.id === feeId);
     if (!f || installment <= 0) return;
     const add = Math.min(installment, this.feeBalance(f));
     if (add <= 0) return;
-    const payments = [...this.feePayments(f), { date: this.todayStr, amount: add }];
+    const payments = [...this.feePayments(f), { date: this.todayStr, amount: add, method, by: this.payerName() }];
     const paid = this.feePaid(f) + add;
-    this.writeFee(f.id, { payments, paidAmount: paid, status: paid >= f.amount ? 'paid' : 'pending' });
+    this.writeFee(f.id, { payments, paidAmount: paid, status: paid + (f.concession ?? 0) >= f.amount ? 'paid' : 'pending' });
+  }
+
+  /** Set or clear a concession/scholarship on a fee (audited). */
+  setConcession(feeId: string, amount: number, reason: string) {
+    const f = this.db().fees.find((x) => x.id === feeId);
+    if (!f) return;
+    const conc = Math.max(0, Math.min(Math.floor(Number(amount) || 0), f.amount));
+    const paid = this.feePaid(f);
+    this.writeFee(f.id, {
+      concession: conc,
+      concessionReason: reason.trim(),
+      concessionBy: this.payerName(),
+      concessionAt: new Date().toISOString(),
+      status: paid + conc >= f.amount ? 'paid' : 'pending',
+    });
+  }
+
+  /** Every recorded fee payment, flattened for the daily collection report. */
+  feeCollections(): { studentId: string; label: string; date: string; amount: number; method: string; by: string }[] {
+    const out: { studentId: string; label: string; date: string; amount: number; method: string; by: string }[] = [];
+    for (const f of this.db().fees) {
+      for (const p of f.payments ?? []) {
+        out.push({ studentId: f.studentId, label: f.label, date: p.date, amount: p.amount, method: p.method ?? 'Cash', by: p.by ?? '' });
+      }
+    }
+    return out;
   }
 
   setFeeStatus(feeId: string, status: 'paid' | 'pending') {
@@ -790,7 +832,7 @@ export class DataService {
    * record per student+label, so editing the amount updates rather than dupes.
    * Amount <= 0 removes the fee. Preserves paid/pending status on edits.
    */
-  setStudentFee(student: Student, label: string, amount: number) {
+  setStudentFee(student: Student, label: string, amount: number, dueDate?: string) {
     const id = `${student.id}_fee_${this.feeSlug(label)}`;
     if (!amount || amount <= 0) {
       if (this.fs) void deleteDoc(doc(this.fs, 'fees', id));
@@ -801,14 +843,15 @@ export class DataService {
     // Keep the full installment history; never lose collected amounts when the total is edited.
     const payments = existing ? this.feePayments(existing) : [];
     const paid = payments.reduce((a, p) => a + p.amount, 0);
+    const conc = existing?.concession ?? 0;
     const rec = {
       studentId: student.id,
       label,
       amount,
       payments,
       paidAmount: paid,
-      dueDate: existing?.dueDate ?? this.todayStr,
-      status: paid >= amount ? ('paid' as const) : ('pending' as const),
+      dueDate: dueDate ?? existing?.dueDate ?? this.todayStr,
+      status: paid + conc >= amount ? ('paid' as const) : ('pending' as const),
     };
     if (this.fs) {
       void setDoc(doc(this.fs, 'fees', id), this.clean({ ...rec, schoolId: this.sid }));
@@ -816,6 +859,81 @@ export class DataService {
     }
     const rest = this.db().fees.filter((f) => f.id !== id);
     this.commit({ fees: [...rest, { ...rec, id }] });
+  }
+
+  // ---------- fee structure templates ----------
+
+  readonly feeStructures = computed(() => this.db().feeStructures);
+  structureFor(classId: string): FeeStructure | undefined {
+    return this.db().feeStructures.find((s) => s.classId === classId);
+  }
+  saveStructure(classId: string, heads: FeeHead[]) {
+    const id = this.docId(`struct_${classId}`);
+    const clean = heads.filter((h) => h.label.trim() && h.amount > 0).map((h) => ({ label: h.label.trim(), amount: Math.floor(h.amount), dueDate: h.dueDate || '' }));
+    const rec = { schoolId: this.sid, classId, heads: clean };
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'feeStructures', id), rec);
+      return;
+    }
+    const rest = this.db().feeStructures.filter((s) => s.classId !== classId);
+    this.commit({ feeStructures: [...rest, { ...rec, id }] });
+  }
+  /** Apply a class's structure to every student in it (creates/updates a fee per head). */
+  applyStructure(classId: string): number {
+    const struct = this.structureFor(classId);
+    if (!struct?.heads.length) return 0;
+    const studs = this.studentsOf(classId);
+    for (const s of studs) for (const h of struct.heads) this.setStudentFee(s, h.label, h.amount, h.dueDate || undefined);
+    return studs.length * struct.heads.length;
+  }
+
+  // ---------- staff payroll ----------
+
+  readonly salaries = computed(() => [...this.db().salaries].sort((a, b) => a.name.localeCompare(b.name)));
+  setSalary(input: { id?: string; name: string; role?: string; monthlySalary: number }) {
+    const name = input.name.trim();
+    if (!name || input.monthlySalary <= 0) return;
+    const existing = input.id ? this.db().salaries.find((s) => s.id === input.id) : undefined;
+    const id = input.id ?? this.docId(`sal${Date.now()}-${Math.floor(Math.random() * 1000)}`);
+    const rec = { schoolId: this.sid, name, role: input.role ?? '', monthlySalary: Math.floor(input.monthlySalary), paidMonths: existing?.paidMonths ?? [] };
+    if (this.fs) {
+      void setDoc(doc(this.fs, 'salaries', id), this.clean(rec));
+      return;
+    }
+    const rest = this.db().salaries.filter((s) => s.id !== id);
+    this.commit({ salaries: [...rest, { ...rec, id }] });
+  }
+  removeSalary(id: string) {
+    if (this.fs) {
+      void deleteDoc(doc(this.fs, 'salaries', id));
+      return;
+    }
+    this.commit({ salaries: this.db().salaries.filter((s) => s.id !== id) });
+  }
+  /** Pay a staff member for a month: posts a Salaries expense and marks the month paid. */
+  payStaff(id: string, month: string): boolean {
+    const s = this.db().salaries.find((x) => x.id === id);
+    if (!s || (s.paidMonths ?? []).includes(month)) return false;
+    this.addExpense({
+      type: 'expense',
+      date: `${month}-28`,
+      category: 'Salaries',
+      description: `Salary ${month} — ${s.name}${s.role ? ' (' + s.role + ')' : ''}`,
+      amount: s.monthlySalary,
+      method: 'Bank',
+      payee: s.name,
+      createdBy: this.payerName(),
+    });
+    const patch = { paidMonths: [...(s.paidMonths ?? []), month] };
+    if (this.fs) void updateDoc(doc(this.fs, 'salaries', id), patch);
+    else this.commit({ salaries: this.db().salaries.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
+    return true;
+  }
+  /** Pay all unpaid staff for a month. Returns how many were posted. */
+  payAllStaff(month: string): number {
+    let n = 0;
+    for (const s of this.db().salaries) if (this.payStaff(s.id, month)) n++;
+    return n;
   }
 
   addStudent(input: Omit<Student, 'id' | 'schoolId'>) {

@@ -1,77 +1,153 @@
 @if (isStaff()) {
-  <!-- SECTION-WISE FEE COLLECTION -->
-  <div class="flex gap-2.5 mb-4 flex-wrap items-center">
-    <select class="input max-w-[120px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
-      @for (c of classes(); track c) {
-        <option [value]="c">{{ 'class' | t }} {{ c }}</option>
+  <!-- TABS -->
+  <div class="flex gap-1 bg-page rounded-xl p-1 mb-4 max-w-lg">
+    <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'collect' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('collect')">💰 {{ 'collectTab' | t }}</button>
+    <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'structure' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('structure')">🧾 {{ 'structureTab' | t }}</button>
+    <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'report' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('report')">📊 {{ 'dayReportTab' | t }}</button>
+  </div>
+
+  @if (flash(); as f) { <div class="badge badge-green mb-3">✓ {{ f }}</div> }
+
+  @if (tab() === 'collect') {
+    <!-- SECTION-WISE FEE COLLECTION -->
+    <div class="flex gap-2.5 mb-4 flex-wrap items-center">
+      <select class="input max-w-[120px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
+        @for (c of classes(); track c) { <option [value]="c">{{ 'class' | t }} {{ c }}</option> }
+      </select>
+      <input class="input max-w-[180px]" [placeholder]="'feeName' | t" [ngModel]="label()" (ngModelChange)="label.set($event)" />
+      <input class="input max-w-[200px]" [placeholder]="'🔍 ' + ('searchNameId' | t)" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+      <label class="flex items-center gap-1.5 text-[12px] font-semibold text-muted">{{ 'method' | t }}
+        <select class="input max-w-[110px]" [ngModel]="payMethod()" (ngModelChange)="payMethod.set($event)">
+          @for (m of methods; track m) { <option [value]="m">{{ m }}</option> }
+        </select>
+      </label>
+      @if (pendingRows().length) {
+        <button class="btn-sm rounded-lg bg-[#25D366] text-white font-semibold px-3 py-2 ml-auto" (click)="remindAllPending()">🟢 {{ 'remindPending' | t }} ({{ pendingRows().length }})</button>
       }
-    </select>
-    <input class="input max-w-[200px]" [placeholder]="'feeName' | t" [ngModel]="label()" (ngModelChange)="label.set($event)" />
-    <input class="input max-w-[220px]" [placeholder]="'🔍 ' + ('searchNameId' | t)" [ngModel]="search()" (ngModelChange)="search.set($event)" />
-  </div>
-
-  <!-- live totals -->
-  <div class="grid grid-cols-3 gap-3 mb-4">
-    <div class="card !p-4 text-center">
-      <div class="font-display text-lg sm:text-2xl font-extrabold text-primary leading-none">₹{{ totalFee().toLocaleString('en-IN') }}</div>
-      <div class="text-[11px] text-muted mt-1">{{ 'totalFee' | t }}</div>
     </div>
-    <div class="card !p-4 text-center">
-      <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ collected().toLocaleString('en-IN') }}</div>
-      <div class="text-[11px] text-muted mt-1">{{ 'collected' | t }}</div>
-    </div>
-    <div class="card !p-4 text-center">
-      <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ pending().toLocaleString('en-IN') }}</div>
-      <div class="text-[11px] text-muted mt-1">{{ 'pending' | t }}</div>
-    </div>
-  </div>
 
-  <p class="text-xs text-muted mb-2">💡 {{ 'feeEntryHint' | t }}</p>
+    <!-- live totals -->
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="card !p-4 text-center">
+        <div class="font-display text-lg sm:text-2xl font-extrabold text-primary leading-none">₹{{ totalFee().toLocaleString('en-IN') }}</div>
+        <div class="text-[11px] text-muted mt-1">{{ 'totalFee' | t }}</div>
+      </div>
+      <div class="card !p-4 text-center">
+        <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ collected().toLocaleString('en-IN') }}</div>
+        <div class="text-[11px] text-muted mt-1">{{ 'collected' | t }}</div>
+      </div>
+      <div class="card !p-4 text-center">
+        <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ pending().toLocaleString('en-IN') }}</div>
+        <div class="text-[11px] text-muted mt-1">{{ 'pending' | t }}</div>
+      </div>
+    </div>
 
-  <div class="card !p-0 overflow-hidden divide-y divide-line">
-    @for (s of rows(); track s.id) {
-      <div class="flex items-center gap-3 px-3 sm:px-4 py-2.5 flex-wrap"
-           [class.bg-success-light]="isPaid(s)">
-        <span class="shrink-0 text-[11px] font-bold text-muted tabular-nums min-w-[2.5rem]">{{ s.roll }}</span>
-        <span class="flex-1 min-w-[100px] font-semibold text-[14px] truncate">{{ s.name }}
-          @if (s.admissionNo) { <span class="text-muted font-normal text-[11px]">· {{ s.admissionNo }}</span> }
-        </span>
-        <!-- total fee -->
-        <label class="flex items-center gap-1 shrink-0">
-          <span class="text-[10px] text-muted uppercase">{{ 'totalFee' | t }}</span>
-          <span class="text-muted text-[14px]">₹</span>
-          <input class="w-20 text-center bg-white border border-line rounded-lg py-1.5 text-[15px]" type="number" min="0"
-                 [ngModel]="amountVal(s)" (ngModelChange)="onAmountInput(s, $event)" (change)="commitAmount(s)" (keyup.enter)="commitAmount(s)" placeholder="0" />
-        </label>
-        @if (amountOf(s)) {
-          <!-- paid / balance -->
-          <div class="shrink-0 text-[11px] leading-tight text-right min-w-[78px]">
-            <div class="text-success font-bold">✓ ₹{{ paidOf(s) }}</div>
-            <div [class]="balanceOf(s) > 0 ? 'text-danger font-bold' : 'text-muted'">{{ 'feePending' | t }}: ₹{{ balanceOf(s) }}</div>
-          </div>
-          <!-- collect installment -->
-          @if (balanceOf(s) > 0) {
-            <div class="flex items-center gap-1 shrink-0">
-              <input class="w-20 text-center bg-white border border-line rounded-lg py-1.5 text-[14px]" type="number" min="1" [max]="balanceOf(s)"
-                     [ngModel]="collectInput()[s.id]" (ngModelChange)="setCollect(s, $event)" [placeholder]="'collectPh' | t" />
-              <button class="rounded-lg bg-success text-white font-bold px-2.5 py-1.5 text-[12px]" (click)="collect(s)">＋ {{ 'collect' | t }}</button>
+    <p class="text-xs text-muted mb-2">💡 {{ 'feeEntryHint' | t }}</p>
+
+    <div class="card !p-0 overflow-hidden divide-y divide-line">
+      @for (s of rows(); track s.id) {
+        <div class="flex items-center gap-3 px-3 sm:px-4 py-2.5 flex-wrap" [class.bg-success-light]="isPaid(s)">
+          <span class="shrink-0 text-[11px] font-bold text-muted tabular-nums min-w-[2.5rem]">{{ s.roll }}</span>
+          <span class="flex-1 min-w-[100px] font-semibold text-[14px] truncate">{{ s.name }}
+            @if (s.admissionNo) { <span class="text-muted font-normal text-[11px]">· {{ s.admissionNo }}</span> }
+            @if (concOf(s) > 0) { <span class="badge badge-purple !text-[10px] ml-1">🎁 ₹{{ concOf(s) }}</span> }
+          </span>
+          <!-- total fee -->
+          <label class="flex items-center gap-1 shrink-0">
+            <span class="text-[10px] text-muted uppercase">{{ 'totalFee' | t }}</span>
+            <span class="text-muted text-[14px]">₹</span>
+            <input class="w-20 text-center bg-white border border-line rounded-lg py-1.5 text-[15px]" type="number" min="0"
+                   [ngModel]="amountVal(s)" (ngModelChange)="onAmountInput(s, $event)" (change)="commitAmount(s)" (keyup.enter)="commitAmount(s)" placeholder="0" />
+          </label>
+          @if (amountOf(s)) {
+            <div class="shrink-0 text-[11px] leading-tight text-right min-w-[78px]">
+              <div class="text-success font-bold">✓ ₹{{ paidOf(s) }}</div>
+              <div [class]="balanceOf(s) > 0 ? 'text-danger font-bold' : 'text-muted'">{{ 'feePending' | t }}: ₹{{ balanceOf(s) }}</div>
             </div>
+            @if (balanceOf(s) > 0) {
+              <div class="flex items-center gap-1 shrink-0">
+                <input class="w-20 text-center bg-white border border-line rounded-lg py-1.5 text-[14px]" type="number" min="1" [max]="balanceOf(s)"
+                       [ngModel]="collectInput()[s.id]" (ngModelChange)="setCollect(s, $event)" [placeholder]="'collectPh' | t" />
+                <button class="rounded-lg bg-success text-white font-bold px-2.5 py-1.5 text-[12px]" (click)="collect(s)">＋ {{ 'collect' | t }}</button>
+              </div>
+            } @else {
+              <span class="shrink-0 badge badge-green">✓ {{ 'paid' | t }}</span>
+            }
+            <button class="shrink-0 rounded-lg border border-line text-violet-600 px-2.5 py-1.5 text-[13px]" [title]="'concession' | t" (click)="openConcession(s)">🎁</button>
+            <button class="shrink-0 rounded-lg border border-line text-primary px-2.5 py-1.5 text-[13px]" [title]="'paymentHistory' | t" (click)="openHistory(s)">📜</button>
+            <button class="shrink-0 rounded-lg border border-line text-primary px-2.5 py-1.5 text-[13px]" [title]="'feeReceipt' | t" (click)="openReceipt(s)">🧾</button>
+            @if (balanceOf(s) > 0) {
+              <button class="shrink-0 rounded-lg bg-[#25D366] text-white px-2.5 py-1.5 text-[13px]" [title]="'whatsapp' | t" (click)="share.openChooser(s, waFee(s))">🟢</button>
+            }
           } @else {
-            <span class="shrink-0 badge badge-green">✓ {{ 'paid' | t }}</span>
+            <span class="shrink-0 text-[11px] text-muted">—</span>
           }
-          <button class="shrink-0 rounded-lg border border-line text-primary px-2.5 py-1.5 text-[13px]" [title]="'paymentHistory' | t" (click)="openHistory(s)">📜</button>
-          <button class="shrink-0 rounded-lg border border-line text-primary px-2.5 py-1.5 text-[13px]" [title]="'feeReceipt' | t" (click)="openReceipt(s)">🧾</button>
-          @if (balanceOf(s) > 0) {
-            <button class="shrink-0 rounded-lg bg-[#25D366] text-white px-2.5 py-1.5 text-[13px]" [title]="'whatsapp' | t" (click)="share.openChooser(s, waFee(s))">🟢</button>
-          }
-        } @else {
-          <span class="shrink-0 text-[11px] text-muted">—</span>
+        </div>
+      } @empty {
+        <div class="px-4 py-8 text-center text-muted text-sm">—</div>
+      }
+    </div>
+  }
+
+  @if (tab() === 'structure') {
+    <!-- FEE STRUCTURE TEMPLATE -->
+    <div class="card mb-4">
+      <div class="card-title">🧾 {{ 'structureTab' | t }} — {{ 'class' | t }}
+        <select class="input max-w-[110px] ml-2" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
+          @for (c of classes(); track c) { <option [value]="c">{{ c }}</option> }
+        </select>
+      </div>
+      <p class="text-xs text-muted mb-3">💡 {{ 'structureHint' | t }}</p>
+      <div class="grid gap-2 max-w-2xl">
+        <div class="grid grid-cols-[1fr_120px_150px_auto] gap-2 text-[11px] font-semibold text-muted px-0.5">
+          <span>{{ 'feeHead' | t }}</span><span class="text-center">{{ 'amount' | t }} (₹)</span><span>{{ 'due' | t }}</span><span></span>
+        </div>
+        @for (h of structHeads(); track $index) {
+          <div class="grid grid-cols-[1fr_120px_150px_auto] gap-2 items-center">
+            <input class="input" placeholder="Tuition / Bus / Exam…" [ngModel]="h.label" (ngModelChange)="setHead($index, 'label', $event)" />
+            <input class="input text-center" type="number" min="0" [ngModel]="h.amount" (ngModelChange)="setHead($index, 'amount', $event)" />
+            <input class="input" type="date" [ngModel]="h.dueDate" (ngModelChange)="setHead($index, 'dueDate', $event)" />
+            <button class="w-9 h-9 shrink-0 rounded-lg border border-line text-red-500 hover:border-danger font-bold" (click)="removeHead($index)">✕</button>
+          </div>
+        }
+        <button class="text-[13px] text-primary font-semibold text-left px-0.5" (click)="addHead()">＋ {{ 'addHead' | t }}</button>
+      </div>
+      <div class="flex gap-2 mt-4">
+        <button class="btn-outline" (click)="saveStructure()">💾 {{ 'save' | t }}</button>
+        <button class="btn-blue" (click)="applyStructure()">✅ {{ 'applyToClass' | t }}</button>
+      </div>
+    </div>
+  }
+
+  @if (tab() === 'report') {
+    <!-- DAILY COLLECTION REPORT -->
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+      <input class="input max-w-[170px]" type="date" [ngModel]="reportDate()" (ngModelChange)="reportDate.set($event)" />
+      <span class="text-[13px] font-bold ml-auto">{{ 'total' | t }}: <span class="text-success">₹{{ dayTotal().toLocaleString('en-IN') }}</span></span>
+    </div>
+    @if (dayByMethod().length) {
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        @for (m of dayByMethod(); track m.method) {
+          <div class="card !p-3 text-center">
+            <div class="font-display text-lg font-extrabold text-primary leading-none">₹{{ m.total.toLocaleString('en-IN') }}</div>
+            <div class="text-[11px] text-muted mt-1">{{ m.method }}</div>
+          </div>
         }
       </div>
-    } @empty {
-      <div class="px-4 py-8 text-center text-muted text-sm">—</div>
     }
-  </div>
+    <div class="card !p-0 overflow-hidden divide-y divide-line">
+      @for (c of dayCollections(); track $index) {
+        <div class="flex items-center gap-3 px-4 py-2.5 text-[13px]">
+          <span class="flex-1 font-semibold truncate">{{ c.name }} <span class="text-muted font-normal text-[11px]">· {{ c.label }}</span></span>
+          <span class="badge badge-blue !text-[10px]">{{ c.method }}</span>
+          @if (c.by) { <span class="text-[11px] text-muted hidden sm:inline">{{ c.by }}</span> }
+          <span class="font-bold text-success tabular-nums">+₹{{ c.amount.toLocaleString('en-IN') }}</span>
+        </div>
+      } @empty {
+        <div class="px-4 py-8 text-center text-muted text-sm">— {{ 'noCollections' | t }}</div>
+      }
+    </div>
+  }
 } @else {
   <!-- PARENT / STUDENT FEE DETAILS -->
   <div class="card max-w-2xl">
@@ -219,7 +295,7 @@
               <div class="divide-y divide-line border border-line rounded-lg overflow-hidden">
                 @for (p of x.payments; track $index) {
                   <div class="flex justify-between items-center px-3 py-1.5 text-[12.5px]">
-                    <span class="text-muted">🗓️ {{ p.date }}</span>
+                    <span class="text-muted">🗓️ {{ p.date }} @if (p.method) { <span class="badge badge-blue !text-[9px] !py-0 ml-1">{{ p.method }}</span> }</span>
                     <span class="font-semibold text-success">+ ₹{{ p.amount }}</span>
                   </div>
                 }
@@ -234,6 +310,31 @@
         } @empty {
           <div class="text-center text-muted text-sm py-6">— {{ 'noPaymentsYet' | t }}</div>
         }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- CONCESSION / SCHOLARSHIP MODAL -->
+@if (concStudent(); as s) {
+  <div class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" (click)="closeConcession()">
+    <div class="bg-white w-full max-w-sm rounded-2xl" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between gap-2 px-4 py-3 bg-page border-b border-line">
+        <div class="font-bold text-[15px]">🎁 {{ 'concession' | t }} — {{ s.name }}</div>
+        <button class="text-muted hover:text-ink cursor-pointer text-sm font-semibold" (click)="closeConcession()">✕</button>
+      </div>
+      <div class="p-4 grid gap-3">
+        <p class="text-[12px] text-muted -mt-1">{{ 'concessionHint' | t }}</p>
+        <label class="text-[12px] font-semibold text-muted">{{ 'concessionAmount' | t }} (₹)
+          <input class="input mt-1" type="number" min="0" [ngModel]="concAmount()" (ngModelChange)="concAmount.set($event)" placeholder="0" />
+        </label>
+        <label class="text-[12px] font-semibold text-muted">{{ 'reason' | t }}
+          <input class="input mt-1" [ngModel]="concReason()" (ngModelChange)="concReason.set($event)" placeholder="Merit / Sibling / Staff ward…" />
+        </label>
+        <div class="flex gap-2 mt-1">
+          <button class="btn-blue flex-1" (click)="saveConcession()">💾 {{ 'save' | t }}</button>
+          <button class="btn-outline" (click)="closeConcession()">{{ 'cancel' | t }}</button>
+        </div>
       </div>
     </div>
   </div>

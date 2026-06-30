@@ -145,6 +145,8 @@ export interface Notice {
 export interface FeePayment {
   date: string; // ISO yyyy-mm-dd
   amount: number;
+  method?: string; // Cash / UPI / Cheque / Card / Bank
+  by?: string; // who collected it
 }
 
 export interface FeeItem {
@@ -157,6 +159,37 @@ export interface FeeItem {
   payments?: FeePayment[]; // installment history
   dueDate: string;
   status: 'paid' | 'pending';
+  /** Concession / scholarship waived off the total (reduces the balance). */
+  concession?: number;
+  concessionReason?: string;
+  concessionBy?: string;
+  concessionAt?: string; // ISO timestamp
+}
+
+/** One head of a class fee structure (e.g. Tuition / Bus / Exam). */
+export interface FeeHead {
+  label: string;
+  amount: number;
+  dueDate?: string; // ISO yyyy-mm-dd
+}
+
+/** A class's fee structure template — applied to every student in the class. */
+export interface FeeStructure {
+  id?: string;
+  schoolId?: string;
+  classId: string;
+  heads: FeeHead[];
+}
+
+/** A staff member's pay setup; payroll runs post salaries into the cash book. */
+export interface StaffSalary {
+  id: string;
+  schoolId?: string;
+  name: string;
+  role?: string;
+  monthlySalary: number;
+  /** "yyyy-mm" months already paid (so a month isn't double-posted). */
+  paidMonths?: string[];
 }
 
 export interface Expense {

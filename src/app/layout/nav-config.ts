@@ -41,6 +41,7 @@ export const NAV: Record<Role, NavSection[]> = {
         { path: '/marks', icon: 'file', label: 'marksResults' },
         { path: '/fees', icon: 'rupee', label: 'feeManagement' },
         { path: '/expenses', icon: 'rupee', label: 'expenses' },
+        { path: '/payroll', icon: 'rupee', label: 'payroll' },
       ],
     },
     {
@@ -71,6 +72,7 @@ export const NAV: Record<Role, NavSection[]> = {
       items: [
         { path: '/fees', icon: 'rupee', label: 'feeManagement' },
         { path: '/expenses', icon: 'rupee', label: 'expenses' },
+        { path: '/payroll', icon: 'rupee', label: 'payroll' },
         { path: '/reports', icon: 'chart', label: 'reports' },
       ],
     },
@@ -181,6 +183,7 @@ export const FEATURES: Feature[] = [
   { path: '/marks', icon: 'file', label: 'marksResults', section: 'studentsSection', roles: ['headmaster', 'teacher', 'parent', 'student'] },
   { path: '/fees', icon: 'rupee', label: 'feeManagement', section: 'studentsSection', roles: ['headmaster', 'teacher', 'accountant', 'parent', 'student'] },
   { path: '/expenses', icon: 'rupee', label: 'expenses', section: 'studentsSection', roles: ['headmaster', 'accountant'] },
+  { path: '/payroll', icon: 'rupee', label: 'payroll', section: 'school', roles: ['headmaster', 'accountant'] },
   { path: '/reports', icon: 'chart', label: 'reports', section: 'school', roles: ['headmaster', 'accountant'] },
   { path: '/halltickets', icon: 'file', label: 'hallTickets', section: 'school', roles: ['headmaster'] },
   { path: '/certificates', icon: 'file', label: 'certificates', section: 'school', roles: ['headmaster', 'accountant'] },
@@ -222,6 +225,7 @@ export const PAGE_TITLES: Record<string, TKey> = {
   '/marks': 'marksResults',
   '/fees': 'feeManagement',
   '/expenses': 'expenses',
+  '/payroll': 'payroll',
   '/timetable': 'timetable',
   '/teachers': 'teachers',
   '/profile': 'myProfile',

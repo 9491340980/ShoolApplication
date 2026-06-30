@@ -1,0 +1,98 @@
+<!-- CONTROLS -->
+<div class="flex items-center gap-2 mb-4 flex-wrap">
+  <input class="input max-w-[170px] font-semibold" type="month" [ngModel]="month()" (ngModelChange)="month.set($event)" />
+  <button class="btn-blue ml-auto" (click)="payAll()">💸 {{ 'payAll' | t }}</button>
+</div>
+
+@if (flash(); as f) { <div class="badge badge-green mb-3">✓ {{ f }}</div> }
+
+<!-- SUMMARY -->
+<div class="grid grid-cols-3 gap-3 mb-4">
+  <div class="card !p-4 text-center">
+    <div class="font-display text-lg sm:text-2xl font-extrabold text-primary leading-none">₹{{ total().toLocaleString('en-IN') }}</div>
+    <div class="text-[11px] text-muted mt-1">{{ 'monthlyPayroll' | t }}</div>
+  </div>
+  <div class="card !p-4 text-center">
+    <div class="font-display text-lg sm:text-2xl font-extrabold text-success leading-none">₹{{ paidTotal().toLocaleString('en-IN') }}</div>
+    <div class="text-[11px] text-muted mt-1">{{ 'paid' | t }} ({{ paidCount() }})</div>
+  </div>
+  <div class="card !p-4 text-center">
+    <div class="font-display text-lg sm:text-2xl font-extrabold text-danger leading-none">₹{{ (total() - paidTotal()).toLocaleString('en-IN') }}</div>
+    <div class="text-[11px] text-muted mt-1">{{ 'pending' | t }}</div>
+  </div>
+</div>
+
+<!-- ADD / EDIT STAFF -->
+<div class="card mb-4">
+  <div class="card-title">{{ editingId() ? '✏️ ' + ('edit' | t) : '➕ ' + ('addStaff' | t) }}</div>
+  <div class="grid sm:grid-cols-[1fr_1fr_140px_auto] gap-2.5 items-end">
+    <label class="text-[11px] font-semibold text-muted">{{ 'fullName' | t }}
+      <input class="input mt-1" [ngModel]="fName()" (ngModelChange)="fName.set($event)" />
+    </label>
+    <label class="text-[11px] font-semibold text-muted">{{ 'roleLabel' | t }}
+      <input class="input mt-1" [ngModel]="fRole()" (ngModelChange)="fRole.set($event)" placeholder="Teacher / Clerk / Driver…" />
+    </label>
+    <label class="text-[11px] font-semibold text-muted">{{ 'monthlySalary' | t }} (₹)
+      <input class="input mt-1 text-center" type="number" min="0" [ngModel]="fAmount()" (ngModelChange)="fAmount.set($event)" placeholder="0" />
+    </label>
+    <div class="flex gap-2">
+      <button class="btn-blue" (click)="save()">💾 {{ editingId() ? ('update' | t) : ('add' | t) }}</button>
+      @if (editingId()) { <button class="btn-outline" (click)="cancel()">{{ 'cancel' | t }}</button> }
+    </div>
+  </div>
+</div>
+
+<!-- STAFF LIST -->
+<div class="card !p-0 overflow-hidden divide-y divide-line">
+  @for (s of staff(); track s.id) {
+    <div class="flex items-center gap-3 px-4 py-3 flex-wrap" [class.bg-success-light]="isPaid(s)">
+      <div class="flex-1 min-w-[120px]">
+        <div class="font-semibold text-[14px]">{{ s.name }} @if (s.role) { <span class="text-muted font-normal text-[11px]">· {{ s.role }}</span> }</div>
+        <div class="text-[12px] text-muted">₹{{ s.monthlySalary.toLocaleString('en-IN') }} / {{ 'month' | t }}</div>
+      </div>
+      @if (isPaid(s)) {
+        <span class="badge badge-green">✓ {{ 'paid' | t }}</span>
+      } @else {
+        <button class="btn-sm rounded-lg bg-success text-white font-semibold px-3 py-1.5" (click)="pay(s)">💸 {{ 'pay' | t }}</button>
+      }
+      <button class="shrink-0 rounded-lg border border-line text-primary px-2.5 py-1.5 text-[13px]" [title]="'salarySlip' | t" (click)="openSlip(s)">🧾</button>
+      <button class="shrink-0 rounded-lg border border-line text-muted px-2.5 py-1.5 text-[13px]" [title]="'edit' | t" (click)="edit(s)">✏️</button>
+      <button class="shrink-0 rounded-lg border border-line text-red-500 px-2.5 py-1.5 text-[13px]" [title]="'remove' | t" (click)="remove(s)">🗑️</button>
+    </div>
+  } @empty {
+    <div class="px-4 py-8 text-center text-muted text-sm">— {{ 'noStaff' | t }}</div>
+  }
+</div>
+
+<!-- SALARY SLIP MODAL -->
+@if (slipStaff(); as s) {
+  <div class="fixed inset-0 bg-black/50 z-[70] flex items-start sm:items-center justify-center p-0 sm:p-4 overflow-y-auto" (click)="closeSlip()">
+    <div class="bg-white w-full sm:max-w-md my-0 sm:my-4" (click)="$event.stopPropagation()">
+      <div class="no-print flex items-center justify-between gap-2 px-4 py-3 bg-page border-b border-line sticky top-0">
+        <button class="text-muted hover:text-ink cursor-pointer text-sm font-semibold" (click)="closeSlip()">✕ {{ 'close' | t }}</button>
+        <button class="btn-blue btn-sm" [disabled]="downloading()" (click)="downloadSlip()">⬇️ {{ downloading() ? '…' : ('downloadPrint' | t) }}</button>
+      </div>
+      <div id="slip-print" class="p-6 bg-white text-ink">
+        <div class="text-center border-b-2 border-primary pb-3 mb-4">
+          @if (logo()) { <img [src]="logo()" class="w-14 h-14 object-contain mx-auto mb-1.5" alt="logo" /> }
+          <div class="font-display text-xl font-extrabold text-primary">{{ schoolName() }}</div>
+          @if (schoolAddress()) { <div class="text-[11px] text-muted">{{ schoolAddress() }}</div> }
+          <div class="text-[12px] text-muted mt-1">{{ 'salarySlip' | t }} — {{ fmtMonth(month()) }}</div>
+        </div>
+        <table class="w-full text-[13px] mb-3">
+          <tbody>
+            <tr><td class="py-1.5 text-muted">{{ 'fullName' | t }}</td><td class="py-1.5 text-right font-bold">{{ s.name }}</td></tr>
+            <tr><td class="py-1.5 text-muted">{{ 'roleLabel' | t }}</td><td class="py-1.5 text-right font-semibold">{{ s.role || '—' }}</td></tr>
+            <tr><td class="py-1.5 text-muted">{{ 'month' | t }}</td><td class="py-1.5 text-right font-semibold">{{ fmtMonth(month()) }}</td></tr>
+            <tr class="border-t border-line"><td class="py-2 font-bold">{{ 'netPay' | t }}</td><td class="py-2 text-right font-extrabold text-primary text-[16px]">₹{{ s.monthlySalary.toLocaleString('en-IN') }}</td></tr>
+            <tr><td class="py-1.5 text-muted">{{ 'status' | t }}</td><td class="py-1.5 text-right font-semibold" [class]="isPaid(s) ? 'text-success' : 'text-danger'">{{ (isPaid(s) ? 'paid' : 'pending') | t }}</td></tr>
+          </tbody>
+        </table>
+        <div class="flex justify-between mt-12 text-[12px] font-semibold text-muted">
+          <span>{{ 'staffSign' | t }}</span>
+          <span>{{ 'authSign' | t }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+}

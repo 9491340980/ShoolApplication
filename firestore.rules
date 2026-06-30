@@ -49,6 +49,8 @@ service cloud.firestore {
     match /classesList/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /examsList/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if isHM() && writingOwnSchool(); allow delete: if isHM() && sameSchool(); }
     match /fees/{id}       { allow read: if sameSchool() || isSuper(); allow create, update: if canMoney() && writingOwnSchool(); allow delete: if canMoney() && sameSchool(); }
+    match /feeStructures/{id} { allow read: if sameSchool() || isSuper(); allow create, update: if canMoney() && writingOwnSchool(); allow delete: if canMoney() && sameSchool(); }
+    match /salaries/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if canMoney() && writingOwnSchool(); allow delete: if canMoney() && sameSchool(); }
     match /expenses/{id}   { allow read: if sameSchool() || isSuper(); allow create, update: if canMoney() && writingOwnSchool(); allow delete: if canMoney() && sameSchool(); }
     // Per-role tab permissions: readable by the school (drives each user's sidebar),
     // writable by the school's Head Master or the Super Admin (any school).
