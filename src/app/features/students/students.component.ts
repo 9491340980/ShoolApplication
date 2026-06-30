@@ -125,6 +125,9 @@ export class StudentsComponent {
   newPen = signal('');
   newApaar = signal('');
   newAddress = signal('');
+  /** Student photos are stored in the Firestore doc today, which is wasteful at
+   * scale — hidden until we move images to Firebase Storage. Flip to re-enable. */
+  photosEnabled = false;
   newPhoto = signal('');
   photoBusy = signal(false);
   async onPhotoPick(event: Event) {
