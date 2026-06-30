@@ -158,7 +158,7 @@ export const CONFIG_ROLES: ConfigRole[] = ['headmaster', 'teacher', 'accountant'
 export const DEFAULT_DISABLED_ROLES: Role[] = ['parent', 'student'];
 
 /** Modules that ship switched OFF (e.g. still under testing) until a super admin enables them. */
-export const DEFAULT_DISABLED_MODULES: string[] = ['/certificates'];
+export const DEFAULT_DISABLED_MODULES: string[] = ['/certificates', '/payroll'];
 
 /**
  * The catalogue of toggleable features for the permission matrix. `roles` lists

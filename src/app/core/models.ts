@@ -181,14 +181,31 @@ export interface FeeStructure {
   heads: FeeHead[];
 }
 
+export interface SalaryComponent {
+  label: string;
+  amount: number;
+}
+/** One month's salary payout — links to the cash-book expense it created. */
+export interface SalaryPayout {
+  month: string; // yyyy-mm
+  date: string; // ISO yyyy-mm-dd it was paid
+  amount: number; // net paid
+  method: string;
+  expenseId: string; // the cash-book Expense this created (for clean reversal)
+}
+
 /** A staff member's pay setup; payroll runs post salaries into the cash book. */
 export interface StaffSalary {
   id: string;
   schoolId?: string;
   name: string;
   role?: string;
-  monthlySalary: number;
-  /** "yyyy-mm" months already paid (so a month isn't double-posted). */
+  monthlySalary: number; // base; net = base + allowances − deductions
+  allowances?: SalaryComponent[];
+  deductions?: SalaryComponent[];
+  /** Full payout history (month → linked expense). */
+  payouts?: SalaryPayout[];
+  /** Legacy: months already paid (kept for back-compat; payouts is the source of truth). */
   paidMonths?: string[];
 }
 
@@ -206,6 +223,12 @@ export interface Expense {
   /** Vendor (for expense) or source (for income). */
   payee?: string;
   createdBy: string;
+  /** Auto-generated entries (e.g. from Payroll) carry their origin so they stay
+   * in sync, can't be hand-edited, and never double-post. */
+  source?: 'payroll';
+  refId?: string; // e.g. `${staffId}:${month}`
+  period?: string; // yyyy-mm
+  locked?: boolean; // managed by its source module, not editable in the cash book
 }
 
 export const EXPENSE_CATEGORIES = ['Salaries', 'Utilities', 'Maintenance', 'Supplies', 'Transport', 'Events', 'Rent', 'Books & Stationery', 'Marketing', 'Taxes & Fees', 'Miscellaneous'];

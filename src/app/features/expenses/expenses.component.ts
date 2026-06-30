@@ -55,6 +55,7 @@ export class ExpensesComponent {
     this.fMethod.set(PAYMENT_METHODS[0]);
   }
   startEdit(e: Expense) {
+    if (e.locked) return; // payroll-managed entries are edited from the Payroll page
     this.editingId.set(e.id);
     this.entryType.set(e.type ?? 'expense');
     this.fDate.set(e.date);
@@ -89,6 +90,7 @@ export class ExpensesComponent {
     setTimeout(() => this.added.set(false), 2000);
   }
   remove(e: Expense) {
+    if (e.locked) return; // reverse it from the Payroll page instead
     if (confirm(`Delete "${e.description || e.category}" — ₹${e.amount}?`)) {
       this.data.deleteExpense(e.id);
       if (this.editingId() === e.id) this.resetForm();

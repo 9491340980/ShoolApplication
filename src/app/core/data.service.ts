@@ -44,6 +44,8 @@ import {
   FeeStructure,
   Notice,
   SUBJECTS,
+  SalaryComponent,
+  SalaryPayout,
   SchoolPermissions,
   StaffSalary,
   Student,
@@ -370,7 +372,7 @@ export class DataService {
       marks: DEMO_MARKS,
       timetables: DEMO_TIMETABLES,
       // Offline demo enables every role; Certificates stays off until enabled (still in testing).
-      permissions: { schoolId: DEMO_SCHOOL_ID, roles: {}, disabledModules: ['/certificates'], disabledRoles: [] },
+      permissions: { schoolId: DEMO_SCHOOL_ID, roles: {}, disabledModules: ['/certificates', '/payroll'], disabledRoles: [] },
       feeStructures: [],
       salaries: [],
     };
@@ -890,18 +892,40 @@ export class DataService {
   // ---------- staff payroll ----------
 
   readonly salaries = computed(() => [...this.db().salaries].sort((a, b) => a.name.localeCompare(b.name)));
-  setSalary(input: { id?: string; name: string; role?: string; monthlySalary: number }) {
+
+  /** Net pay = base + allowances − deductions (never below 0). */
+  netSalary(s: StaffSalary): number {
+    const add = (s.allowances ?? []).reduce((a, c) => a + (c.amount || 0), 0);
+    const cut = (s.deductions ?? []).reduce((a, c) => a + (c.amount || 0), 0);
+    return Math.max(0, Math.round(s.monthlySalary + add - cut));
+  }
+  /** Has this staff member been paid for the month? */
+  staffPaidFor(s: StaffSalary, month: string): SalaryPayout | undefined {
+    return (s.payouts ?? []).find((p) => p.month === month);
+  }
+
+  setSalary(input: { id?: string; name: string; role?: string; monthlySalary: number; allowances?: SalaryComponent[]; deductions?: SalaryComponent[] }) {
     const name = input.name.trim();
     if (!name || input.monthlySalary <= 0) return;
     const existing = input.id ? this.db().salaries.find((s) => s.id === input.id) : undefined;
     const id = input.id ?? this.docId(`sal${Date.now()}-${Math.floor(Math.random() * 1000)}`);
-    const rec = { schoolId: this.sid, name, role: input.role ?? '', monthlySalary: Math.floor(input.monthlySalary), paidMonths: existing?.paidMonths ?? [] };
+    const clean = (list?: SalaryComponent[]) => (list ?? []).filter((c) => c.label.trim() && c.amount > 0).map((c) => ({ label: c.label.trim(), amount: Math.round(c.amount) }));
+    const rec: StaffSalary = {
+      id,
+      schoolId: this.sid,
+      name,
+      role: input.role ?? '',
+      monthlySalary: Math.round(input.monthlySalary),
+      allowances: clean(input.allowances),
+      deductions: clean(input.deductions),
+      payouts: existing?.payouts ?? [],
+    };
     if (this.fs) {
       void setDoc(doc(this.fs, 'salaries', id), this.clean(rec));
       return;
     }
     const rest = this.db().salaries.filter((s) => s.id !== id);
-    this.commit({ salaries: [...rest, { ...rec, id }] });
+    this.commit({ salaries: [...rest, rec] });
   }
   removeSalary(id: string) {
     if (this.fs) {
@@ -910,29 +934,48 @@ export class DataService {
     }
     this.commit({ salaries: this.db().salaries.filter((s) => s.id !== id) });
   }
-  /** Pay a staff member for a month: posts a Salaries expense and marks the month paid. */
-  payStaff(id: string, month: string): boolean {
+
+  private saveSalaryRec(id: string, patch: Partial<StaffSalary>) {
+    if (this.fs) void updateDoc(doc(this.fs, 'salaries', id), this.clean(patch));
+    else this.commit({ salaries: this.db().salaries.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
+  }
+
+  /** Pay a staff member for a month: posts a linked Salaries expense and records the payout. */
+  payStaff(id: string, month: string, method = 'Bank'): boolean {
     const s = this.db().salaries.find((x) => x.id === id);
-    if (!s || (s.paidMonths ?? []).includes(month)) return false;
-    this.addExpense({
+    if (!s || this.staffPaidFor(s, month)) return false;
+    const amount = this.netSalary(s);
+    const expenseId = this.addExpense({
       type: 'expense',
       date: `${month}-28`,
       category: 'Salaries',
       description: `Salary ${month} — ${s.name}${s.role ? ' (' + s.role + ')' : ''}`,
-      amount: s.monthlySalary,
-      method: 'Bank',
+      amount,
+      method,
       payee: s.name,
       createdBy: this.payerName(),
+      source: 'payroll',
+      refId: `${id}:${month}`,
+      period: month,
+      locked: true,
     });
-    const patch = { paidMonths: [...(s.paidMonths ?? []), month] };
-    if (this.fs) void updateDoc(doc(this.fs, 'salaries', id), patch);
-    else this.commit({ salaries: this.db().salaries.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
+    const payout: SalaryPayout = { month, date: this.todayStr, amount, method, expenseId };
+    this.saveSalaryRec(id, { payouts: [...(s.payouts ?? []), payout] });
+    return true;
+  }
+  /** Reverse a month's payment: deletes the linked cash-book expense and drops the payout. */
+  reversePay(id: string, month: string): boolean {
+    const s = this.db().salaries.find((x) => x.id === id);
+    const payout = s ? this.staffPaidFor(s, month) : undefined;
+    if (!s || !payout) return false;
+    this.deleteExpense(payout.expenseId);
+    this.saveSalaryRec(id, { payouts: (s.payouts ?? []).filter((p) => p.month !== month) });
     return true;
   }
   /** Pay all unpaid staff for a month. Returns how many were posted. */
-  payAllStaff(month: string): number {
+  payAllStaff(month: string, method = 'Bank'): number {
     let n = 0;
-    for (const s of this.db().salaries) if (this.payStaff(s.id, month)) n++;
+    for (const s of this.db().salaries) if (this.payStaff(s.id, month, method)) n++;
     return n;
   }
 
@@ -1037,13 +1080,11 @@ export class DataService {
     this.commit({ fees: [...this.db().fees, { ...input, id }] });
   }
 
-  addExpense(input: Omit<Expense, 'id' | 'schoolId'>) {
+  addExpense(input: Omit<Expense, 'id' | 'schoolId'>): string {
     const id = this.docId(`exp${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
-    if (this.fs) {
-      void setDoc(doc(this.fs, 'expenses', id), this.clean({ ...input, schoolId: this.sid }));
-      return;
-    }
-    this.commit({ expenses: [...this.db().expenses, { ...input, id }] });
+    if (this.fs) void setDoc(doc(this.fs, 'expenses', id), this.clean({ ...input, schoolId: this.sid }));
+    else this.commit({ expenses: [...this.db().expenses, { ...input, id }] });
+    return id;
   }
 
   updateExpense(id: string, patch: Partial<Expense>) {

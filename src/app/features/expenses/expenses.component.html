@@ -165,8 +165,12 @@
             </div>
           </div>
           <span class="font-semibold tabular-nums shrink-0" [class]="isInc(e) ? 'text-success' : 'text-danger'">{{ isInc(e) ? '+' : '−' }}₹{{ e.amount.toLocaleString('en-IN') }}</span>
-          <button class="text-muted hover:text-primary text-sm shrink-0" [title]="'edit' | t" (click)="startEdit(e)">✏️</button>
-          <button class="text-muted hover:text-danger text-sm shrink-0" [title]="'remove' | t" (click)="remove(e)">🗑️</button>
+          @if (e.locked) {
+            <span class="text-muted text-sm shrink-0" [title]="'fromPayroll' | t">🔒</span>
+          } @else {
+            <button class="text-muted hover:text-primary text-sm shrink-0" [title]="'edit' | t" (click)="startEdit(e)">✏️</button>
+            <button class="text-muted hover:text-danger text-sm shrink-0" [title]="'remove' | t" (click)="remove(e)">🗑️</button>
+          }
         </div>
       }
     </div>

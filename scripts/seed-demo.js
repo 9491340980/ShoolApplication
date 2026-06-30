@@ -80,7 +80,7 @@ async function main() {
 
   // Permissions: demo showcases every role & module (parent/student are OFF by
   // default for real schools, but ON here so the demo logins all work).
-  await db.collection('permissions').doc(`${SID}_perms`).set({ schoolId: SID, roles: {}, disabledModules: ['/certificates'], disabledRoles: [] });
+  await db.collection('permissions').doc(`${SID}_perms`).set({ schoolId: SID, roles: {}, disabledModules: ['/certificates', '/payroll'], disabledRoles: [] });
 
   // subjects master
   await db.collection('subjects').doc(`${SID}_list`).set({ schoolId: SID, names: SUBJECTS });
