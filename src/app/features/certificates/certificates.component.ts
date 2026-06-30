@@ -44,7 +44,12 @@ export class CertificatesComponent {
 
   classFilter = signal('');
   studentId = signal('');
-  studentList = computed(() => (this.classFilter() ? this.data.studentsOf(this.classFilter()) : this.data.students()));
+  /** Pick from current students or passed-out (left) students. */
+  source = signal<'current' | 'left'>('current');
+  studentList = computed(() => {
+    if (this.source() === 'left') return this.data.leftStudents();
+    return this.classFilter() ? this.data.studentsOf(this.classFilter()) : this.data.students();
+  });
   student = computed<Student | undefined>(() => this.data.student(this.studentId()));
 
   // ---- shared ----

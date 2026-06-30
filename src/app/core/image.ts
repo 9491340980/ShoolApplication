@@ -27,6 +27,31 @@ export function fileToSquareLogo(file: File, size = 256): Promise<string> {
 }
 
 /**
+ * Read an image and return a downscaled JPEG data URL keeping aspect ratio —
+ * for bill/receipt attachments. Kept compact so it fits in a Firestore doc.
+ */
+export function fileToCompressedImage(file: File, maxDim = 1100, quality = 0.6): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Invalid image'));
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
  * Read an image and return a small, square JPEG data URL cropped "cover"-style
  * (fills the square, trims the overflow) — a tidy portrait for student photos.
  * Kept tiny so it fits comfortably inside the Firestore student doc.

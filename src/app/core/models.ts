@@ -88,6 +88,9 @@ export interface Student {
   shareToken?: string;
   /** Soft-delete timestamp (ISO). When set, the record is in the recycle bin. */
   deactivatedAt?: string | null;
+  /** Passed-out / left timestamp (ISO). Kept permanently (not purged); still
+   * eligible for certificates (TC / Bonafide). */
+  leftAt?: string | null;
 }
 
 /** Read-only snapshot of one child, exposed at /p/:token for parents (no login). */
@@ -231,6 +234,8 @@ export interface Expense {
   refId?: string; // e.g. `${staffId}:${month}`
   period?: string; // yyyy-mm
   locked?: boolean; // managed by its source module, not editable in the cash book
+  /** Optional bill / receipt photo (compressed JPEG data URL). */
+  attachment?: string;
 }
 
 export const EXPENSE_CATEGORIES = ['Salaries', 'Utilities', 'Maintenance', 'Supplies', 'Transport', 'Events', 'Rent', 'Books & Stationery', 'Marketing', 'Taxes & Fees', 'Miscellaneous'];

@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import * as XLSX from 'xlsx';
 import { environment } from '../../../environments/environment';
 import { AttendanceHistoryService } from '../../core/attendance-history.service';
@@ -14,7 +15,7 @@ import { TKey } from '../../core/translations';
 
 @Component({
   selector: 'app-students',
-  imports: [FormsModule, TPipe],
+  imports: [FormsModule, TPipe, RouterLink],
   templateUrl: './students.component.html',
 })
 export class StudentsComponent {
@@ -41,12 +42,23 @@ export class StudentsComponent {
   /** Fees/fee status are visible to the Head Master only. */
   isHM = computed(() => this.auth.role() === 'headmaster');
 
-  // ---- active vs recycle bin ----
-  tab = signal<'active' | 'bin'>('active');
+  // ---- active vs recycle bin vs passed-out ----
+  tab = signal<'active' | 'bin' | 'left'>('active');
   deactivated = computed(() => this.data.deactivatedStudents());
+  leftList = computed(() => this.data.leftStudents());
   openBin() {
     this.data.purgeExpired(); // clear anything past 30 days
     this.tab.set('bin');
+  }
+  /** Mark a student as passed out / left (archived, certificate-eligible). */
+  markLeft(s: Student) {
+    if (confirm(`Mark "${s.name}" as passed out / left?\n\nThey move out of active rolls but stay available for certificates (TC / Bonafide). You can restore them anytime.`)) {
+      this.data.markStudentLeft(s.id);
+      this.viewing.set(null);
+    }
+  }
+  restoreLeft(s: Student) {
+    this.data.restoreLeftStudent(s.id);
   }
   daysLeft(s: Student): number {
     return this.data.daysLeft(s.deactivatedAt);

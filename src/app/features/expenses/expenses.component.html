@@ -80,6 +80,17 @@
         <input class="input mt-1" [ngModel]="fDesc()" (ngModelChange)="fDesc.set($event)" [placeholder]="'expenseDescPh' | t" />
       </label>
     </div>
+    <!-- bill / receipt photo -->
+    <div class="flex items-center gap-3 mt-3">
+      @if (fAttachment()) {
+        <img [src]="fAttachment()" class="w-12 h-12 rounded-lg object-cover border border-line cursor-pointer" (click)="viewAttachment.set(fAttachment())" alt="bill" />
+      }
+      <label class="btn-outline btn-sm cursor-pointer inline-flex">
+        📎 {{ attachBusy() ? '…' : (fAttachment() ? ('changeBill' | t) : ('attachBill' | t)) }}
+        <input type="file" accept="image/*" class="hidden" (change)="onAttachPick($event)" />
+      </label>
+      @if (fAttachment()) { <button class="text-[12px] text-red-500" (click)="fAttachment.set('')">{{ 'remove' | t }}</button> }
+    </div>
   }
 
   <div class="flex items-center gap-2 mt-3 flex-wrap">
@@ -183,6 +194,7 @@
             </div>
           </div>
           <span class="font-semibold tabular-nums shrink-0" [class]="isInc(e) ? 'text-success' : 'text-danger'">{{ isInc(e) ? '+' : '−' }}₹{{ e.amount.toLocaleString('en-IN') }}</span>
+          @if (e.attachment) { <button class="text-muted hover:text-primary text-sm shrink-0" [title]="'viewBill' | t" (click)="viewAttachment.set(e.attachment!)">📎</button> }
           @if (e.locked) {
             <span class="text-muted text-sm shrink-0" [title]="'fromPayroll' | t">🔒</span>
           } @else {
@@ -229,3 +241,16 @@
     <span>Balance: ₹{{ balance().toLocaleString('en-IN') }}</span>
   </div>
 </div>
+
+<!-- BILL VIEWER -->
+@if (viewAttachment(); as img) {
+  <div class="fixed inset-0 bg-black/70 z-[70] flex items-center justify-center p-4" (click)="viewAttachment.set(null)">
+    <div class="max-w-2xl w-full" (click)="$event.stopPropagation()">
+      <div class="flex justify-end gap-2 mb-2">
+        <a class="btn-blue btn-sm" [href]="img" download="bill.jpg">⬇️ {{ 'download' | t }}</a>
+        <button class="btn-outline btn-sm !bg-white" (click)="viewAttachment.set(null)">✕ {{ 'close' | t }}</button>
+      </div>
+      <img [src]="img" class="w-full rounded-xl bg-white" alt="bill" />
+    </div>
+  </div>
+}

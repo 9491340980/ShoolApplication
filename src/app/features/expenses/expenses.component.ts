@@ -6,6 +6,7 @@ import { DataService } from '../../core/data.service';
 import { EXPENSE_CATEGORIES, Expense, INCOME_CATEGORIES, PAYMENT_METHODS } from '../../core/models';
 import { ExportFormat, buildExportName, exportData } from '../../core/export';
 import { downloadElementPdf } from '../../core/report-pdf';
+import { fileToCompressedImage } from '../../core/image';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 
@@ -40,8 +41,26 @@ export class ExpensesComponent {
   fMethod = signal(PAYMENT_METHODS[0]);
   fDesc = signal('');
   fAmount = signal<number | null>(null);
+  fAttachment = signal('');
+  attachBusy = signal(false);
   added = signal(false);
   showMore = signal(false);
+
+  async onAttachPick(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.attachBusy.set(true);
+    try {
+      this.fAttachment.set(await fileToCompressedImage(file));
+      this.showMore.set(true);
+    } catch {
+      /* ignore a bad image */
+    } finally {
+      this.attachBusy.set(false);
+    }
+  }
+  /** Open an entry's bill image in a viewer. */
+  viewAttachment = signal<string | null>(null);
 
   setType(t: EType) {
     this.entryType.set(t);
@@ -54,6 +73,7 @@ export class ExpensesComponent {
     this.fDesc.set('');
     this.fAmount.set(null);
     this.fMethod.set(PAYMENT_METHODS[0]);
+    this.fAttachment.set('');
   }
   startEdit(e: Expense) {
     if (e.locked) return; // payroll-managed entries are edited from the Payroll page
@@ -65,6 +85,7 @@ export class ExpensesComponent {
     this.fMethod.set(e.method ?? PAYMENT_METHODS[0]);
     this.fDesc.set(e.description ?? '');
     this.fAmount.set(e.amount);
+    this.fAttachment.set(e.attachment ?? '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   cancelEdit() {
@@ -82,6 +103,7 @@ export class ExpensesComponent {
       method: this.fMethod(),
       payee: this.fPayee().trim(),
       createdBy: this.auth.user()?.name ?? '',
+      attachment: this.fAttachment() || undefined,
     };
     const id = this.editingId();
     if (id) this.data.updateExpense(id, payload);

@@ -1,6 +1,7 @@
 @if (isHM()) {
-  <div class="flex gap-1 bg-page rounded-xl p-1 mb-4 max-w-md">
+  <div class="flex gap-1 bg-page rounded-xl p-1 mb-4 max-w-xl">
     <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'active' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('active')">👥 {{ 'studentsList' | t }}</button>
+    <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'left' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="tab.set('left')">🎓 {{ 'passedOut' | t }} ({{ leftList().length }})</button>
     <button class="flex-1 px-3 py-2 rounded-lg text-[13px] font-semibold" [class]="tab() === 'bin' ? 'bg-white shadow-sm text-primary' : 'text-muted'" (click)="openBin()">🗑️ {{ 'deactivated' | t }} ({{ deactivated().length }})</button>
   </div>
 }
@@ -210,6 +211,30 @@
 }
 }
 
+@if (tab() === 'left') {
+  <div class="card !p-0 overflow-hidden">
+    <div class="px-5 py-4">
+      <div class="text-[15px] font-bold">🎓 {{ 'passedOut' | t }}</div>
+      <div class="text-[12px] text-muted mt-0.5">💡 {{ 'passedOutHint' | t }}</div>
+    </div>
+    <div class="divide-y divide-line">
+      @for (s of leftList(); track s.id) {
+        <div class="flex items-center gap-3 px-4 py-2.5">
+          @if (s.photo) { <img [src]="s.photo" class="w-9 h-9 rounded-full object-cover shrink-0" alt="" /> } @else { <span class="w-9 h-9 rounded-full bg-page grid place-items-center shrink-0">🎓</span> }
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-[14px] truncate">{{ s.name }}</div>
+            <div class="text-[11px] text-muted">{{ 'class' | t }} {{ s.classId }} · {{ 'rollNo' | t }} {{ s.roll }} @if (s.admissionNo) { · {{ s.admissionNo }} }</div>
+          </div>
+          <a class="btn-outline btn-sm" routerLink="/certificates">🧾 {{ 'certificates' | t }}</a>
+          <button class="btn-outline btn-sm" (click)="restoreLeft(s)">↩ {{ 'restore' | t }}</button>
+        </div>
+      } @empty {
+        <div class="px-4 py-8 text-center text-muted text-sm">— {{ 'noPassedOut' | t }}</div>
+      }
+    </div>
+  </div>
+}
+
 @if (tab() === 'bin') {
   <div class="card !p-0 overflow-hidden">
     <div class="px-5 py-4">
@@ -262,6 +287,9 @@
           <button class="btn-outline btn-sm" (click)="openHistory(s)">📅 {{ 'attendanceHistory' | t }}</button>
           @if (auth.role() === 'headmaster' || auth.role() === 'teacher') {
             <button class="btn-outline btn-sm" (click)="startEdit(s)">✏️ {{ 'edit' | t }}</button>
+          }
+          @if (isHM() && !s.leftAt) {
+            <button class="btn-outline btn-sm !text-amber-600 !border-amber-300" (click)="markLeft(s)">🎓 {{ 'markPassedOut' | t }}</button>
           }
           <button class="text-muted hover:text-ink cursor-pointer text-xl" (click)="viewing.set(null)">✕</button>
         </div>

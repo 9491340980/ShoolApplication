@@ -6,13 +6,20 @@
 
 <!-- PICKER + FIELDS -->
 <div class="card mb-4">
+  <!-- current vs passed-out -->
+  <div class="inline-flex bg-page rounded-lg p-1 mb-3">
+    <button class="px-3 py-1.5 rounded-md text-[12.5px] font-bold" [class]="source() === 'current' ? 'bg-primary text-white' : 'text-muted'" (click)="source.set('current'); studentId.set('')">{{ 'currentStudents' | t }}</button>
+    <button class="px-3 py-1.5 rounded-md text-[12.5px] font-bold" [class]="source() === 'left' ? 'bg-primary text-white' : 'text-muted'" (click)="source.set('left'); studentId.set('')">🎓 {{ 'passedOut' | t }}</button>
+  </div>
   <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-    <label class="text-[11px] font-semibold text-muted">{{ 'class' | t }}
-      <select class="input mt-1" [ngModel]="classFilter()" (ngModelChange)="classFilter.set($event); studentId.set('')">
-        <option value="">{{ 'allItems' | t }}</option>
-        @for (c of classes(); track c) { <option [value]="c">{{ c }}</option> }
-      </select>
-    </label>
+    @if (source() === 'current') {
+      <label class="text-[11px] font-semibold text-muted">{{ 'class' | t }}
+        <select class="input mt-1" [ngModel]="classFilter()" (ngModelChange)="classFilter.set($event); studentId.set('')">
+          <option value="">{{ 'allItems' | t }}</option>
+          @for (c of classes(); track c) { <option [value]="c">{{ c }}</option> }
+        </select>
+      </label>
+    }
     <label class="text-[11px] font-semibold text-muted lg:col-span-2">{{ 'selectStudent' | t }}
       <select class="input mt-1" [ngModel]="studentId()" (ngModelChange)="pickStudent($event)">
         <option value="">{{ 'selectStudent' | t }}…</option>

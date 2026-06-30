@@ -117,8 +117,10 @@ export class DataService {
   private seedAttempted = false;
 
   /** Active records only — deactivated (recycle-bin) ones are hidden everywhere. */
-  readonly students = computed(() => this.db().students.filter((s) => !s.deactivatedAt));
+  readonly students = computed(() => this.db().students.filter((s) => !s.deactivatedAt && !s.leftAt));
   readonly teachers = computed(() => this.db().teachers.filter((t) => !t.deactivatedAt));
+  /** Passed-out / left students — archived permanently, still certificate-eligible. */
+  readonly leftStudents = computed(() => this.db().students.filter((s) => s.leftAt && !s.deactivatedAt).sort((a, b) => (b.leftAt ?? '').localeCompare(a.leftAt ?? '')));
   /** Recycle bin (soft-deleted). */
   readonly deactivatedStudents = computed(() => this.db().students.filter((s) => s.deactivatedAt));
   readonly deactivatedTeachers = computed(() => this.db().teachers.filter((t) => t.deactivatedAt));
@@ -394,7 +396,7 @@ export class DataService {
   // ---------- queries (already school-scoped by the listeners) ----------
 
   studentsOf(classId: string): Student[] {
-    return this.db().students.filter((s) => s.classId === classId && !s.deactivatedAt);
+    return this.db().students.filter((s) => s.classId === classId && !s.deactivatedAt && !s.leftAt);
   }
 
   student(id: string): Student | undefined {
@@ -777,6 +779,14 @@ export class DataService {
   }
   restoreStudent(id: string) {
     this.updateStudent(id, { deactivatedAt: null });
+  }
+  /** Mark a student as passed out / left (archived permanently, certificate-eligible). */
+  markStudentLeft(id: string) {
+    this.updateStudent(id, { leftAt: new Date().toISOString() });
+  }
+  /** Bring a passed-out student back to active rolls. */
+  restoreLeftStudent(id: string) {
+    this.updateStudent(id, { leftAt: null });
   }
   deactivateTeacher(id: string) {
     this.updateTeacher(id, { deactivatedAt: new Date().toISOString() });
