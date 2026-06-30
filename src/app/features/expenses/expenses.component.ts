@@ -41,6 +41,7 @@ export class ExpensesComponent {
   fDesc = signal('');
   fAmount = signal<number | null>(null);
   added = signal(false);
+  showMore = signal(false);
 
   setType(t: EType) {
     this.entryType.set(t);
