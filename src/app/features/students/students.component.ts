@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { DataService } from '../../core/data.service';
 import { ExportFormat, exportData } from '../../core/export';
 import { Student } from '../../core/models';
+import { fileToSquarePhoto } from '../../core/image';
 import { SchoolService } from '../../core/school.service';
 import { TPipe } from '../../core/translate.service';
 import { TKey } from '../../core/translations';
@@ -105,6 +106,20 @@ export class StudentsComponent {
   newPen = signal('');
   newApaar = signal('');
   newAddress = signal('');
+  newPhoto = signal('');
+  photoBusy = signal(false);
+  async onPhotoPick(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.photoBusy.set(true);
+    try {
+      this.newPhoto.set(await fileToSquarePhoto(file));
+    } catch {
+      /* ignore a bad image */
+    } finally {
+      this.photoBusy.set(false);
+    }
+  }
 
   // detail viewer
   viewing = signal<Student | null>(null);
@@ -174,7 +189,7 @@ export class StudentsComponent {
     for (const s of [
       this.newRoll, this.newName, this.newPhone, this.newAdmissionNo, this.newFather, this.newMother,
       this.newDob, this.newDoa, this.newCaste, this.newMotherTongue, this.newAadhaar, this.newPen,
-      this.newApaar, this.newAddress,
+      this.newApaar, this.newAddress, this.newPhoto,
     ]) {
       s.set('');
     }
@@ -198,6 +213,7 @@ export class StudentsComponent {
     this.newPen.set(s.pen ?? '');
     this.newApaar.set(s.apaarId ?? '');
     this.newAddress.set(s.address ?? '');
+    this.newPhoto.set(s.photo ?? '');
     this.showMore.set(true);
     this.showAdd.set(true);
     this.viewing.set(null);
@@ -221,6 +237,7 @@ export class StudentsComponent {
       pen: this.newPen().trim() || undefined,
       apaarId: this.newApaar().trim() || undefined,
       address: this.newAddress().trim() || undefined,
+      photo: this.newPhoto() || undefined,
     };
     const id = this.editingId();
     if (id) this.data.updateStudent(id, data);
@@ -228,7 +245,7 @@ export class StudentsComponent {
     for (const s of [
       this.newRoll, this.newName, this.newPhone, this.newAdmissionNo, this.newFather, this.newMother,
       this.newDob, this.newDoa, this.newCaste, this.newMotherTongue, this.newAadhaar, this.newPen,
-      this.newApaar, this.newAddress,
+      this.newApaar, this.newAddress, this.newPhoto,
     ]) {
       s.set('');
     }

@@ -25,3 +25,31 @@ export function fileToSquareLogo(file: File, size = 256): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+/**
+ * Read an image and return a small, square JPEG data URL cropped "cover"-style
+ * (fills the square, trims the overflow) — a tidy portrait for student photos.
+ * Kept tiny so it fits comfortably inside the Firestore student doc.
+ */
+export function fileToSquarePhoto(file: File, size = 240): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Invalid image'));
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+        const scale = Math.max(size / img.width, size / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}

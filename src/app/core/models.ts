@@ -82,6 +82,8 @@ export interface Student {
   motherTongue?: string;
   aadhaar?: string;
   address?: string;
+  /** Small square JPEG data URL — student photo, shown on lists, profile, ID cards & report cards. */
+  photo?: string;
   /** Token for the passwordless parent-view link (`/p/:token`); set on first share. */
   shareToken?: string;
   /** Soft-delete timestamp (ISO). When set, the record is in the recycle bin. */

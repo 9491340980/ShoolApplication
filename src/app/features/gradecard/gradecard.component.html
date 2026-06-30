@@ -1,0 +1,117 @@
+<!-- CONTROLS -->
+<div class="flex items-center gap-2 mb-4 flex-wrap">
+  <select class="input max-w-[130px]" [ngModel]="classId()" (ngModelChange)="classId.set($event)">
+    @for (c of classes(); track c) { <option [value]="c">{{ 'class' | t }} {{ c }}</option> }
+  </select>
+  <span class="text-[12px] text-muted">{{ 'selectStudentView' | t }}</span>
+</div>
+
+<!-- CLASS OVERVIEW: students × exams -->
+<div class="card !p-0 overflow-hidden">
+  <div class="px-4 py-3 border-b border-line text-[14px] font-bold">📋 {{ 'consolidated' | t }} {{ 'gradeCard' | t }} — {{ classId() }}</div>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-[13px]">
+      <thead>
+        <tr>
+          <th class="th sticky left-0 bg-slate-50 z-10">{{ 'studentName' | t }}</th>
+          @for (e of exams(); track e.id) {
+            <th class="th !text-center">{{ e.label }}<div class="text-[9px] font-normal normal-case opacity-70">/{{ e.maxMarks ?? 100 }}</div></th>
+          }
+          <th class="th !text-center">{{ 'overall' | t }}</th>
+          <th class="th !text-center">{{ 'gradeLabel' | t }}</th>
+          <th class="th !text-center"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of students(); track s.id) {
+          <tr class="hover:bg-blue-50/40 cursor-pointer" (click)="open(s)">
+            <td class="td font-semibold whitespace-nowrap sticky left-0 bg-white z-10">
+              <span class="inline-flex items-center gap-2">
+                @if (s.photo) { <img [src]="s.photo" class="w-7 h-7 rounded-full object-cover" alt="" /> } @else { <span class="text-muted font-bold">{{ s.roll }}</span> }
+                {{ s.name }}
+              </span>
+            </td>
+            @for (e of exams(); track e.id) {
+              @let ex = examOf(s.id, e.id);
+              <td class="td text-center" [class]="ex.has ? pctColor(ex.pct) : 'text-muted'">{{ ex.has ? ex.pct + '%' : '—' }}</td>
+            }
+            @let ov = overall(s.id);
+            <td class="td text-center font-bold" [class]="pctColor(ov.pct)">{{ ov.pct }}%</td>
+            <td class="td text-center"><span class="badge badge-blue">{{ grade(ov.pct) }}</span></td>
+            <td class="td text-center text-primary">📄</td>
+          </tr>
+        } @empty {
+          <tr><td class="td text-muted text-center" [attr.colspan]="exams().length + 4">—</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PRINTABLE CONSOLIDATED CARD -->
+@if (viewing(); as s) {
+  <div class="fixed inset-0 bg-black/50 z-[70] flex items-start sm:items-center justify-center p-0 sm:p-4 overflow-y-auto" (click)="close()">
+    <div class="bg-white w-full sm:max-w-2xl my-0 sm:my-4" (click)="$event.stopPropagation()">
+      <div class="no-print flex items-center justify-between gap-2 px-4 py-3 bg-page border-b border-line sticky top-0">
+        <button class="text-muted hover:text-ink cursor-pointer text-sm font-semibold" (click)="close()">✕ {{ 'close' | t }}</button>
+        <button class="btn-blue btn-sm" [disabled]="downloading()" (click)="download()">⬇️ {{ downloading() ? '…' : ('downloadPrint' | t) }}</button>
+      </div>
+      <div id="grade-print" class="p-6 bg-white text-ink">
+        <div class="text-center border-b-2 border-primary pb-3 mb-3 flex items-center justify-center gap-3">
+          @if (logo()) { <img [src]="logo()" class="w-14 h-14 object-contain" alt="logo" /> }
+          <div>
+            <div class="font-display text-xl font-extrabold text-primary">{{ schoolName() }}</div>
+            @if (schoolAddress()) { <div class="text-[11px] text-muted">{{ schoolAddress() }}</div> }
+            <div class="text-[12px] text-muted">{{ 'consolidated' | t }} {{ 'gradeCard' | t }}</div>
+          </div>
+          @if (s.photo) { <img [src]="s.photo" class="w-16 h-16 rounded object-cover border border-line" alt="photo" /> }
+        </div>
+        <div class="grid grid-cols-2 gap-x-6 text-[12.5px] mb-3">
+          <div><span class="text-muted">{{ 'studentName' | t }}:</span> <b>{{ s.name }}</b></div>
+          <div class="text-right"><span class="text-muted">{{ 'class' | t }}:</span> <b>{{ s.classId }}</b> · <span class="text-muted">{{ 'rollNo' | t }}:</span> <b>{{ s.roll }}</b></div>
+          <div><span class="text-muted">{{ 'fatherName' | t }}:</span> <b>{{ s.fatherName || '—' }}</b></div>
+          <div class="text-right"><span class="text-muted">{{ 'attendance' | t }}:</span> <b>{{ attPct(s.id) ?? '—' }}%</b></div>
+        </div>
+
+        <!-- subjects × exams matrix -->
+        <table class="w-full border-collapse text-[12px] tk-table" style="table-layout:auto">
+          <thead>
+            <tr>
+              <th style="text-align:left">{{ 'subjects' | t }}</th>
+              @for (e of exams(); track e.id) { <th>{{ e.label }}<div style="font-weight:400;font-size:9px">/{{ e.maxMarks ?? 100 }}</div></th> }
+              <th>{{ 'total' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of units(); track u) {
+              <tr>
+                <td style="text-align:left">{{ u }}</td>
+                @for (e of exams(); track e.id) { <td>{{ cell(s.id, e.id, u) ?? '—' }}</td> }
+                <td style="font-weight:700">{{ subjectTotal(s.id, u) }}</td>
+              </tr>
+            }
+            <tr style="font-weight:700;background:#f4f7ff">
+              <td style="text-align:left">{{ 'total' | t }}</td>
+              @for (e of exams(); track e.id) { @let ex = examOf(s.id, e.id); <td>{{ ex.total }}/{{ ex.max }}</td> }
+              <td>{{ overall(s.id).total }}/{{ overall(s.id).max }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- overall -->
+        @let ov = overall(s.id);
+        <div class="flex justify-between items-center mt-4 bg-page rounded-xl px-4 py-3">
+          <div class="text-[13px] font-semibold">{{ 'overall' | t }}</div>
+          <div class="flex items-center gap-4">
+            <div class="text-[22px] font-extrabold" [class]="pctColor(ov.pct)">{{ ov.pct }}%</div>
+            <span class="badge badge-blue !text-[14px] !px-3 !py-1">{{ 'gradeLabel' | t }} {{ grade(ov.pct) }}</span>
+          </div>
+        </div>
+        <div class="flex justify-between mt-12 text-[12px] font-semibold text-muted">
+          <span>{{ 'classTeacher' | t }}</span>
+          <span>{{ 'authSign' | t }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+}

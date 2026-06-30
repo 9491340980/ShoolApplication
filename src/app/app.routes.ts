@@ -62,6 +62,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/certificates/certificates.component').then((m) => m.CertificatesComponent),
       },
       {
+        path: 'gradecard',
+        loadComponent: () => import('./features/gradecard/gradecard.component').then((m) => m.GradeCardComponent),
+      },
+      {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },

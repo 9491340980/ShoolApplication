@@ -39,6 +39,7 @@ export const NAV: Record<Role, NavSection[]> = {
         { path: '/students', icon: 'users', label: 'studentsList' },
         { path: '/attendance', icon: 'check', label: 'attendance' },
         { path: '/marks', icon: 'file', label: 'marksResults' },
+        { path: '/gradecard', icon: 'file', label: 'gradeCard' },
         { path: '/fees', icon: 'rupee', label: 'feeManagement' },
         { path: '/expenses', icon: 'rupee', label: 'expenses' },
         { path: '/payroll', icon: 'rupee', label: 'payroll' },
@@ -96,6 +97,7 @@ export const NAV: Record<Role, NavSection[]> = {
         { path: '/students', icon: 'users', label: 'myStudents' },
         { path: '/attendance', icon: 'check', label: 'markAttendance' },
         { path: '/marks', icon: 'file', label: 'enterMarks' },
+        { path: '/gradecard', icon: 'file', label: 'gradeCard' },
         { path: '/timetable', icon: 'calendar', label: 'myTimetable' },
       ],
     },
@@ -158,7 +160,7 @@ export const CONFIG_ROLES: ConfigRole[] = ['headmaster', 'teacher', 'accountant'
 export const DEFAULT_DISABLED_ROLES: Role[] = ['parent', 'student'];
 
 /** Modules that ship switched OFF (e.g. still under testing) until a super admin enables them. */
-export const DEFAULT_DISABLED_MODULES: string[] = ['/certificates', '/payroll'];
+export const DEFAULT_DISABLED_MODULES: string[] = ['/certificates', '/payroll', '/gradecard'];
 
 /**
  * The catalogue of toggleable features for the permission matrix. `roles` lists
@@ -181,6 +183,7 @@ export const FEATURES: Feature[] = [
   { path: '/students', icon: 'users', label: 'studentsList', section: 'studentsSection', roles: ['headmaster', 'teacher'] },
   { path: '/attendance', icon: 'check', label: 'attendance', section: 'studentsSection', roles: ['headmaster', 'teacher', 'parent', 'student'] },
   { path: '/marks', icon: 'file', label: 'marksResults', section: 'studentsSection', roles: ['headmaster', 'teacher', 'parent', 'student'] },
+  { path: '/gradecard', icon: 'file', label: 'gradeCard', section: 'studentsSection', roles: ['headmaster', 'teacher'] },
   { path: '/fees', icon: 'rupee', label: 'feeManagement', section: 'studentsSection', roles: ['headmaster', 'teacher', 'accountant', 'parent', 'student'] },
   { path: '/expenses', icon: 'rupee', label: 'expenses', section: 'studentsSection', roles: ['headmaster', 'accountant'] },
   { path: '/payroll', icon: 'rupee', label: 'payroll', section: 'school', roles: ['headmaster', 'accountant'] },
@@ -216,6 +219,7 @@ export const PAGE_TITLES: Record<string, TKey> = {
   '/reports': 'reports',
   '/halltickets': 'hallTickets',
   '/certificates': 'certificates',
+  '/gradecard': 'gradeCard',
   '/promote': 'promotion',
   '/dashboard': 'dashboard',
   '/notices': 'noticeBoard',

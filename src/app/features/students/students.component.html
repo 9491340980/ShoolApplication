@@ -45,6 +45,21 @@
   <div class="card mb-4">
     <div class="card-title">{{ editingId() ? ('edit' | t) : '＋ ' + ('newStudent' | t) }}</div>
 
+    <!-- photo -->
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-16 h-16 rounded-xl bg-page border border-line overflow-hidden grid place-items-center shrink-0">
+        @if (newPhoto()) { <img [src]="newPhoto()" class="w-full h-full object-cover" alt="photo" /> } @else { <span class="text-2xl">🧒</span> }
+      </div>
+      <div>
+        <label class="btn-outline btn-sm cursor-pointer inline-flex">
+          📷 {{ photoBusy() ? '…' : ('uploadPhoto' | t) }}
+          <input type="file" accept="image/*" class="hidden" (change)="onPhotoPick($event)" />
+        </label>
+        @if (newPhoto()) { <button class="text-[12px] text-red-500 ml-2" (click)="newPhoto.set('')">{{ 'remove' | t }}</button> }
+        <div class="text-[11px] text-muted mt-1">{{ 'photoHint' | t }}</div>
+      </div>
+    </div>
+
     <div class="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">{{ 'basicDetails' | t }}</div>
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4">
       <input class="input" [placeholder]="('rollNo' | t) + ' *'" [ngModel]="newRoll()" (ngModelChange)="newRoll.set($event)" />
@@ -105,7 +120,12 @@
       <tbody>
         @for (s of filtered(); track s.id) {
           <tr class="hover:bg-blue-50/40">
-            <td class="td font-bold" [attr.data-label]="'studentName' | t">{{ s.name }}</td>
+            <td class="td font-bold" [attr.data-label]="'studentName' | t">
+              <span class="inline-flex items-center gap-2">
+                @if (s.photo) { <img [src]="s.photo" class="w-7 h-7 rounded-full object-cover shrink-0" alt="" /> } @else { <span class="w-7 h-7 rounded-full bg-page grid place-items-center text-[12px] shrink-0">🧒</span> }
+                {{ s.name }}
+              </span>
+            </td>
             <td class="td" [attr.data-label]="'rollNo' | t">{{ s.roll }}</td>
             <td class="td" [attr.data-label]="'class' | t"><span class="badge badge-blue">{{ s.classId }}</span></td>
             <td class="td" [attr.data-label]="'parentPhone' | t">📞 {{ s.parentPhone }}</td>
@@ -248,7 +268,11 @@
       </div>
       <div class="p-4 sm:p-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center text-xl">🧒</div>
+          @if (s.photo) {
+            <img [src]="s.photo" class="w-14 h-14 rounded-full object-cover border border-line" alt="photo" />
+          } @else {
+            <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center text-xl">🧒</div>
+          }
           <div>
             <div class="font-bold text-[16px]">{{ s.name }}</div>
             <div class="text-xs text-muted">{{ 'class' | t }} {{ s.classId }} | {{ 'rollNo' | t }} {{ s.roll }}</div>
